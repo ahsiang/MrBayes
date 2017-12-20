@@ -80,13 +80,13 @@
    not all compilers perform bitfield operations on signed ints and longs in the expected manner
    for unsigned ints and longs. Actually, the ANSI standard does not specify how to implement
    bit operations on signed operands.
-   
+
    Another problem is that some bitshift operations in MrBayes have been performed on an integer
    constant "1". This is probably interpreted by most compilers as a signed int and the result of
    the bitshift operation is therefore also a signed int. When a signed int has had a different
    number of bits than the type specified as SafeLong, this may also have resulted in errors on
    some systems.
- 
+
    Both of these problems are fixed now by using unsigned longs for the bitfield operations and
    by setting the "1" value needed by some bitfield functions using a variable defined as the same
    type as the bitfield containers themselves. Furthermore, I have separated out the cases where
@@ -100,7 +100,7 @@ typedef long RandLong;
 #define MRBFLT_MAX DBL_MAX  /* maximum possible value that can be stored in MrBFlt */
 #define MRBFLT_MIN DBL_MIN  /* minimum possible value that can be stored in MrBFlt */
 #define MRBFLT_NEG_MAX (-DBL_MAX)  /* maximum possible negative value that can be stored in MrBFlt */
-typedef double MrBFlt;      /* double used for parameter values and generally for floating point values, 
+typedef double MrBFlt;      /* double used for parameter values and generally for floating point values,
                                if set to float MPI would not work becouse of use MPI_DOUBLE */
 typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt) to increase speed and reduce memory requirement */
                             /* set CLFlt to double if you want increased precision */
@@ -429,7 +429,7 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define UNLINKED                1
 
 /*paramType*/
-#define NUM_LINKED              32
+#define NUM_LINKED              34
 #define P_TRATIO                0
 #define P_REVMAT                1
 #define P_OMEGA                 2
@@ -462,6 +462,8 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define P_MIXEDVAR              29
 #define P_MIXEDBRCHRATES        30
 #define P_MIXTURE_RATES         31
+#define P_RHO                   32
+#define P_ALPHADIR              33
 /* NOTE: If you add another parameter, change NUM_LINKED */
 
 // #define CPPm                 0       /* CPP rate multipliers */
@@ -505,7 +507,7 @@ enum CALPRIOR
     logNormal,
     offsetLogNormal,
     standardGamma,
-    offsetGamma 
+    offsetGamma
     };
 
 enum ConstraintType
@@ -585,12 +587,12 @@ typedef struct node
     TreeNode;
 
 /* typedef for binary tree */
-typedef struct 
+typedef struct
     {
     char            name[100];          /*!< name of tree                                 */
     int             memNodes;           /*!< number of allocated nodes (do not exceed!)   */
     int             nNodes;             /*!< number of nodes in tree (including lower root in rooted trees) */
-    int             nIntNodes;          /*!< number of interior nodes in tree (excluding lower root in rooted trees) */  
+    int             nIntNodes;          /*!< number of interior nodes in tree (excluding lower root in rooted trees) */
     int             isRooted;           /*!< is tree rooted?                              */
     int             isClock;            /*!< is tree clock?                               */
     int             isCalibrated;       /*!< is tree calibrated?                          */
@@ -606,7 +608,7 @@ typedef struct
     TreeNode        *nodes;             /*!< array containing the nodes                   */
     BitsLong        *bitsets;           /*!< pointer to bitsets describing splits         */
     BitsLong        *flags;             /*!< pointer to cond like flags                   */
-    int             fromUserTree;       /*!< YES is set for the trees whoes branch lengthes are set from user tree(as start tree or fix branch length prior), NO otherwise */       
+    int             fromUserTree;       /*!< YES is set for the trees whoes branch lengthes are set from user tree(as start tree or fix branch length prior), NO otherwise */
     }
     Tree;
 
@@ -632,7 +634,7 @@ typedef struct pNode
     PolyNode;
 
 /* typedef for polytomous tree */
-typedef struct 
+typedef struct
     {
     char            name[100];           /*!< name of tree                                */
     int             memNodes;            /*!< number of allocated nodes; do not exceed!   */
@@ -641,7 +643,7 @@ typedef struct
     PolyNode        **allDownPass;       /*!< downpass array over all nodes               */
     PolyNode        **intDownPass;       /*!< downpass array over interior nodes          */
     PolyNode        *root;               /*!< pointer to root (lower for rooted trees     */
-    PolyNode        *nodes;              /*!< array holding the tree nodes                */  
+    PolyNode        *nodes;              /*!< array holding the tree nodes                */
     BitsLong        *bitsets;            /*!< bits describing partitions (splits)         */
     int             nBSets;              /*!< number of effective branch length sets      */
     int             nESets;              /*!< number of breakpoint rate sets              */
@@ -857,6 +859,10 @@ typedef struct param
 #define MIXEDVAR_UNI                    145
 #define MIXEDBRCHRATES                  146
 #define MIXTURE_RATES                   147
+#define RHO_EXP                         148
+#define RHO_FIX                         149
+#define ALPHADIR_EXP                    150
+#define ALPHADIR_FIX                    151
 
 #if defined (BEAGLE_ENABLED)
 #define MB_BEAGLE_SCALE_ALWAYS          0
@@ -936,7 +942,7 @@ typedef int (*PrintSiteRateFxn) (TreeNode *, int, int);
 typedef int (*PosSelProbsFxn) (TreeNode *, int, int);
 typedef int (*SiteOmegasFxn) (TreeNode *, int, int);
 
-typedef struct cmdtyp           
+typedef struct cmdtyp
     {
     int         cmdNumber;
     char        *string;
@@ -950,7 +956,7 @@ typedef struct cmdtyp
     int         hiding;
     }
     CmdType;
-    
+
 typedef struct parm
     {
     char        *string;    /* parameter name */
@@ -966,7 +972,7 @@ typedef struct model
     int         codon[64];         /* gives protein ID for each codon              */
     int         codonNucs[64][3];  /* gives triplet for each codon                 */
     int         codonAAs[64];      /* gives protein ID for implemented code        */
-    
+
     char        nucModel[100];     /* nucleotide model used                        */
     char        nst[100];          /* number of substitution types                 */
     char        parsModel[100];    /* use the (so-called) parsimony model          */
@@ -989,8 +995,14 @@ typedef struct model
     char        augmentData[100];  /* should data be augmented                     */
 
     char        tRatioPr[100];     /* prior for ti/tv rate ratio                   */
-    MrBFlt      tRatioFix;   
-    MrBFlt      tRatioDir[2];      
+    MrBFlt      tRatioFix;
+    MrBFlt      tRatioDir[2];
+    char        rhoPr[100];        /* prior for inverse correlation factor         */
+    MrBFlt      rhoFix;
+    MrBFlt      rhoDir;
+    char        alphaDirPr[100];     /* prior for DPMM scaling parameter           */
+    MrBFlt      alphaDirFix;
+    MrBFlt      alphaDirDir;
     char        revMatPr[100];     /* prior for GTR model                          */
     MrBFlt      revMatFix[6];
     MrBFlt      revMatDir[6];
@@ -1221,6 +1233,8 @@ typedef struct modelinfo
 
     /* Model parameter pointers */
     Param       *tRatio;                    /* ptr to tRatio used in model              */
+    Param       *rho;                       /* ptr to rho used in model (inverse correlation factor) */
+    Param       *alphaDir;                  /* ptr to alphaDir used in model (DPMM scaling parameter) */
     Param       *revMat;                    /* ptr to revMat used in model              */
     Param       *omega;                     /* ptr to omega used in model               */
     Param       *stateFreq;                 /* ptr to statFreq used in model            */
@@ -1261,10 +1275,10 @@ typedef struct modelinfo
     int         compCharStop;               /* stop char among compressed chars         */
     int         parsMatrixStart;            /* start column in parsimony matrix         */
     int         parsMatrixStop;             /* stop collumn in parsimony matrix         */
-    int         nParsIntsPerSite;           /* # parsimony ints per character           */  
+    int         nParsIntsPerSite;           /* # parsimony ints per character           */
     int         nCharsPerSite;              /* number chars per site (eg 3 for codon)   */
     int         rateProbStart;              /* start of rate probs (for adgamma)        */
-                
+
      /* Variables for eigen decompositions */
     int         cijkLength;                 /* stores length of cijk vector                 */
     int         nCijkParts;                 /* stores number of cijk partitions (1 except for omega/covarion models) */
@@ -1283,7 +1297,7 @@ typedef struct modelinfo
     CLFlt       ***catLnScaler;             /* scaler for Gibbs sampling of gamma           */
     int         gibbsGamma;                 /* flags whether Gibbs sampling of discrete gamma is used */
     int         gibbsFreq;                  /* frequency of Gibbs resampling of discrete gamma */
-    
+
     /* Variables for parsimony sets and parsimony calculations */
     MrBFlt      parsTreeLength[MAX_CHAINS*2];   /* parsimony tree lengths for chains        */
     BitsLong    **parsSets;                 /* parsimony sets                               */
@@ -1505,8 +1519,8 @@ typedef struct charinfo
     int variable;
     int informative;
     } CharInfo;
-    
-typedef struct 
+
+typedef struct
     {
     int         isExcluded;            /* is the character excluded                     */
     int         numStates;             /* number of observed states for the character   */
@@ -1519,7 +1533,7 @@ typedef struct
     }
     CharInformation;
 
-typedef struct 
+typedef struct
     {
     int         isDeleted;             /* is the taxon deleted                          */
     int         charCount;             /* count holder                                  */

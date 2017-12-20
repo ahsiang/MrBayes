@@ -156,7 +156,7 @@ int main (int argc, char *argv[])
     SIOUXSettings.rows             = 60;
     SIOUXSettings.columns          = 90;
 #   endif
-    
+
 #   if defined (MPI_ENABLED)
     ierror = MPI_Init(&argc, &argv);
     if (ierror != MPI_SUCCESS)
@@ -177,30 +177,30 @@ int main (int argc, char *argv[])
         exit (1);
         }
 #   endif
-    
+
 #   ifdef HAVE_LIBREADLINE
     rl_attempted_completion_function = readline_completion;
 #   endif
     /* Set up parameter table. */
     SetUpParms ();
-    
+
     /* initialize seed using current time */
     GetTimeSeed ();
-    
+
     /* Initialize the variables of the program. */
     InitializeMrBayes ();
-    
+
     /* Print the nifty header. */
     PrintHeader ();
-    
+
     /* Go to the command line, process any arguments passed to the program
        and then wait for input. */
     i = CommandLine (argc, argv);
-    
+
 #   if defined (MPI_ENABLED)
     MPI_Finalize();
 #   endif
-    
+
     if (i == ERROR)
         return (1);
     else
@@ -222,7 +222,7 @@ int CommandLine (int argc, char **argv)
 #   endif
 
     for (i=0;i<CMD_STRING_LENGTH;i++) cmdStr[i]='\0';
-    
+
     /* wait for user-input commands */
     nProcessedArgs = 1; /* first argument is program name and needs not be processed */
     if (nProcessedArgs < argc)
@@ -235,7 +235,7 @@ int CommandLine (int argc, char **argv)
         }
     for (;;)
         {
-        if (nProcessedArgs < argc) 
+        if (nProcessedArgs < argc)
             {
             /* we are here only if a command that has been passed
                into the program remains to be processed */
@@ -287,10 +287,10 @@ int CommandLine (int argc, char **argv)
 #   else
 #       ifdef HAVE_LIBREADLINE
             cmdStrP = readline("MrBayes > ");
-            if (cmdStrP!=NULL) 
+            if (cmdStrP!=NULL)
                     {
                     strncpy (cmdStr,cmdStrP,CMD_STRING_LENGTH - 2);
-                    if (*cmdStrP) 
+                    if (*cmdStrP)
                         add_history (cmdStrP);
                     free (cmdStrP);
                     }
@@ -365,7 +365,7 @@ char **readline_completion (const char *text, int start, int stop)
             matches = rl_completion_matches (text, command_generator);
 #   endif
 
-    return (matches);   
+    return (matches);
 }
 #endif
 
@@ -376,7 +376,7 @@ void GetTimeSeed (void)
 
 #   if defined (MPI_ENABLED)
     int         ierror;
-    
+
     if (proc_id == 0)
         {
         curTime = time(NULL);
@@ -389,7 +389,7 @@ void GetTimeSeed (void)
         {
         MrBayesPrint ("%s   Problem broadcasting seed\n", spacer);
         }
-        
+
     if (proc_id == 0)
         {
         /* Note: swapSeed will often be same as globalSeed */
@@ -423,7 +423,7 @@ void GetTimeSeed (void)
     globalSeed  = (RandLong)curTime;
     if (globalSeed < 0)
         globalSeed = -globalSeed;
-        
+
     /* Note: swapSeed will often be the same as globalSeed */
     curTime = time(NULL);
     swapSeed  = (RandLong)curTime;
@@ -435,7 +435,7 @@ void GetTimeSeed (void)
     runIDSeed  = (RandLong)curTime;
     if (runIDSeed < 0)
         runIDSeed = -runIDSeed;
-        
+
 #   endif
 }
 
@@ -443,7 +443,7 @@ void GetTimeSeed (void)
 int InitializeMrBayes (void)
 {
     /* this function initializes the program; only call it at the start of execution */
-    
+
     int     i, j, growthFxn[6];
 
     nBitsInALong         = sizeof(BitsLong) * 8;     /* global variable: number of bits in a BitsLong */
@@ -461,7 +461,7 @@ int InitializeMrBayes (void)
 #   endif
 
     for (i=0; i<NUM_ALLOCS; i++)                     /* set allocated memory to NO                    */
-        memAllocs[i] = NO;              
+        memAllocs[i] = NO;
     logToFile = NO;                                  /* should screen output be logged to a file      */
     strcpy(logFileName, "log.out");                  /* name of the log file                          */
     logFileFp = NULL;                                /* file pointer to log file                      */
@@ -496,7 +496,7 @@ int InitializeMrBayes (void)
     beagleResource = NULL;
     beagleResourceCount = 0;                         /* default has no list */
     beagleInstanceCount = 0;                         /* no BEAGLE instances */
-    beagleScalingFrequency = 1000;  
+    beagleScalingFrequency = 1000;
 #   endif
 
     /* set the proposal information */
@@ -505,7 +505,7 @@ int InitializeMrBayes (void)
     /* Set up rates for standard amino acid models, in case we need them. */
     if (SetAARates () == ERROR)
         return (ERROR);
-           
+
     /* set up doublet information */
     doublet[ 0].first  = 1;   doublet[ 0].second = 1;
     doublet[ 1].first  = 1;   doublet[ 1].second = 2;
@@ -531,7 +531,7 @@ int InitializeMrBayes (void)
     /* parameter values */
     paramValues = NULL;
     intValues = NULL;
-    
+
     /* Prior model settings */
     defaultModel.dataType = DNA;                        /* datatype                                     */
     defaultModel.coding = 0;                            /* ascertainment bias                           */
@@ -559,6 +559,12 @@ int InitializeMrBayes (void)
     defaultModel.tRatioFix = 1.0;
     defaultModel.tRatioDir[0] = 1.0;
     defaultModel.tRatioDir[1] = 1.0;
+    strcpy(defaultModel.rhoPr, "Exponential");          /* prior for inverse correlation factor         */
+    defaultModel.rhoFix = 0.05;
+    defaultModel.rhoExp[0] = 20;
+    strcpy(defaultModel.alphaDirPr, "Exponential");     /* prior for DPMM scaling factor                */
+    defaultModel.alphaDirFix = 0.05;
+    defaultModel.alphaDirExp[0] = 20;
     strcpy(defaultModel.revMatPr, "Dirichlet");         /* prior for GTR model (nucleotides)            */
     for (i=0; i<6; i++)
         {
@@ -614,9 +620,9 @@ int InitializeMrBayes (void)
     strcpy(defaultModel.stateFreqsFixType, "Equal");
     for (i=0; i<200; i++)
         {
-        defaultModel.stateFreqsFix[i] = 0.0;   
+        defaultModel.stateFreqsFix[i] = 0.0;
         defaultModel.stateFreqsDir[i] = 1.0;
-        }    
+        }
     defaultModel.numDirParams = 0;
     strcpy(defaultModel.shapePr, "Exponential");        /* prior for gamma/lnorm shape parameter        */
     defaultModel.shapeFix = 0.5;
@@ -669,7 +675,7 @@ int InitializeMrBayes (void)
 //  defaultModel.brlensDir[1] = 20.0;                   /* 2nd param of invGamDir prior  */
     defaultModel.brlensDir[2] = 1.0;                    /* 3rd param of Dirichlet priors */
     defaultModel.brlensDir[3] = 1.0;                    /* 4th param of Dirichlet priors */
-    
+
     strcpy(defaultModel.unconstrainedPr, "GammaDir");   /* prior on branches if unconstrained           */
     strcpy(defaultModel.clockPr, "Uniform");            /* prior on branch lengths if clock enforced    */
     defaultModel.treeAgePr.prior = standardGamma;       /* calibration prior on tree age */
@@ -814,7 +820,7 @@ int InitializeMrBayes (void)
 
     /* finally reset everything dependent on a matrix being defined */
     return (ReinitializeMrBayes ());
-    
+
 }
 
 
@@ -838,9 +844,9 @@ void PrintHeader (void)
 int ReinitializeMrBayes (void)
 {
     /* this function resets everything dependent on a matrix */
-    
+
     int             i;
-    
+
     /* reinitialize indentation */
     strcpy (spacer, "");                             /* holds blanks for indentation                  */
 
@@ -950,7 +956,6 @@ int ReinitializeMrBayes (void)
     strcpy(plotParams.plotFileName, "temp.p");       /* input name for plot command                   */
     strcpy(plotParams.parameter, "lnL");             /* plotted parameter plot command                */
     strcpy(plotParams.match, "Perfect");             /* matching for plot command                     */
-    
+
     return (NO_ERROR);
 }
-

@@ -176,7 +176,7 @@ int             *stateSize;                  /* # states for each compressed cha
 int AddDummyChars (void)
 {
     int         i, j, k, d, numIncompatible, numDeleted, numStdChars, oldRowSize,
-                newRowSize, numDummyChars, newColumn, newChar, oldColumn, oldChar, 
+                newRowSize, numDummyChars, newColumn, newChar, oldColumn, oldChar,
                 isCompat, *tempChar, numIncompatibleChars;
     BitsLong    *tempMatrix, bitsLongOne = 1;
     CLFlt       *tempSitesOfPat;
@@ -430,15 +430,15 @@ int AddDummyChars (void)
     free (compMatrix);
     free (numSitesOfPat);
     free (origChar);
-    
+
     compMatrix = tempMatrix;
     numSitesOfPat = tempSitesOfPat;
     origChar = tempChar;
-    
+
     tempMatrix = NULL;
     tempSitesOfPat = NULL;
     tempChar = NULL;
-    
+
     /* print new compressed matrix */
 #   if  defined (DEBUG_ADDDUMMYCHARS)
     MrBayesPrint ("After adding dummy characters...\n");
@@ -455,7 +455,7 @@ int AddDummyChars (void)
         if (tempChar)
             free (tempChar);
 
-        return ERROR;   
+        return ERROR;
 }
 
 
@@ -530,8 +530,8 @@ MCMCMove *AllocateMove (MoveType *moveType, Param *param)
     temp->nTried       = temp->nAccepted + numGlobalChains;
     temp->nBatches     = temp->nAccepted + 2*numGlobalChains;
     temp->nTotAccepted = temp->nAccepted + 3*numGlobalChains;
-    temp->nTotTried    = temp->nAccepted + 4*numGlobalChains; 
-    
+    temp->nTotTried    = temp->nAccepted + 4*numGlobalChains;
+
     if ((temp->relProposalProb = (MrBFlt *) SafeCalloc (4*numGlobalChains, sizeof (MrBFlt))) == NULL)
         {
         free (temp->nAccepted);
@@ -579,7 +579,7 @@ MCMCMove *AllocateMove (MoveType *moveType, Param *param)
             }
         strcat (temp->name,")");
         }
-        
+
     temp->moveType = moveType;
     temp->moveFxn = moveType->moveFxn;
     for (i=0; i<numGlobalChains; i++)
@@ -609,7 +609,7 @@ int AllocateNormalParams (void)
 {
     int         i, k, nOfParams, nOfIntParams;
     Param       *p;
-    
+
     /* Count the number of param values and subvalues */
     nOfParams = 0;
     nOfIntParams = 0;
@@ -677,7 +677,7 @@ int AllocateNormalParams (void)
             p->intValues = NULL;
         nOfIntParams += p->nIntValues;
         }
-    
+
     /* allocate space for cpp events */
     for (k=0; k<numParams; k++)
         {
@@ -748,7 +748,7 @@ int AllocateTreeParams (void)
         else if (params[k].paramType == P_MIXEDBRCHRATES)
             numSubParamPtrs += 2;
         }
-        
+
     /* Allocate space for trees and subparam pointers */
     if (memAllocs[ALLOC_MCMCTREES] == YES)
         {
@@ -775,7 +775,7 @@ int AllocateTreeParams (void)
     /* Initialize number of subparams, just in case */
     for (k=0; k<numParams; k++)
         params[k].nSubParams = 0;
-    
+
     /* Count number of trees (brlens) for each topology or species tree */
     for (k=0; k<numParams; k++)
         {
@@ -906,14 +906,14 @@ int AllocateTreeParams (void)
                     for (j=0; j<n; j++)
                         if (q == p->subParams[j])
                             break;
-                    
+
                     if (j == n && q != p)   /* a new tree (brlens) for this topology */
                         {
                         p->subParams[n++] = q;
                         }
                     q = modelSettings[p->relParts[++i]].brlens;
                     }
-                
+
                 p->tree = p->subParams[0]->tree;
                 p->treeIndex = p->subParams[0]->treeIndex;
                 }
@@ -1105,7 +1105,7 @@ int ChangeNumChains (int from, int to)
     nRuns = chainParams.numRuns;
     numGlobalChains = chainParams.numRuns * chainParams.numChains;
 
-    /* Do the normal parameters */  
+    /* Do the normal parameters */
     /* first save old values */
     tempVals = paramValues;
     paramValues = NULL;
@@ -1145,7 +1145,7 @@ int ChangeNumChains (int from, int to)
 
     /* then fill all params */
     FillNormalParams (&globalSeed, 0, numGlobalChains);
-    
+
     /* finally overwrite with old values if present */
     for (run=0; run<nRuns; run++)
         {
@@ -1192,7 +1192,7 @@ int ChangeNumChains (int from, int to)
                 }
             }
         }
-    
+
     /* and free up space */
     free (tempVals);
     if (intValsRowSize > 0)
@@ -1279,7 +1279,7 @@ int ChangeNumChains (int from, int to)
             assert (p->paramType==P_BRLENS || p->tree==NULL);
         }
 
-    
+
     /* fill new tree parameters */
     if (to > from)
         {
@@ -1313,7 +1313,7 @@ int ChangeNumChains (int from, int to)
                 continue;
             p->stdStateFreqs += stdStateFreqs-stdStateFreqsOld;
             }
-        
+
         for (run=0; run<nRuns; run++)
             {
             /* copy old chains values*/
@@ -1341,7 +1341,7 @@ int ChangeNumChains (int from, int to)
     moves = NULL;
     memAllocs[ALLOC_MOVES] = NO;
     SetMoves ();
-    
+
     /* then overwrite with old values if present */
     for (i=0; i<numApplicableMoves; i++)
         {
@@ -1364,12 +1364,12 @@ int ChangeNumChains (int from, int to)
                 }
             }
         }
-    
+
     /* and free up space */
     for (i=0; i<numApplicableMoves; i++)
         FreeMove (tempMoves[i]);
     free (tempMoves);
-    
+
     return (NO_ERROR);
 }
 
@@ -1452,7 +1452,7 @@ int ChangeNumRuns (int from, int to)
     for (i=from*2*nChains*numTrees; i<to*2*nChains*numTrees; i++)
         {
         mcmcTree[i]=NULL;
-        }  
+        }
     /* then the cppevents parameters */
     for (i1=0; i1<numParams; i1++)
         {
@@ -1555,7 +1555,7 @@ int ChangeNumRuns (int from, int to)
             MrBayesPrint ("%s   Problem reallocating stdStateFreqs\n", spacer);
             return (ERROR);
             }
-        
+
         /* set pointers */
         for (k=n=0; k<numParams; k++)
             {
@@ -1564,7 +1564,7 @@ int ChangeNumRuns (int from, int to)
                 continue;
             p->stdStateFreqs += stdStateFreqs-stdStateFreqsOld;
             }
-        
+
         FillStdStateFreqs (from*nChains, to*nChains, &globalSeed);
         }
 
@@ -1695,7 +1695,7 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
             for (j=0; j<10; j++)
                 {
                 if (((bitsLongOne<<j) & x) != 0)
-                    {   
+                    {
                     n1[j]++;
                     if (NBits(x) == 1)
                         n2[j]++;
@@ -1724,7 +1724,7 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
         return;
 
     /* the character is either (variable and uninformative) or informative */
-    
+
     /* first consider unambiguous characters */
     /* find smallest and largest unambiguous state for this character */
     smallest = 9;
@@ -1739,7 +1739,7 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
                 largest = i;
             }
         }
-        
+
     /* count the number of informative states in the unambiguous codings */
     for (i=numInformative=0; i<10; i++)
         {
@@ -1761,14 +1761,14 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
     else
         ci->informative = NO;
 
-    
+
     /* we can return now unless informative is no and numPartAmbig is not 0 */
     if (!(numPartAmbig > 0 && ci->informative == NO))
         return;
 
     /* check if partially ambiguous observations make this character informative
        after all */
-    
+
     /* first set the bits for the taken states */
     x = 0;
     for (i=0; i<10; i++)
@@ -1784,7 +1784,7 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
     for (i=0; i<m->nRows; i++)
         {
         x = (int) m->origin[m->column + i*m->rowSize];
-        /* if partambig */ 
+        /* if partambig */
         if (NBits(x) > 1 && NBits(x) < ci->nStates)
             {
             /* remove lastInformative */
@@ -1804,7 +1804,7 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
             /* break out if we could not add it */
             if (newPoss == 0)
                 break;
-            
+
             /* prepare for next partAmbig */
             oldPoss = newPoss;
             tempComb = oldComb;
@@ -1831,7 +1831,7 @@ int CheckModel (void)
     int         i, j, k, answer;
     Tree        *t = NULL;
     TreeNode    *p;
-    
+
     /* there should only be one calibrated tree */
     for (i=0; i<numTrees; i++)
         {
@@ -1839,7 +1839,7 @@ int CheckModel (void)
         if (t->isCalibrated == YES)
             break;
         }
-    
+
     if (i < numTrees)
         {
         if (!strcmp(modelParams[t->relParts[0]].clockRatePr, "Fixed") && AreDoublesEqual(modelParams[t->relParts[0]].clockRateFix, 1.0, 1E-6) == YES)
@@ -1948,14 +1948,14 @@ int CheckModel (void)
 -------------------------------------------------------------*/
 int CheckExpandedModels (void)
 {
-    int             c, d, i, t, s, s1, s2, s3, whichNuc, uniqueId, numCharsInPart, 
+    int             c, d, i, t, s, s1, s2, s3, whichNuc, uniqueId, numCharsInPart,
                     firstChar, lastChar, contiguousPart, badBreak, badExclusion,
                     nGone, nuc1, nuc2, nuc3, foundStopCodon, posNucs1[4], posNucs2[4], posNucs3[4],
                     oneGoodCodon, foundUnpaired, nPair, allCheckedOut;
     char            *tempStr;
     int             tempStrSize=100;
     ModelParams     *mp;
-    
+
     tempStr = (char *) SafeMalloc((size_t)tempStrSize * sizeof(char));
     if (!tempStr)
         {
@@ -1966,20 +1966,20 @@ int CheckExpandedModels (void)
     /* first, set charId to 0 for all characters */
     for (i=0; i<numChar; i++)
         charInfo[i].charId = 0;
-    
+
     /* loop over partitions */
     allCheckedOut = 0;
     uniqueId = 1;
     for (d=0; d<numCurrentDivisions; d++)
         {
         mp = &modelParams[d];
-        
+
         if (mp->dataType == DNA || mp->dataType == RNA)
             {
             if (!strcmp(mp->nucModel,"Codon") || !strcmp(mp->nucModel,"Protein"))
                 {
                 /* start check that the codon model is appropriate for this partition */
-                
+
                 /* find first character in this partition */
                 for (c=0; c<numChar; c++)
                     {
@@ -1988,7 +1988,7 @@ int CheckExpandedModels (void)
                     }
                 firstChar = c;
                 /*printf ("   first character = %d\n", firstChar);*/
-                
+
                 /* find last character in this partition */
                 for (c=numChar-1; c>=0; c--)
                     {
@@ -1997,7 +1997,7 @@ int CheckExpandedModels (void)
                     }
                 lastChar = c;
                 /*printf ("   last character = %d\n", lastChar);*/
-                
+
                 /* check that the number of characters in partition is divisible by 3 */
                 numCharsInPart = 0;
                 for (c=firstChar; c<=lastChar; c++)
@@ -2025,7 +2025,7 @@ int CheckExpandedModels (void)
                     free (tempStr);
                     return (ERROR);
                     }
-                
+
                 /* check that all of the characters in the partition are contiguous */
                 contiguousPart = YES;
                 for (c=firstChar; c<=lastChar; c++)
@@ -2042,7 +2042,7 @@ int CheckExpandedModels (void)
                     free (tempStr);
                     return (ERROR);
                     }
-                    
+
                 /* check that there is not a break inside a triplet of characters */
                 badBreak = NO;
                 whichNuc = 0;
@@ -2091,7 +2091,7 @@ int CheckExpandedModels (void)
                     free (tempStr);
                     return (ERROR);
                     }
-                
+
                 /* check that there are no stop codons */
                 foundStopCodon = NO;
                 /* allow frameshifting exclusions in the beginning */
@@ -2113,7 +2113,7 @@ int CheckExpandedModels (void)
                             GetPossibleNucs (nuc1, posNucs1);
                             GetPossibleNucs (nuc2, posNucs2);
                             GetPossibleNucs (nuc3, posNucs3);
-                            
+
                             oneGoodCodon = NO;
                             s = 0;
                             for (s1=0; s1<4; s1++)
@@ -2134,12 +2134,12 @@ int CheckExpandedModels (void)
                             if (oneGoodCodon == NO)
                                 {
                                 foundStopCodon = YES;
-                                MrBayesPrint ("%s   Stop codon: taxon %s, sites %d to %d (%c%c%c, %s code)\n", spacer, 
+                                MrBayesPrint ("%s   Stop codon: taxon %s, sites %d to %d (%c%c%c, %s code)\n", spacer,
                                     taxaNames[t], c+1, c+3, WhichNuc (nuc1), WhichNuc (nuc2), WhichNuc (nuc3), mp->geneticCode);
                                 }
                             }
                         }
-                    }               
+                    }
                 if (foundStopCodon == YES)
                     {
                     MrBayesPrint ("%s   At least one stop codon was found. Stop codons are not\n", spacer);
@@ -2147,7 +2147,7 @@ int CheckExpandedModels (void)
                     free (tempStr);
                     return (ERROR);
                     }
-                
+
                 /* everything checks out. Now we can initialize charId */
                 whichNuc = 0;
                 for (c=firstChar; c<=lastChar; c++)
@@ -2160,18 +2160,18 @@ int CheckExpandedModels (void)
                         uniqueId++;
                         }
                     }
-                
+
                 allCheckedOut++;
                 /* end check that the codon model is appropriate for this partition */
                 }
             else if (!strcmp(mp->nucModel,"Doublet"))
                 {
                 /* start check that the doublet model is appropriate for this partition */
-                
+
                 /* Check that pairsId does not equal 0 for any of the characters in
-                   the partition. If it does, then this means that at least one 
+                   the partition. If it does, then this means that at least one
                    site was not appropriately paired. Remember, that pairsId is
-                   initialized 1, 2, 3, ... for the first pair, second pair, etc. 
+                   initialized 1, 2, 3, ... for the first pair, second pair, etc.
                    Also, check that every pair is only represented two times. */
                 foundUnpaired = NO;
                 for (c=0; c<numChar; c++)
@@ -2179,7 +2179,7 @@ int CheckExpandedModels (void)
                     if (partitionId[c][partitionNum] == d+1 && charInfo[c].pairsId == 0 && charInfo[c].isExcluded == NO)
                         foundUnpaired = YES;
                     }
-                    
+
                 for (c=0; c<numChar; c++)
                     {
                     if (partitionId[c][partitionNum] == d+1 && charInfo[c].isExcluded == NO)
@@ -2235,18 +2235,18 @@ int CheckExpandedModels (void)
                             }
                         }
                     }
-                    
+
                 allCheckedOut++;
                 /* end check that the doublet model is appropriate for this partition */
                 }
             }
         }
-        
+
     /*
     if (allCheckedOut > 0)
         MrBayesPrint ("%s   Codon/Doublet models successfully checked\n", spacer);
     */
-        
+
 #   if 0
     for (c=0; c<numChar; c++)
             printf (" %d", charId[c]);
@@ -2428,13 +2428,13 @@ int CompressData (void)
         /* find the number of original characters per model site */
         m->nCharsPerSite = 1;
         if (mp->dataType == DNA || mp->dataType == RNA)
-            {   
+            {
             if (!strcmp(mp->nucModel, "Doublet"))
                 m->nCharsPerSite = 2;
             if (!strcmp(mp->nucModel, "Codon") || !strcmp(mp->nucModel, "Protein"))
                 m->nCharsPerSite = 3;
             }
-        
+
         /* sort and compress the characters for this division */
         for (c=0; c<numChar; c++)
             {
@@ -2443,7 +2443,7 @@ int CompressData (void)
 
             col[0] = c;
             isTaken[c] = YES;
-            
+
             /* find additional columns if more than one character per model site      */
             /* return error if the number of matching characters is smaller or larger */
             /* than the actual number of characters per model site                    */
@@ -2477,7 +2477,7 @@ int CompressData (void)
                     goto errorExit;
                     }
                 }
-            
+
             /* add character to temporary matrix in column(s) at newColumn */
             for (t=newRow=0; t<numTaxa; t++)
                 {
@@ -2490,7 +2490,7 @@ int CompressData (void)
                     }
                 newRow++;
                 }
-            
+
             /* is it unique? */
             isSame = NO;
             if (mp->dataType != CONTINUOUS)
@@ -2554,7 +2554,7 @@ int CompressData (void)
                     }
                 }
             }   /* next character */
-            
+
         /* check that the partition has at least a single character */
         if (m->numChars <= 0)
             {
@@ -2584,7 +2584,7 @@ int CompressData (void)
         goto errorExit;
         }
     memAllocs[ALLOC_COMPMATRIX] = YES;
-    
+
     if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
         {
         free (numSitesOfPat);
@@ -2669,9 +2669,9 @@ int DataType (int part)
 int DoLink (void)
 {
     int         i, j, newLine;
-    
+
     MrBayesPrint ("%s   Linking\n", spacer);
-    
+
     /* update status of linkTable */
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -2689,7 +2689,7 @@ int DoLink (void)
                 }
             }
         }
-    
+
 #   if 0
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -2708,7 +2708,7 @@ int DoLink (void)
     /* set up parameters and moves */
     if (SetUpAnalysis (&globalSeed) == ERROR)
         return (ERROR);
-    
+
     return (NO_ERROR);
 }
 
@@ -2722,7 +2722,7 @@ int DoLinkParm (char *parmName, char *tkn)
         MrBayesPrint ("%s   A matrix must be specified before the model can be defined\n", spacer);
         return (ERROR);
         }
-        
+
     if (inValidCommand == YES)
         {
         for (j=0; j<NUM_LINKED; j++)
@@ -2823,11 +2823,11 @@ int DoLinkParm (char *parmName, char *tkn)
             for (i=0; i<numCurrentDivisions; i++)
                 tempLinkUnlink[P_EXTRATE][i] = tempLinkUnlinkVec[i];
             }
-        else if (!strcmp(parmName, "Fossilizationrate")) 
+        else if (!strcmp(parmName, "Fossilizationrate"))
             {
             for (i=0; i<numCurrentDivisions; i++)
                 tempLinkUnlink[P_FOSLRATE][i] = tempLinkUnlinkVec[i];
-            }                                                             
+            }
         else if (!strcmp(parmName, "Popsize"))
             {
             for (i=0; i<numCurrentDivisions; i++)
@@ -2837,7 +2837,7 @@ int DoLinkParm (char *parmName, char *tkn)
             {
             for (i=0; i<numCurrentDivisions; i++)
                 tempLinkUnlink[P_GROWTH][i] = tempLinkUnlinkVec[i];
-            } 
+            }
         else if (!strcmp(parmName, "Aamodel"))
             {
             for (i=0; i<numCurrentDivisions; i++)
@@ -2892,7 +2892,7 @@ int DoLinkParm (char *parmName, char *tkn)
             {
             MrBayesPrint ("%s   Couldn't find parameter %s to link\n", spacer, parmName);
             }
-        
+
         expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
         }
     else if (expecting == Expecting(COMMA))
@@ -2954,7 +2954,7 @@ int DoLinkParm (char *parmName, char *tkn)
 int DoLset (void)
 {
     int         i, nApplied, lastActive=0;
-    
+
     nApplied = NumActiveParts ();
     for (i=numCurrentDivisions-1; i>=0; i--)
         {
@@ -2964,11 +2964,11 @@ int DoLset (void)
             break;
             }
         }
-            
+
     /* MrBayesPrint ("\n"); */
     if (numCurrentDivisions == 1)
         MrBayesPrint ("%s   Successfully set likelihood model parameters\n", spacer);
-    else 
+    else
         {
         if (nApplied == numCurrentDivisions || nApplied == 0)
             {
@@ -3000,7 +3000,7 @@ int DoLset (void)
 
     if (SetUpAnalysis (&globalSeed) == ERROR)
         return (ERROR);
-    
+
     return (NO_ERROR);
 }
 
@@ -3087,7 +3087,7 @@ int DoLsetParm (char *parmName, char *tkn)
                     fromI = tempInt;
                     foundComma = NO;
                     }
-                    
+
                 expecting  = Expecting(COMMA);
                 expecting |= Expecting(DASH);
                 expecting |= Expecting(RIGHTPAR);
@@ -3117,15 +3117,15 @@ int DoLsetParm (char *parmName, char *tkn)
                             {
                             strcpy(modelParams[i].nucModel, tempStr);
                             modelParams[i].nStates = NumStates (i);
-                            
+
                             /* set state frequencies back to default */
                             strcpy(modelParams[i].stateFreqPr, "Dirichlet");
                             strcpy(modelParams[i].stateFreqsFixType, "Equal");
                             for (j=0; j<200; j++)
                                 {
-                                modelParams[i].stateFreqsFix[j] = 0.0;   
+                                modelParams[i].stateFreqsFix[j] = 0.0;
                                 modelParams[i].stateFreqsDir[j] = 1.0;
-                                }    
+                                }
                             tempInt = YES;
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Setting Nucmodel to %s\n", spacer, modelParams[i].nucModel);
@@ -3328,7 +3328,7 @@ int DoLsetParm (char *parmName, char *tkn)
                 }
             else
                 return (ERROR);
-            }           
+            }
         /* set Gibbsfreq (gibbsFreq) ************************************************************/
         else if (!strcmp(parmName, "Gibbsfreq"))
             {
@@ -3503,7 +3503,7 @@ int DoLsetParm (char *parmName, char *tkn)
                 }
             else
                 return (ERROR);
-            }           
+            }
         /* set Augment (augmentData) **********************************************************/
         else if (!strcmp(parmName, "Augment"))
             {
@@ -3539,7 +3539,7 @@ int DoLsetParm (char *parmName, char *tkn)
                 }
             else
                 return (ERROR);
-            }           
+            }
         /* set Omegavar (wVarModel) ***********************************************************/
         else if (!strcmp(parmName, "Omegavar"))
             {
@@ -3720,7 +3720,7 @@ int DoLsetParm (char *parmName, char *tkn)
                 {
                 for (i=0; i<numCurrentDivisions; i++)
                     modelParams[i].coding = ALL;
-                
+
                 expecting = Expecting(ALPHA);
                 }
             else if (expecting == Expecting(VERTICALBAR))
@@ -3757,7 +3757,7 @@ int DoLsetParm (char *parmName, char *tkn)
                                     MrBayesPrint ("%s   Invalid coding for standard characters: %s\n", spacer, tempStr);
                                     return (ERROR);
                                     }
-                                
+
                                 if(!strcmp(tempStr, "Noabsencesites"))
                                     {
                                     modelParams[i].coding |= NOABSENCESITES;
@@ -3775,9 +3775,9 @@ int DoLsetParm (char *parmName, char *tkn)
                                     modelParams[i].coding |= NOSINGLETONABSENCE;
                                     }
                                 }
-                            
+
                             CodingToString(modelParams[i].coding, modelParams[i].codingString);
-                            
+
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Enabling Coding %s\n", spacer, tempStr);
                             else
@@ -3795,10 +3795,10 @@ int DoLsetParm (char *parmName, char *tkn)
             else
                 return (ERROR);
             }
-                
-                
-                
-                
+
+
+
+
         else
             return (ERROR);
         }
@@ -3813,27 +3813,27 @@ int DoPlot (void)
     char            temp[100], **headerNames = NULL;
     SumpFileInfo    fileInfo;
     ParameterSample *parameterSamples;
-    
+
 #   if defined (MPI_ENABLED)
     if (proc_id != 0)
         return NO_ERROR;
 #   endif
-    
+
     /* initialize values */
     headerNames = NULL;
     nHeaders = 0;
     parameterSamples = NULL;
-    
+
     /* tell user we are ready to go */
     MrBayesPrint ("%s   Plotting parameters in file %s ...\n", spacer, plotParams.plotFileName);
-    
+
     /* examine plot file */
     if (ExamineSumpFile (plotParams.plotFileName, &fileInfo, &headerNames, &nHeaders) == ERROR)
         return ERROR;
-    
+
     /* Calculate burn in */
     burnin = fileInfo.firstParamLine - fileInfo.headerLine - 1;
-    
+
     /* tell the user that everything is fine */
     MrBayesPrint ("%s   Found %d parameter lines in file \"%s\"\n", spacer, fileInfo.numRows + burnin, plotParams.plotFileName);
     if (burnin > 0)
@@ -3842,15 +3842,15 @@ int DoPlot (void)
         MrBayesPrint ("%s   All %d lines will be summarized (starting at line %d)\n", spacer, fileInfo.numRows, fileInfo.firstParamLine);
     MrBayesPrint ("%s   (Only the last set of lines will be read, in case multiple\n", spacer);
     MrBayesPrint ("%s   parameter blocks are present in the same file.)\n", spacer);
-    
+
     /* allocate space to hold parameter information */
     if (AllocateParameterSamples (&parameterSamples, 1, fileInfo.numRows, fileInfo.numColumns) == ERROR)
         goto errorExit;
-    
+
     /* Now we read the file for real. First, rewind file pointer to beginning of file... */
     if (ReadParamSamples (plotParams.plotFileName, &fileInfo, parameterSamples, 0) == ERROR)
         goto errorExit;
-    
+
     /* get length of longest header */
     longestHeader = 9; /* 9 is the length of the word "parameter" (for printing table) */
     for (i=0; i<nHeaders; i++)
@@ -3859,7 +3859,7 @@ int DoPlot (void)
         if (len > longestHeader)
             longestHeader = len;
         }
-    
+
     /* print x-y plot of parameter vs. generation */
     whichIsX = -1;
     for (i=0; i<nHeaders; i++)
@@ -3867,13 +3867,13 @@ int DoPlot (void)
         if (IsSame (headerNames[i], "Gen") == SAME)
             whichIsX = i;
         }
-    
+
     if (whichIsX < 0)
         {
         MrBayesPrint ("%s   Could not find a column labelled \"Gen\" \n", spacer);
         goto errorExit;
         }
-    
+
     numPlotted = 0;
     for (n=0; n<nHeaders; n++)
         {
@@ -3893,7 +3893,7 @@ int DoPlot (void)
             if (IsSame (temp, plotParams.parameter) == CONSISTENT_WITH)
                 whichIsY = n;
             }
-        
+
         if (whichIsY >= 0 && whichIsX != whichIsY)
             {
             MrBayesPrint ("\n%s   Rough trace plot of parameter %s:\n", spacer, headerNames[whichIsY]);
@@ -3902,32 +3902,32 @@ int DoPlot (void)
             numPlotted++;
             }
         }
-    
+
     if (numPlotted == 0)
         {
         MrBayesPrint ("%s   Did not find any parameters matching \"%s\" to plot\n", spacer, plotParams.parameter);
         }
-    
+
     /* free memory */
     for (i=0; i<nHeaders; i++)
         free (headerNames[i]);
     free(headerNames);
     FreeParameterSamples(parameterSamples);
-    
+
     expecting = Expecting(COMMAND);
-    
+
     return (NO_ERROR);
-    
+
 errorExit:
-    
+
     /* free memory */
     for (i=0; i<nHeaders; i++)
         free (headerNames[i]);
     free(headerNames);
     FreeParameterSamples(parameterSamples);
-    
+
     expecting = Expecting(COMMAND);
-    
+
     return (ERROR);
 }
 
@@ -3937,13 +3937,13 @@ int DoPlotParm (char *parmName, char *tkn)
     int         tempI;
     MrBFlt      tempD;
     char        tempStr[100];
-    
+
     if (defMatrix == NO)
         {
         MrBayesPrint ("%s   A matrix must be specified before sumt can be used\n", spacer);
         return (ERROR);
         }
-    
+
     if (expecting == Expecting(PARAMETER))
         {
         expecting = Expecting(EQUALSIGN);
@@ -4071,18 +4071,18 @@ int DoPlotParm (char *parmName, char *tkn)
                     strcpy (plotParams.match, tempStr);
                 else
                     return (ERROR);
-                
+
                 MrBayesPrint ("%s   Setting plot matching to %s\n", spacer, plotParams.match);
                 expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
                 }
             else
                 return (ERROR);
             }
-        
+
         else
             return (ERROR);
         }
-    
+
     return (NO_ERROR);
 }
 
@@ -4090,7 +4090,7 @@ int DoPlotParm (char *parmName, char *tkn)
 int DoPropset (void)
 {
     MrBayesPrint ("%s   Successfully set proposal parameters\n", spacer);
-    
+
     return (NO_ERROR);
 }
 
@@ -4128,7 +4128,7 @@ int DoPropsetParm (char *parmName, char *tkn)
                so we need to assemble the move name from several tokens that are parsed out separately;
                here we receive only the first part (before the left parenthesis)
             */
-            
+
             /* copy to local move name */
             SafeStrcpy(&tempName, tkn);
             mv = NULL;
@@ -4180,7 +4180,7 @@ int DoPropsetParm (char *parmName, char *tkn)
                 }
             if (nMatches == 0)
                 {
-                MrBayesPrint ("%s   Could not find move parameter to change '%s'\n", spacer, localTkn);  
+                MrBayesPrint ("%s   Could not find move parameter to change '%s'\n", spacer, localTkn);
                 return (ERROR);
                 }
             else if (nMatches > 1)
@@ -4188,7 +4188,7 @@ int DoPropsetParm (char *parmName, char *tkn)
                 MrBayesPrint ("%s   Several move parameters matched the abbreviated name '%s'\n", spacer, localTkn);
                 return (ERROR);
                 }
-            
+
             if (j == -1)
                 {
                 theValue = mv->relProposalProb;
@@ -4225,13 +4225,13 @@ int DoPropsetParm (char *parmName, char *tkn)
         }
     else if (expecting == Expecting(DOLLAR))
         {
-        /* we know that the name is complete now; find the move by its name, 
+        /* we know that the name is complete now; find the move by its name,
            case insensitive */
         SafeStrcpy(&localTkn, tempName);
         j=(int)strlen(localTkn);
         for (i=0; i<j; i++)
             localTkn[i] = tolower(localTkn[i]);
-            
+
         /* find the move */
         nMatches = j = 0;
         for (i=0; i<numApplicableMoves; i++)
@@ -4248,12 +4248,12 @@ int DoPropsetParm (char *parmName, char *tkn)
             }
         if (nMatches == 0)
             {
-            MrBayesPrint ("%s   Could not find move '%s'\n", spacer, localTkn);   
+            MrBayesPrint ("%s   Could not find move '%s'\n", spacer, localTkn);
             return (ERROR);
             }
         else if (nMatches > 1)
             {
-            MrBayesPrint ("%s   Several moves matched the abbreviated name '%s'\n", spacer, localTkn);   
+            MrBayesPrint ("%s   Several moves matched the abbreviated name '%s'\n", spacer, localTkn);
             return (ERROR);
             }
         else
@@ -4413,10 +4413,10 @@ int DoPrset (void)
             break;
             }
         }
-            
+
     if (numCurrentDivisions == 1)
         MrBayesPrint ("%s   Successfully set prior model parameters\n", spacer);
-    else 
+    else
         {
         if (nApplied == numCurrentDivisions || nApplied == 0)
             {
@@ -4445,7 +4445,7 @@ int DoPrset (void)
             MrBayesPrint (" (if applicable)\n");
             }
         }
-    
+
     if (SetUpAnalysis (&globalSeed) == ERROR)
         return (ERROR);
 
@@ -4541,7 +4541,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                     fromI = tempInt;
                     foundComma = NO;
                     }
-                    
+
                 expecting  = Expecting(COMMA);
                 expecting |= Expecting(DASH);
                 expecting |= Expecting(RIGHTPAR);
@@ -4769,11 +4769,11 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 }
 
                             if (nApplied == 0 && numCurrentDivisions == 1)
-                                MrBayesPrint ("%s   Setting Revmatpr to Dirichlet(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer, 
+                                MrBayesPrint ("%s   Setting Revmatpr to Dirichlet(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer,
                                 modelParams[i].revMatDir[0], modelParams[i].revMatDir[1], modelParams[i].revMatDir[2],
                                 modelParams[i].revMatDir[3], modelParams[i].revMatDir[4], modelParams[i].revMatDir[5]);
                             else
-                                MrBayesPrint ("%s   Setting Revmatpr to Dirichlet(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf) for partition %d\n", spacer, 
+                                MrBayesPrint ("%s   Setting Revmatpr to Dirichlet(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf) for partition %d\n", spacer,
                                 modelParams[i].revMatDir[0], modelParams[i].revMatDir[1], modelParams[i].revMatDir[2],
                                 modelParams[i].revMatDir[3], modelParams[i].revMatDir[4], modelParams[i].revMatDir[5], i+1);
                             }
@@ -4782,11 +4782,11 @@ int DoPrsetParm (char *parmName, char *tkn)
                             for (j=0; j<6; j++)
                                 modelParams[i].revMatFix[j] = tempNum[j];
                             if (nApplied == 0 && numCurrentDivisions == 1)
-                                MrBayesPrint ("%s   Setting Revmatpr to Fixed(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer, 
+                                MrBayesPrint ("%s   Setting Revmatpr to Fixed(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer,
                                 modelParams[i].revMatFix[0], modelParams[i].revMatFix[1], modelParams[i].revMatFix[2],
                                 modelParams[i].revMatFix[3], modelParams[i].revMatFix[4], modelParams[i].revMatFix[5]);
                             else
-                                MrBayesPrint ("%s   Setting Revmatpr to Fixed(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf) for partition %d\n", spacer, 
+                                MrBayesPrint ("%s   Setting Revmatpr to Fixed(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf) for partition %d\n", spacer,
                                 modelParams[i].revMatFix[0], modelParams[i].revMatFix[1], modelParams[i].revMatFix[2],
                                 modelParams[i].revMatFix[3], modelParams[i].revMatFix[4], modelParams[i].revMatFix[5], i+1);
                             }
@@ -5534,7 +5534,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                     MrBayesPrint ("%s   Codon category frequencies must sum to 1\n", spacer);
                                     return (ERROR);
                                     }
-                                
+
                                 if (nApplied == 0 && numCurrentDivisions == 1)
                                     MrBayesPrint ("%s   Setting Codoncatfreqs prior to Fixed(%1.2lf,%1.2lf,%1.2lf)\n", spacer, modelParams[i].codonCatFreqFix[0], modelParams[i].codonCatFreqFix[1], modelParams[i].codonCatFreqFix[2]);
                                 else
@@ -6079,7 +6079,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                     return (ERROR);
                     }
                 /* set the parameter */
-                modelParams[i].ratePrDir = tempD;               
+                modelParams[i].ratePrDir = tempD;
                 /* check if all partitions have been filled in */
                 for (i=0; i<numCurrentDivisions; i++)
                     {
@@ -6413,8 +6413,8 @@ int DoPrsetParm (char *parmName, char *tkn)
                     expecting  = Expecting(LEFTPAR);
                     for (i=0; i<numCurrentDivisions; i++)
                         numVars[i] = 0;
-                    foundBeta = YES;    
-                    }   
+                    foundBeta = YES;
+                    }
                 else
                     {
                     /* expecting infinity */
@@ -6443,7 +6443,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                             }
                         expecting  = Expecting(RIGHTPAR);
                         }
-                    }       
+                    }
                 }
             else if (expecting == Expecting(LEFTPAR))
                 {
@@ -6480,7 +6480,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                             {
                             sscanf (tkn, "%lf", &tempD);
                             modelParams[i].symBetaUni[numVars[i]++] = tempD;
-                            if (numVars[i] == 1)    
+                            if (numVars[i] == 1)
                                 expecting = Expecting(COMMA);
                             else
                                 {
@@ -6619,12 +6619,12 @@ int DoPrsetParm (char *parmName, char *tkn)
                                     if (j == ns - 1)
                                         MrBayesPrint (")");
                                     else
-                                        MrBayesPrint (","); 
-                                    }   
+                                        MrBayesPrint (",");
+                                    }
                                 if (nApplied == 0 && numCurrentDivisions == 1)
                                     MrBayesPrint ("\n");
                                 else
-                                    MrBayesPrint (" for partition %d\n", i+1); 
+                                    MrBayesPrint (" for partition %d\n", i+1);
                                 modelParams[i].numDirParams = ns;
                                 }
                             else
@@ -6646,12 +6646,12 @@ int DoPrsetParm (char *parmName, char *tkn)
                                         if (j == ns - 1)
                                             MrBayesPrint (")");
                                         else
-                                            MrBayesPrint (","); 
-                                        }   
+                                            MrBayesPrint (",");
+                                        }
                                     if (nApplied == 0 && numCurrentDivisions == 1)
                                         MrBayesPrint ("\n");
                                     else
-                                        MrBayesPrint (" for partition %d\n", i+1); 
+                                        MrBayesPrint (" for partition %d\n", i+1);
                                     }
                                 }
                             }
@@ -6666,9 +6666,9 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 if (nApplied == 0 && numCurrentDivisions == 1)
                                     MrBayesPrint ("\n");
                                 else
-                                    MrBayesPrint (" for partition %d\n", i+1); 
+                                    MrBayesPrint (" for partition %d\n", i+1);
                                 }
-                            else 
+                            else
                                 {
                                 if (tempNumStates == ns)
                                     {
@@ -6690,12 +6690,12 @@ int DoPrsetParm (char *parmName, char *tkn)
                                         if (j == ns - 1)
                                             MrBayesPrint (")");
                                         else
-                                            MrBayesPrint (","); 
-                                        }   
+                                            MrBayesPrint (",");
+                                        }
                                     if (nApplied == 0 && numCurrentDivisions == 1)
                                         MrBayesPrint ("\n");
                                     else
-                                        MrBayesPrint (" for partition %d\n", i+1); 
+                                        MrBayesPrint (" for partition %d\n", i+1);
                                     }
                                 else
                                     {
@@ -6703,7 +6703,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                     return (ERROR);
                                     }
                                 }
-                                
+
                             }
                         }
                     }
@@ -6943,7 +6943,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                         MrBayesPrint (" %d", modelParams[i].activeConstraints[j]);
                     MrBayesPrint ("\n");
                     }
-#               endif               
+#               endif
                 expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
                 }
             else
@@ -8241,7 +8241,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 MrBayesPrint ("%s   Setting Clockratepr to Fixed(%1.6lf) for partition %d\n", spacer, modelParams[i].clockRateFix, i+1);
                             for (k=0; k<numGlobalChains; k++)
                                 {
-                                if (UpdateClockRate(tempD, k) == ERROR) 
+                                if (UpdateClockRate(tempD, k) == ERROR)
                                     return (ERROR);
                                 }
                             expecting  = Expecting(RIGHTPAR);
@@ -8443,7 +8443,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                         if (activeParts[i] == YES || nApplied == 0)
                             {
                             strcpy(modelParams[i].popVarPr, tempStr);
-                        
+
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Setting Popvarpr to %s\n", spacer, modelParams[i].popVarPr);
                             else
@@ -9127,7 +9127,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                             foundExp = YES;
                             expecting = Expecting(LEFTPAR);
                             }
-                        else    
+                        else
                             {
                             MrBayesPrint ("%s   Invalid argument \"%s\"\n", spacer, tkn);
                             return (ERROR);
@@ -9201,7 +9201,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                         foundExp = NO;
                         expecting = Expecting(COMMA) | Expecting(RIGHTPAR);
                         }
-                    else    
+                    else
                         {
                         if (fromI < 10)
                             {
@@ -9227,7 +9227,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                             }
                         expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
                         }
-                    }               
+                    }
                 }
             else if (expecting == Expecting(DASH))
                 {
@@ -9254,7 +9254,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                 }
             else
                 return (ERROR);
-            }       
+            }
         /* set Brownscalepr (brownScalesPr) ****************************************************/
         else if (!strcmp(parmName, "Brownscalepr"))
             {
@@ -9593,14 +9593,14 @@ int DoQuit (void)
 {
     int         i;
     char        tempName[100];
-    
+
     /* free information for model and matrix */
     FreeModel ();
     FreeMatrix ();
-    
+
     SafeFclose (&logFileFp);
     logToFile = NO;
-    
+
     /* check to see if any memory has not been freed */
     for (i=0; i<NUM_ALLOCS; i++)
         {
@@ -9618,7 +9618,7 @@ int DoQuit (void)
                 }
             }
         }
-    
+
     /* free modelIndicatorParams and modelElementNames */
     for (i=0; i<203; i++)
         free (modelElementNames[1][i]);
@@ -9626,9 +9626,9 @@ int DoQuit (void)
         free (modelElementNames[i]);
     free (modelElementNames);
     free (modelIndicatorParams);
-    
+
     MrBayesPrint ("   Quitting program\n\n");
-    
+
     /* If we quit while reading a mrbayes block, then we need to make certain
      that we return a NO_ERROR_QUIT so we can break out of DoExecute cleanly,
      and dealloc "s" there. */
@@ -9637,7 +9637,7 @@ int DoQuit (void)
         inMrbayesBlock = NO;
         return (NO_ERROR_QUIT);
         }
-    
+
     return (NO_ERROR);
 }
 
@@ -9733,7 +9733,7 @@ int DoReportParm (char *parmName, char *tkn)
                     fromI = tempInt;
                     foundComma = NO;
                     }
-                    
+
                 expecting  = Expecting(COMMA);
                 expecting |= Expecting(DASH);
                 expecting |= Expecting(RIGHTPAR);
@@ -9829,7 +9829,7 @@ int DoReportParm (char *parmName, char *tkn)
                     tempInt = NO;
                     for (i=0; i<numCurrentDivisions; i++)
                         {
-                        /* we do not know yet if the user will specify variable rates across partitions 
+                        /* we do not know yet if the user will specify variable rates across partitions
                            so only check that we have more than one partition in the model */
                         if ((activeParts[i] == YES || nApplied == 0) && numCurrentDivisions > 1)
                             {
@@ -10055,7 +10055,7 @@ int DoReportParm (char *parmName, char *tkn)
             }
         }
 
-    return (NO_ERROR);      
+    return (NO_ERROR);
 }
 
 
@@ -10106,7 +10106,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
                so we need to assemble the parameter name from several tokens that are parsed out separately;
                here we receive only the first part (before the left curly, if present)
             */
-            
+
             /* copy to local parameter name */
             SafeStrcpy (&tempName, tkn);
             param = NULL;
@@ -10276,7 +10276,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
                                 }
                             }
                         theTree->fromUserTree=YES;
-                        
+
                         FillBrlensSubParams (param, chainId, 0);
                         //MrBayesPrint ("%s   Rrelaxed clock subparamiters of a parameter '%s' are reset.\n", spacer, param->name);
                         //assert (IsTreeConsistent(param, chainId, 0) == YES);
@@ -10431,7 +10431,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
                 {
                 if (param->paramType == P_OMEGA)
                     MrBayesPrint ("%s   Only %d values were expected for parameter '%s'\n", spacer, param->nValues+param->nSubValues/2, param->name);
-                else if (param->nIntValues > 0)   
+                else if (param->nIntValues > 0)
                     MrBayesPrint ("%s   Only %d values were expected for parameter '%s'\n", spacer, param->nValues+param->nIntValues, param->name);
                 else
                     MrBayesPrint ("%s   Only %d values were expected for parameter '%s'\n", spacer, numExpectedValues, param->name);
@@ -10482,7 +10482,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
                             return (ERROR);
                         if (param->paramType == P_CLOCKRATE)
                             {
-                            if (UpdateClockRate(tempFloat, i*chainParams.numChains+j) == ERROR) 
+                            if (UpdateClockRate(tempFloat, i*chainParams.numChains+j) == ERROR)
                                 {
                                 return (ERROR);
                                 }
@@ -10530,9 +10530,9 @@ int DoStartvalsParm (char *parmName, char *tkn)
             {
             /* we will be reading in chain index, if present */
             foundComma = YES;
-            expecting = Expecting(RIGHTPAR) | Expecting(NUMBER); 
+            expecting = Expecting(RIGHTPAR) | Expecting(NUMBER);
             /* if the comma is in a list of partitions (so between { and }) we have to add the comma to the parameter name */
-            if (param == NULL && strchr(tempName, '}')==NULL && strchr(tempName, '{')!=NULL) 
+            if (param == NULL && strchr(tempName, '}')==NULL && strchr(tempName, '{')!=NULL)
               SafeStrcat (&tempName, ",");
             }
         }
@@ -10595,7 +10595,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
         /* FIXME: tempName is NULL? (from clang static analyzer) */
         for (i=0; i<(int)strlen(tempName); i++)
             tempName[i] = (char)(tolower(tempName[i]));
-        
+
         /* first check exact matches */
         nMatches = j = 0;
         for (i=0; i<numParams; i++)
@@ -10632,7 +10632,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
             {
             extern char *tokenP;
             MrBayesPrint ("%s   Could not find parameter '%s': ignoring values\n", spacer, tempName);
-            while (*tokenP && *tokenP++!=')') {}; 
+            while (*tokenP && *tokenP++!=')') {};
             expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
             return (*tokenP ? NO_ERROR:ERROR);
             }
@@ -10641,7 +10641,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
             MrBayesPrint ("%s   Several parameters matched the abbreviated name '%s'\n", spacer, tempName);
             return (ERROR);
             }
-            
+
         param = &params[j];
         if (param->printParam == NO && !(param->paramType == P_TOPOLOGY && strcmp(modelParams[param->relParts[0]].topologyPr,"Fixed")!=0)
                                     && !(param->paramType == P_CPPEVENTS)
@@ -10704,9 +10704,9 @@ int DoStartvalsParm (char *parmName, char *tkn)
 int DoUnlink (void)
 {
     int         i, j;
-    
+
     MrBayesPrint ("%s   Unlinking\n", spacer);
-    
+
     /* update status of linkTable */
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -10718,7 +10718,7 @@ int DoUnlink (void)
                 }
             }
         }
-    
+
 #   if 0
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -10814,7 +10814,7 @@ int DoShowMoves (void)
 int DoShowmovesParm (char *parmName, char *tkn)
 {
     char    tempStr[100];
-    
+
     if (expecting == Expecting(PARAMETER))
         {
         expecting = Expecting(EQUALSIGN);
@@ -10849,7 +10849,7 @@ int DoShowmovesParm (char *parmName, char *tkn)
             return (ERROR);
 
         }
-        
+
     return (NO_ERROR);
 }
 
@@ -10971,8 +10971,8 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             value[2] =  (1.0 - (1.0/mp->ny98omega3Exp) * log(RandomNumber(seed)));
                         else
                             value[2] = mp->ny98omega3Fixed;
-                        if (p->paramId == OMEGA_BUD || p->paramId == OMEGA_BED || p->paramId == OMEGA_BFD || 
-                            p->paramId == OMEGA_FUD || p->paramId == OMEGA_FED || p->paramId == OMEGA_FFD) 
+                        if (p->paramId == OMEGA_BUD || p->paramId == OMEGA_BED || p->paramId == OMEGA_BFD ||
+                            p->paramId == OMEGA_FUD || p->paramId == OMEGA_FED || p->paramId == OMEGA_FFD)
                             {
                             subValue[3] = mp->codonCatDir[0];
                             subValue[4] = mp->codonCatDir[1];
@@ -11003,7 +11003,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             value[1] =  1.0;
                             value[2] =  3.0;
                             }
-                        if (p->paramId == OMEGA_ED || p->paramId == OMEGA_FD) 
+                        if (p->paramId == OMEGA_ED || p->paramId == OMEGA_FD)
                             {
                             subValue[3] = mp->codonCatDir[0];
                             subValue[4] = mp->codonCatDir[1];
@@ -11024,7 +11024,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                         {
                         if (p->paramId == OMEGA_10UUB || p->paramId == OMEGA_10UEB || p->paramId == OMEGA_10UFB ||
                             p->paramId == OMEGA_10EUB || p->paramId == OMEGA_10EEB || p->paramId == OMEGA_10EFB ||
-                            p->paramId == OMEGA_10FUB || p->paramId == OMEGA_10FEB || p->paramId == OMEGA_10FFB) 
+                            p->paramId == OMEGA_10FUB || p->paramId == OMEGA_10FEB || p->paramId == OMEGA_10FFB)
                             {
                             subValue[mp->numM10BetaCats + mp->numM10GammaCats + 2] = mp->codonCatDir[0];
                             subValue[mp->numM10BetaCats + mp->numM10GammaCats + 3] = mp->codonCatDir[1];
@@ -11037,7 +11037,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             subValue[mp->numM10BetaCats + mp->numM10GammaCats + 2] = 0.0;
                             subValue[mp->numM10BetaCats + mp->numM10GammaCats + 3] = 0.0;
                             }
-                            
+
                         for (i=0; i<mp->numM10BetaCats; i++)
                             subValue[i] = subValue[mp->numM10BetaCats + mp->numM10GammaCats + 0] / mp->numM10BetaCats;
                         for (i=mp->numM10BetaCats; i<mp->numM10BetaCats+mp->numM10GammaCats; i++)
@@ -11066,7 +11066,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             subValue[mp->numM10BetaCats + mp->numM10GammaCats + 6] = 1.0;
                             subValue[mp->numM10BetaCats + mp->numM10GammaCats + 7] = 1.0;
                             }
-                            
+
                         BetaBreaks (subValue[mp->numM10BetaCats + mp->numM10GammaCats + 4], subValue[mp->numM10BetaCats + mp->numM10GammaCats + 5], &value[0], mp->numM10BetaCats);
                         if (DiscreteGamma (&value[mp->numM10BetaCats], subValue[mp->numM10BetaCats + mp->numM10GammaCats + 6],
                                            subValue[mp->numM10BetaCats + mp->numM10GammaCats + 7], mp->numM10GammaCats, 0) == ERROR)
@@ -11115,7 +11115,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     for (i=0; i<m->numStates; i++)
                         subValue[i] =  mp->stateFreqsFix[i];
                     }
-                    
+
                 else if (p->paramId == PI_FIXED)
                     {
                     if (!strcmp(mp->aaModelPr, "Fixed"))
@@ -11190,11 +11190,11 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
             else if (p->paramType == P_MIXTURE_RATES)
                 {
                 /* Fill in rates of site rate mixture ****************************************************************************/
-                
+
                 /* We use value array for dirichlet prior parameters. We use a flat prior, so this will be a series of 1.0 values */
                 for (i=0; i<m->numRateCats; ++i)
                     value[i] = 1.0;
-                
+
                 /* Now fill in subvalues by setting them to be equal, Note that we use rates and not rate proportions. */
                 for (i=0; i<m->numRateCats; ++i)
                     subValue[i] = 1.0;
@@ -11242,7 +11242,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
 
                 else if (p->paramId == CORREL_FIX)
                     value[0] =  mp->corrFix;
-                
+
                 /* Fill in correlation matrices */
                 AutodGamma (subValue, value[0], mp->numGammaCats);
                 }
@@ -11363,15 +11363,15 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                         AAMODEL_MTREV           3
                         AAMODEL_MTMAM           4
                         AAMODEL_WAG             5
-                        AAMODEL_RTREV           6 
-                        AAMODEL_CPREV           7 
+                        AAMODEL_RTREV           6
+                        AAMODEL_CPREV           7
                         AAMODEL_VT              8
                         AAMODEL_BLOSUM          9 */
 
                     /* set the amino acid model  (the meaning of the numbers is defined) */
                     tempInt = (int)(RandomNumber(seed) * 10);
                     value[0] = tempInt;
-                    
+
                     /* we need to make certain that the aa frequencies are filled in correctly */
                     bs = GetParamSubVals (m->stateFreq, chn, 0);
                     if (tempInt == AAMODEL_POISSON)
@@ -11424,7 +11424,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                         for (i=0; i<mp->nStates; i++)
                             bs[i] = blosPi[i];
                         }
-                        
+
                     for (i=0; i<p->nSubValues; i++)
                         {
                         subValue[i] = mp->aaModelPrProbs[i];
@@ -11513,7 +11513,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
     return NO_ERROR;
 }
 
-    
+
 int FillRelPartsString (Param *p, char **relPartString)
 {
     int         i, n, filledString;
@@ -11568,7 +11568,7 @@ void FillStdStateFreqs (int chfrom, int chto, RandLong *seed)
     int     chn, n, i, j, k, b, c, nb, index;
     MrBFlt  *subValue, sum, symDir[10];
     Param   *p;
-    
+
     for (chn=chfrom; chn<chto; chn++)
         {
         for (k=0; k<numParams; k++)
@@ -11606,7 +11606,7 @@ void FillStdStateFreqs (int chfrom, int chto, RandLong *seed)
                         }
                     }
                 }
-            
+
             /* Deal with transition asymmetry for standard characters */
             /* First, fill in stationary frequencies for beta categories if needed; */
             /* discard category frequencies (assume equal) */
@@ -11628,11 +11628,11 @@ void FillStdStateFreqs (int chfrom, int chto, RandLong *seed)
                         }
                     subValue += (2 * nb);
                     }
-                
+
                 /* Then fill in state frequencies for multistate chars, one set for each */
                 for (i=0; i<10; i++)
                     symDir[i] = p->values[0];
-                
+
                 for (c=0; c<p->nSympi; c++)
                     {
                     /* now fill in subvalues */
@@ -11665,7 +11665,7 @@ int FillTopologySubParams (Param *param, int chn, int state, RandLong *seed)
     MrBFlt      minRate=0.0, maxRate=0.0;
 
     tree = GetTree (param, chn, state);
-    
+
     for (i=1; i<param->nSubParams; i++)
         {
         q = param->subParams[i];
@@ -11776,7 +11776,7 @@ int FillBrlensSubParams (Param *param, int chn, int state)
     Param       *q;
 
     tree = GetTree (param, chn, state);
-    
+
     for (i=0; i<param->nSubParams; i++)
         {
         q = param->subParams[i];
@@ -11824,7 +11824,7 @@ int FillBrlensSubParams (Param *param, int chn, int state)
 int PruneConstraintPartitions()
 {
     int             i, j, constraintId, nLongsNeeded;
-    
+
     nLongsNeeded = (numLocalTaxa - 1) / nBitsInALong + 1;
 
     for (constraintId=0; constraintId<numDefinedConstraints; constraintId++)
@@ -11889,10 +11889,10 @@ int PruneConstraintPartitions()
                     SetBit(j, definedConstraintTwoPruned[constraintId]);
                 j++;
                 }
-            assert (j == numLocalTaxa);         
+            assert (j == numLocalTaxa);
             }
     }
-    
+
     return NO_ERROR;
 }
 
@@ -11953,7 +11953,7 @@ int DoesTreeSatisfyConstraints(Tree *t)
             if (t->isRooted == YES)
                 {
                 CheckFirst = YES;
-                CheckSecond = NO; 
+                CheckSecond = NO;
                 }
             else
                 {
@@ -12023,7 +12023,7 @@ int DoesTreeSatisfyConstraints(Tree *t)
                 {
                 p = t->intDownPass[i];
                 if (p->anc != NULL)
-                    { 
+                    {
                     if (CheckFirst== YES && IsPartNested(definedConstraintPruned[k], p->partition, nLongsNeeded) && IsSectionEmpty(definedConstraintTwoPruned[k], p->partition, nLongsNeeded))
                         break;
                     if (CheckSecond==YES && IsPartNested(definedConstraintTwoPruned[k], p->partition, nLongsNeeded) && IsSectionEmpty(definedConstraintPruned[k], p->partition, nLongsNeeded))
@@ -12039,7 +12039,7 @@ int DoesTreeSatisfyConstraints(Tree *t)
             if (t->isRooted == YES)
                 {
                 CheckFirst = YES;
-                CheckSecond = NO; 
+                CheckSecond = NO;
                 }
             else
                 {
@@ -12064,7 +12064,7 @@ int DoesTreeSatisfyConstraints(Tree *t)
                 return NO;
             }
         }
-    
+
     return YES;
 }
 
@@ -12072,7 +12072,7 @@ int DoesTreeSatisfyConstraints(Tree *t)
 /*------------------------------------------------------------------
 |
 |   FillTreeParams: Fill in trees and branch lengths
-|                   
+|
 |   Note: Should be run after FillNormalParams because
 |   clockrate needs to be set if calibrated tree needs
 |   to be filled.
@@ -12103,7 +12103,7 @@ int FillTreeParams (RandLong *seed, int fromChain, int toChain)
                     nTaxa = tree->nNodes - tree->nIntNodes - 1;
                 else
                     nTaxa = tree->nNodes - tree->nIntNodes;
-                
+
                 /* fixed topology */
                 if (p->paramId == TOPOLOGY_NCL_FIXED ||
                     p->paramId == TOPOLOGY_NCL_FIXED_HOMO ||
@@ -12177,12 +12177,12 @@ int FillTreeParams (RandLong *seed, int fromChain, int toChain)
                                 return (ERROR);
                                 }
                             else
-                                {   
+                                {
                                 assert (tmp  == ABORT);
                                 continue;
                                 }
                             }
-                   
+
                         CopyToTreeFromPolyTree(tree, constraintTree);
                         if (DoesTreeSatisfyConstraints(tree)==YES)
                             break;
@@ -12198,7 +12198,7 @@ int FillTreeParams (RandLong *seed, int fromChain, int toChain)
                     FreePolyTree (constraintTreeRef);
                     if (i==100)
                         {
-                        MrBayesPrint ("%s   Could not build a starting tree satisfying all constraints\n", spacer);                     
+                        MrBayesPrint ("%s   Could not build a starting tree satisfying all constraints\n", spacer);
                         return (ERROR);
                         }
                     }
@@ -12218,7 +12218,7 @@ int FillTreeParams (RandLong *seed, int fromChain, int toChain)
                             return (ERROR);
                         }
                     }
-                
+
                 if (LabelTree (tree, localTaxonNames) == ERROR)
                     return (ERROR);
                 if (q == p)
@@ -12244,7 +12244,7 @@ int FillTreeParams (RandLong *seed, int fromChain, int toChain)
 void FreeCppEvents (Param *p)
 {
     int i, j;
-    
+
     if (p->paramType != P_CPPEVENTS)
         return;
 
@@ -12489,13 +12489,13 @@ int GetEmpiricalFreqs (int *relParts, int nRelParts)
 
     for (i=0; i<200; i++)
         empiricalFreqs[i] = 0.0;
-    
+
     for (m=0; m<ns; m++)
         freqN[m] =  1.0 / ns;
-        
+
     /* for (m=0; m<ns; m++)
        rawCounts[m] = 0.0; NEVER USED */
-        
+
     for (m=0; m<ns; m++)
         sumN[m] = 0.0;
     for (k=0; k<nRelParts; k++)
@@ -12597,7 +12597,7 @@ int GetEmpiricalFreqs (int *relParts, int nRelParts)
                 sum += empiricalFreqs[i];
             for (i=0; i<64; i++)
                 empiricalFreqs[i] /= sum;
-            
+
             }
         }
     else
@@ -12605,7 +12605,7 @@ int GetEmpiricalFreqs (int *relParts, int nRelParts)
         for (m=0; m<ns; m++)
             empiricalFreqs[m] = freqN[m];
         }
-        
+
     return (NO_ERROR);
 }
 
@@ -12619,7 +12619,7 @@ int GetNumDivisionChars (void)
     for (d=0; d<numCurrentDivisions; d++)
         {
         m = &modelSettings[d];
-        
+
         n = 0;
         for (c=0; c<numChar; c++)
             {
@@ -12636,7 +12636,7 @@ int GetNumDivisionChars (void)
 
         m->numUncompressedChars = n;
         }
-    
+
     return (NO_ERROR);
 }
 
@@ -12668,10 +12668,10 @@ MrBFlt  *GetParamVals (Param *parm, int chain, int state)
 void GetPossibleAAs (int aaCode, int aa[])
 {
     int     m;
-    
+
     for (m=0; m<20; m++)
         aa[m] = 0;
-        
+
     if (aaCode > 0 && aaCode <= 20)
         aa[aaCode-1] = 1;
     else
@@ -12802,10 +12802,10 @@ void GetPossibleNucs (int nucCode, int nuc[])
 void GetPossibleRestrictionSites (int resSiteCode, int *sites)
 {
     int     m;
-    
+
     for (m=0; m<2; m++)
         sites[m] = 0;
-        
+
     if (resSiteCode == 1)
         sites[0] = 1;
     else if (resSiteCode == 2)
@@ -12885,7 +12885,7 @@ int GetUserTreeFromName (int *index, char *treeName)
         }
     if (nMatches == 0)
         {
-        MrBayesPrint ("%s   Could not find tree '%s'\n", spacer, localName);  
+        MrBayesPrint ("%s   Could not find tree '%s'\n", spacer, localName);
         return (ERROR);
         }
     else if (nMatches > 1)
@@ -13034,7 +13034,7 @@ int InitializeChainTrees (Param *p, int from, int to, int isRooted)
 int InitializeLinks (void)
 {
     int         i, j;
-    
+
     linkNum = 0;
     for (i=0; i<NUM_LINKED; i++)
         {
@@ -13051,10 +13051,10 @@ int InitializeTreeCalibrations (Tree *t)
 {
     int         i;
     TreeNode    *p;
-    
+
     if (t->isCalibrated == NO)
         return (NO_ERROR);
-    
+
     /* Set tip calibrations */
     for (i=0; i<t->nNodes; i++)
         {
@@ -13070,7 +13070,7 @@ int InitializeTreeCalibrations (Tree *t)
             p->isDated = NO;
             p->calibration = NULL;
             p->age = -1.0;
-            } 
+            }
         }
 
     /* Initialize interior calibrations */
@@ -13094,7 +13094,7 @@ int IsApplicable_ThreeTaxaOrMore (Param *param)
 {
     if (param->paramType != P_TOPOLOGY )
         return NO;
-        
+
     if (LargestMovableSubtree (param) >= 3)
         return YES;
     else
@@ -13106,7 +13106,7 @@ int IsApplicable_FourTaxaOrMore (Param *param)
 {
     if (param->paramType != P_TOPOLOGY )
         return NO;
-    
+
     if (LargestMovableSubtree (param) >= 4)
         return YES;
     else
@@ -13118,7 +13118,7 @@ int IsApplicable_FiveTaxaOrMore (Param *param)
 {
     if (param->paramType != P_TOPOLOGY )
         return NO;
-    
+
     if (LargestMovableSubtree (param) >= 5)
         return YES;
     else
@@ -13136,7 +13136,7 @@ int IsApplicable_TreeAgeMove (Param *param)
 
     if (param->paramType != P_BRLENS)
         return NO;
-    
+
     t = GetTree (param, 0, 0);
 
     p = t->root->left;
@@ -13175,13 +13175,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     if ((modelParams[part1].dataType == DNA || modelParams[part1].dataType == RNA) && strcmp(modelParams[part1].nucModel,"Protein") != 0)
         isFirstNucleotide = YES;
     if ((modelParams[part2].dataType == DNA || modelParams[part2].dataType == RNA) && strcmp(modelParams[part2].nucModel,"Protein") != 0)
-        isSecondNucleotide = YES;       
+        isSecondNucleotide = YES;
     isFirstProtein = isSecondProtein = NO;
     if (modelParams[part1].dataType == PROTEIN || ((modelParams[part1].dataType == DNA || modelParams[part1].dataType == RNA) && !strcmp(modelParams[part1].nucModel,"Protein")))
         isFirstProtein = YES;
     if (modelParams[part2].dataType == PROTEIN || ((modelParams[part2].dataType == DNA || modelParams[part2].dataType == RNA) && !strcmp(modelParams[part2].nucModel,"Protein")))
-        isSecondProtein = YES;      
-    
+        isSecondProtein = YES;
+
     if (whichParam == P_TRATIO)
         {
         /* Check the ti/tv rate ratio for partitions 1 and 2. */
@@ -13191,19 +13191,19 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* part1 has a parsimony model and tratio does not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO; /* part2 has a parsimony model and tratio does not apply */
-        
+
         /* Check that the data are nucleotide for both partitions 1 and 2 */
         if (isFirstNucleotide == NO)
             *isApplic1 = NO; /* part1 is not nucleotide data so tratio does not apply */
         if (isSecondNucleotide == NO)
             *isApplic2 = NO; /* part2 is not nucleotide data so tratio does not apply */
-        
+
         /* check that nst=2 for both partitions */
         if (strcmp(modelParams[part1].nst, "2"))
             *isApplic1 = NO; /* part1 does not have nst=2 and tratio does not apply */
         if (strcmp(modelParams[part2].nst, "2"))
             *isApplic2 = NO; /* part2 does not have nst=2 and tratio does not apply */
-        
+
         /* Check if part1 & part2 are restriction */
         if (modelParams[part1].dataType == RESTRICTION)
             *isApplic1 = NO;
@@ -13233,7 +13233,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_REVMAT)
         {
         /* Check the GTR rates for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and GTR rates do not apply */
@@ -13251,7 +13251,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* part1 does not have nst=6/Mixed and GTR rates do not apply */
         if (isSecondNucleotide == YES && strcmp(modelParams[part2].nst, "6") && strcmp(modelParams[part2].nst, "Mixed"))
             *isApplic2 = NO; /* part2 does not have nst=6/Mixed and GTR rates do not apply */
-            
+
         /* check that model is GTR for both partitions if protein */
         if (isFirstProtein == YES && (strcmp(modelParams[part1].aaModel,"Gtr")!=0 || strcmp(modelParams[part1].aaModelPr,"Fixed")!=0))
             *isApplic1 = NO;
@@ -13322,25 +13322,25 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_OMEGA)
         {
         /* Check the nonsynonymous/synonymous rate ratio for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and nonsynonymous/synonymous rate ratio does not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO; /* part2 has a parsimony model and nonsynonymous/synonymous rate ratio does not apply */
-        
+
         /* Check that the data are nucleotide for both partitions 1 and 2 */
         if (isFirstNucleotide == NO)
             *isApplic1 = NO; /* part1 is not nucleotide data so a nonsynonymous/synonymous rate ratio does not apply */
         if (isSecondNucleotide == NO)
             *isApplic2 = NO; /* part2 is not nucleotide data so a nonsynonymous/synonymous rate ratio does not apply */
-        
+
         /* Check that the model structure is the same for both. The nucmodel should be "codon". */
         if (strcmp(modelParams[part1].nucModel, "Codon"))
             *isApplic1 = NO; /* part1 does not have Nucmodel = Codon and nonsynonymous/synonymous rate ratio does not apply */
         if (strcmp(modelParams[part2].nucModel, "Codon"))
             *isApplic2 = NO; /* part2 does not have Nucmodel = Codon and nonsynonymous/synonymous rate ratio does not apply */
-        
+
         /* Assuming that Nucmodel = Codon for both part1 and part2, we now need to check if the prior is the
            same for both. */
         if (!strcmp(modelParams[part1].omegaVar, "M3") && !strcmp(modelParams[part2].omegaVar, "M3"))
@@ -13380,7 +13380,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                 isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
             }
         else if (!strcmp(modelParams[part1].omegaVar, "M10") && !strcmp(modelParams[part2].omegaVar, "M10"))
-            {           
+            {
             if (!strcmp(modelParams[part1].codonCatFreqPr, "Dirichlet") && !strcmp(modelParams[part2].codonCatFreqPr, "Dirichlet"))
                 {
                 if (AreDoublesEqual (modelParams[part1].codonCatDir[0], modelParams[part2].codonCatDir[0], (MrBFlt) 0.00001) == NO)
@@ -13473,7 +13473,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
-        
+
         /* Check to see if omega is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO; /* if omega is inapplicable for either partition, then the parameter cannot be the same */
@@ -13481,7 +13481,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_PI)
         {
         /* Check the state frequencies for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and state frequencies do not apply */
@@ -13493,7 +13493,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* state frequencies do not make sense for part1 */
         if (modelParams[part2].dataType == CONTINUOUS)
             *isApplic2 = NO; /* state frequencies do not make sense for part2 */
-            
+
         /* Now, check that the data are the same (i.e., both nucleotide or both amino acid, or whatever). */
         if (isFirstNucleotide != isSecondNucleotide)
             isSame = NO; /* data are not both nucleotide or both note nucleotide */
@@ -13505,14 +13505,14 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             isSame = NO; /* the nucleotide models are different */
         if (strcmp(modelParams[part1].covarionModel, modelParams[part2].covarionModel) && !(!strcmp(modelParams[part1].nucModel, "Codon") && !strcmp(modelParams[part2].nucModel, "Codon")))
             isSame = NO; /* the models have different covarion struture */
-            
+
         /* If both partitions have nucmodel=codon, then we also have to make certain that the same genetic code is used. */
         if (!strcmp(modelParams[part1].nucModel, "Codon") && !strcmp(modelParams[part2].nucModel, "Codon"))
             {
             if (strcmp(modelParams[part1].geneticCode, modelParams[part2].geneticCode))
                 isSame = NO; /* the models have different genetic codes */
             }
-        
+
         /* Let's see if the prior is the same. */
         if (modelParams[part1].dataType == STANDARD && modelParams[part2].dataType == STANDARD)
             {
@@ -13647,55 +13647,55 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_MIXTURE_RATES)
         {
         /* Check the mixture rate parameter for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and mixture rate parameter does not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO; /* part2 has a parsimony model and mixture rate parameter does not apply */
-        
+
         /* Check that the data are not CONTINUOUS for partitions 1 and 2 */
         if (modelParams[part1].dataType == CONTINUOUS)
             *isApplic1 = NO; /* the mixture rate parameter does not make sense for part1 */
         if (modelParams[part2].dataType == CONTINUOUS)
             *isApplic2 = NO; /* the mixture rate parameter does not make sense for part2 */
-        
+
         /* Now, check that the data are the same (i.e., both nucleotide or both amino acid, or whatever). */
         if (isFirstNucleotide != isSecondNucleotide)
             isSame = NO; /* data are not both nucleotide */
         else if (modelParams[part1].dataType != modelParams[part2].dataType && isFirstNucleotide == NO)
             isSame = NO; /* data are not the same */
-        
+
         /* Let's check that the mixture rate parameter is relevant for the two partitions */
         if (strcmp(modelParams[part1].ratesModel, "Kmixture") != 0)
             *isApplic1 = NO; /* the rate mixture parameter does not apply to part1 */
         if (strcmp(modelParams[part2].ratesModel, "Kmixture") != 0)
             *isApplic2 = NO; /* the rate mixture parameter does not apply to part2 */
-        
+
         /* We may have a nucleotide model. Make certain the models are not of type codon. */
         if (!strcmp(modelParams[part1].nucModel, "Codon"))
             *isApplic1 = NO; /* we have a codon model for part1, and a shape parameter does not apply */
         if (!strcmp(modelParams[part2].nucModel, "Codon"))
             *isApplic2 = NO;/* we have a codon model for part2, and a shape parameter does not apply */
-        
+
         /* Check that the model structure is the same for both partitions */
         if ((!strcmp(modelParams[part1].nucModel, "4by4") || !strcmp(modelParams[part1].nucModel, "Doublet")) && !strcmp(modelParams[part2].nucModel, "Codon"))
             isSame = NO; /* the nucleotide models are incompatible with the same rate mixture parameter */
         if ((!strcmp(modelParams[part2].nucModel, "4by4") || !strcmp(modelParams[part2].nucModel, "Doublet")) && !strcmp(modelParams[part1].nucModel, "Codon"))
             isSame = NO; /* the nucleotide models are incompatible with the same rate mixture parameter */
-        
+
         /* if (strcmp(modelParams[part1].covarionModel, modelParams[part2].covarionModel))
          isSame = NO; */ /* the models have different covarion struture */
         /* NOTE: Perhaps we should allow the possiblity that the shape parameter is the same for the case
          where one partition has a covarion model but the other does not and both datatypes are the same. */
-        
+
         /* Check that the number of rate components is the same */
         if (modelParams[part1].numMixtCats != modelParams[part2].numMixtCats)
             isSame = NO; /* the number of rate components is not the same, so we cannot set the parameter to be equal for both partitions */
-        
+
         /* Check that the priors are the same. */
         /* For now we only allow a flat Dirichlet prior, so this is not needed */
-        
+
         /* Check to see if the rate mixture parameter is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO; /* if the rate mixture parameter is inapplicable for either partition, then the parameter cannot be the same */
@@ -13703,7 +13703,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_SHAPE)
         {
         /* Check the shape parameter for partitions 1 and 2 (this applies to the lnorm as well as various gamma models of rate variation across sites) */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and shape parameter does not apply */
@@ -13778,7 +13778,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
-        
+
         /* Check to see if the shape parameter is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO; /* if the shape parameter is inapplicable for either partition, then the parameter cannot be the same */
@@ -13786,7 +13786,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_PINVAR)
         {
         /* Check the proportion of invariable sites parameter for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and proportion of invariable sites parameter does not apply */
@@ -13814,13 +13814,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             !strcmp(modelParams[part2].ratesModel, "LNorm") || !strcmp(modelParams[part2].ratesModel, "Adgamma") ||
             !strcmp(modelParams[part1].ratesModel, "Kmixture"))
             *isApplic2 = NO; /* the proportion of invariable sites parameter does not make sense for part2 */
-            
+
         /* It is not sensible to have a covarion model and a proportion of invariable sites */
         if (!strcmp(modelParams[part1].covarionModel, "Yes"))
             *isApplic1 = NO;
         if (!strcmp(modelParams[part2].covarionModel, "Yes"))
             *isApplic2 = NO;
-        
+
         /* We have a nucleotide model. Make certain the models are not of type codon. */
         if (!strcmp(modelParams[part1].nucModel, "Codon"))
             *isApplic1 = NO; /* we have a codon model for part1, and a proportion of invariable sites parameter does not apply */
@@ -13832,7 +13832,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             isSame = NO; /* the nucleotide models are different */
         if (strcmp(modelParams[part1].covarionModel, modelParams[part2].covarionModel))
             isSame = NO; /* the models have different covarion struture */
-        
+
         /* check the priors */
         if (!strcmp(modelParams[part1].pInvarPr,"Uniform") && !strcmp(modelParams[part2].pInvarPr,"Uniform"))
             {
@@ -13848,7 +13848,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
-        
+
         /* Check to see if the switching rates are inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO; /* if the switching rates are inapplicable for either partition, then the parameter cannot be the same */
@@ -13856,7 +13856,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_CORREL)
         {
         /* Check the autocorrelation parameter for gamma rates on partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and autocorrelation parameter does not apply */
@@ -13868,7 +13868,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* the switching rates do not make sense for part1 */
         if (modelSettings[part2].dataType != DNA && modelSettings[part2].dataType != RNA && modelSettings[part2].dataType != PROTEIN)
             *isApplic2 = NO; /* the switching rates do not make sense for part2 */
-            
+
         /* Now, check that the data are the same (i.e., both nucleotide or both amino acid). */
         if (isFirstNucleotide != isSecondNucleotide)
             isSame = NO; /* one or the other is nucleotide, so they cannot be the same */
@@ -13886,7 +13886,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* we have a codon model for part1, and a autocorrelation parameter does not apply */
         if (!strcmp(modelParams[part2].nucModel, "Codon"))
             *isApplic2 = NO; /* we have a codon model for part2, and a autocorrelation parameter does not apply */
-        
+
         /* Check that the model structure is the same for both partitions */
         if (strcmp(modelParams[part1].nucModel, modelParams[part2].nucModel))
             isSame = NO; /* the nucleotide models are different */
@@ -13916,19 +13916,19 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_SWITCH)
         {
         /* Check the covarion switching rates on partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO; /* part1 has a parsimony model and switching rates do not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO; /* part2 has a parsimony model and switching rates do not apply */
-        
+
         /* Check that the data are either DNA, RNA, or PROTEIN for partitions 1 and 2 */
         if (modelSettings[part1].dataType != DNA && modelSettings[part1].dataType != RNA && modelSettings[part1].dataType != PROTEIN)
             *isApplic1 = NO; /* the switching rates do not make sense for part1 */
         if (modelSettings[part2].dataType != DNA && modelSettings[part2].dataType != RNA && modelSettings[part2].dataType != PROTEIN)
             *isApplic2 = NO; /* the switching rates do not make sense for part2 */
-            
+
         /* Now, check that the data are the same (i.e., both nucleotide or both amino acid). */
         if (isFirstNucleotide != isSecondNucleotide)
             isSame = NO; /* one or the other is nucleotide, so they cannot be the same */
@@ -13979,10 +13979,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
            silly and doesn't take this information into account) and a rate multiplier is nonsensical. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-        
+            *isApplic2 = NO;
+
         /* Check that the branch lengths are at least proportional. */
         if (IsModelSame (P_BRLENS, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
@@ -13995,13 +13995,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
 
         /* Check to see if rate multipliers are inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
-            isSame = NO; 
-            
+            isSame = NO;
+
         }
     else if (whichParam == P_TOPOLOGY)
         {
         /* Check the topology for partitions 1 and 2. */
-        
+
         /* If the prior is different, then the topologies cannot be the same. */
         if (strcmp(modelParams[part1].topologyPr, modelParams[part2].topologyPr))
             isSame = NO;
@@ -14036,7 +14036,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
            silly and doesn't take this information into account). */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
 
@@ -14048,11 +14048,11 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         if (*isApplic1 == YES && *isApplic2 == YES)
             {
             /* We are dealing with real branch lengths (not parsimony) for both partitions */
-            
+
             /* The branch length prior should be the same */
             if (strcmp(modelParams[part1].brlensPr, modelParams[part2].brlensPr))
                 isSame = NO;
-                
+
             /* if both partitions have unconstrained brlens, then we need to check that the priors on the branch lengths are the same */
             if (!strcmp(modelParams[part1].brlensPr, "Unconstrained") && !strcmp(modelParams[part2].brlensPr, "Unconstrained"))
                 {
@@ -14081,18 +14081,18 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                         }
                     else
                         {
-                        if (AreDoublesEqual (modelParams[part1].brlensDir[0], modelParams[part2].brlensDir[0], (MrBFlt) 0.00001) == NO)  
+                        if (AreDoublesEqual (modelParams[part1].brlensDir[0], modelParams[part2].brlensDir[0], (MrBFlt) 0.00001) == NO)
                             isSame = NO;
-                        if (AreDoublesEqual (modelParams[part1].brlensDir[1], modelParams[part2].brlensDir[1], (MrBFlt) 0.00001) == NO) 
+                        if (AreDoublesEqual (modelParams[part1].brlensDir[1], modelParams[part2].brlensDir[1], (MrBFlt) 0.00001) == NO)
                             isSame = NO;
-                        if (AreDoublesEqual (modelParams[part1].brlensDir[2], modelParams[part2].brlensDir[2], (MrBFlt) 0.00001) == NO)  
+                        if (AreDoublesEqual (modelParams[part1].brlensDir[2], modelParams[part2].brlensDir[2], (MrBFlt) 0.00001) == NO)
                             isSame = NO;
-                        if (AreDoublesEqual (modelParams[part1].brlensDir[3], modelParams[part2].brlensDir[3], (MrBFlt) 0.00001) == NO) 
+                        if (AreDoublesEqual (modelParams[part1].brlensDir[3], modelParams[part2].brlensDir[3], (MrBFlt) 0.00001) == NO)
                             isSame = NO;
-                        }   
+                        }
                     }
                 }
-            
+
             /* if both partitions have clock brlens, then we need to check that the priors on the clock are the same */
             if (!strcmp(modelParams[part1].brlensPr, "Clock") && !strcmp(modelParams[part2].brlensPr, "Clock"))
                 {
@@ -14238,7 +14238,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                                     isSame = NO;
                                 }
                             }
-                        
+
                         if (!strcmp(modelParams[part1].speciationPr,"Uniform") && !strcmp(modelParams[part2].speciationPr,"Uniform"))
                             {
                             if (AreDoublesEqual (modelParams[part1].speciationUni[0], modelParams[part2].speciationUni[0], (MrBFlt) 0.00001) == NO)
@@ -14258,7 +14258,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                             }
                         else
                             isSame = NO;
-                        
+
                         if (!strcmp(modelParams[part1].extinctionPr,"Beta") && !strcmp(modelParams[part2].extinctionPr,"Beta"))
                             {
                             if (AreDoublesEqual (modelParams[part1].extinctionBeta[0], modelParams[part2].extinctionBeta[0], (MrBFlt) 0.00001) == NO)
@@ -14273,7 +14273,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                             }
                         else
                             isSame = NO;
-                        
+
                         if (!strcmp(modelParams[part1].fossilizationPr,"Beta") && !strcmp(modelParams[part2].fossilizationPr,"Beta"))
                             {
                             if (AreDoublesEqual (modelParams[part1].fossilizationBeta[0], modelParams[part2].fossilizationBeta[0], (MrBFlt) 0.00001) == NO)
@@ -14288,7 +14288,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                             }
                         else
                             isSame = NO;
-                        
+
                         if (AreDoublesEqual (modelParams[part1].sampleProb, modelParams[part2].sampleProb, 0.00001) == NO)
                             isSame = NO;
                         if (strcmp(modelParams[part1].sampleStrat,modelParams[part2].sampleStrat))
@@ -14299,7 +14299,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                 /* if the same clock prior, we need to check calibrations */
                 if (strcmp(modelParams[part1].nodeAgePr,modelParams[part2].nodeAgePr) != 0)
                     isSame = NO;
-                
+
                 /* If fixed clock brlens, check if the brlens come from the same tree */
                 if (!strcmp(modelParams[part1].clockPr, "Fixed") && !strcmp(modelParams[part2].clockPr, "Fixed"))
                     {
@@ -14322,10 +14322,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
            silly and doesn't take this information into account) and a speciation rate cannot be estimated. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-            
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is a clock:birthdeath or clock:fossilization for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14335,7 +14335,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockPr, "Birthdeath") != 0 && strcmp(modelParams[part2].clockPr, "Fossilization") != 0)
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on the speciation rates are the same. */
         if (!strcmp(modelParams[part1].speciationPr,"Uniform") && !strcmp(modelParams[part2].speciationPr,"Uniform"))
             {
@@ -14356,7 +14356,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if the speciation rates are inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
@@ -14368,10 +14368,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
            silly and doesn't take this information into account) and a extinction rate cannot be estimated. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-            
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is a clock:birthdeath or clock:fossilization for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14381,7 +14381,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockPr, "Birthdeath")!= 0 && strcmp(modelParams[part2].clockPr, "Fossilization") != 0)
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on the extinction rates are the same. */
         if (!strcmp(modelParams[part1].extinctionPr,"Beta") && !strcmp(modelParams[part2].extinctionPr,"Beta"))
             {
@@ -14397,7 +14397,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if the extinction rates are inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
@@ -14405,13 +14405,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_FOSLRATE)
         {
         /* Check the fossilization rates for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
-        
+
         /* Check that the branch length prior is a clock:fossilization for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14421,7 +14421,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockPr, "Fossilization") != 0)
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on the fossilization rates are the same. */
         if (!strcmp(modelParams[part1].fossilizationPr,"Beta") && !strcmp(modelParams[part2].fossilizationPr,"Beta"))
             {
@@ -14437,7 +14437,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if the fossilization rates are inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
@@ -14449,10 +14449,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
            silly and doesn't take this information into account) and population size cannot be estimated. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-            
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is a clock:coalescence or clock:speciestreecoalescence for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14462,7 +14462,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockPr, "Coalescence") != 0 && strcmp(modelParams[part2].clockPr, "Speciestreecoalescence") != 0)
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on population size is the same. */
         if (!strcmp(modelParams[part1].popSizePr,"Uniform") && !strcmp(modelParams[part2].popSizePr,"Uniform"))
             {
@@ -14499,7 +14499,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if population size is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
@@ -14511,10 +14511,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
            silly and doesn't take this information into account) and growth rate cannot be estimated. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-            
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is a clock:coalescence for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14524,7 +14524,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockPr, "Coalescence"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on growth rate is the same. */
         if (!strcmp(modelParams[part1].growthPr,"Uniform") && !strcmp(modelParams[part2].growthPr,"Uniform"))
             {
@@ -14545,10 +14545,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if growth rate is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
-            isSame = NO; 
+            isSame = NO;
         }
     else if (whichParam == P_AAMODEL)
         {
@@ -14559,17 +14559,17 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* part1 has a parsimony model and aamodel does not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO; /* part2 has a parsimony model and aamodel does not apply */
-        
+
         /* Check that the data are protein for both partitions 1 and 2 */
         if (isFirstProtein == NO)
             *isApplic1 = NO; /* part1 is not amino acid data so tratio does not apply */
         if (isSecondProtein == NO)
             *isApplic2 = NO; /* part2 is not amino acid data so tratio does not apply */
-            
+
         /* If the model is fixed for a partition, then it is not a free parameter and
            we set it to isApplic = NO */
         if (!strcmp(modelParams[part1].aaModelPr,"Fixed"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].aaModelPr,"Fixed"))
             *isApplic2 = NO;
 
@@ -14592,13 +14592,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_BRCORR)
         {
         /* Check the correlation parameter for brownian motion 1 and 2. */
-        
+
         /* Check that the data are either CONTINUOUS for partitions 1 and 2 */
         if (modelParams[part1].dataType != CONTINUOUS)
             *isApplic1 = NO; /* the correlation parameter does not make sense for part1 */
         if (modelParams[part2].dataType != CONTINUOUS)
             *isApplic2 = NO; /* the correlation parameter does not make sense for part2 */
-            
+
         /* Now, check that the data are the same. */
         if (modelParams[part1].dataType != modelParams[part2].dataType)
             isSame = NO; /* data are not both continuous */
@@ -14626,13 +14626,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_BRSIGMA)
         {
         /* Check the sigma parameter for brownian motion 1 and 2. */
-        
+
         /* Check that the data are either CONTINUOUS for partitions 1 and 2 */
         if (modelParams[part1].dataType != CONTINUOUS)
             *isApplic1 = NO; /* the sigma parameter does not make sense for part1 */
         if (modelParams[part2].dataType != CONTINUOUS)
             *isApplic2 = NO; /* the sigma parameter does not make sense for part2 */
-            
+
         /* Now, check that the data are the same. */
         if (modelParams[part1].dataType != modelParams[part2].dataType)
             isSame = NO; /* data are not both continuous */
@@ -14672,11 +14672,11 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_CPPRATE)
         {
         /* Check cpp rate for partitions 1 and 2. */
-    
+
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
         silly and doesn't take this information into account) and cpp rate cannot be estimated. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
 
@@ -14691,7 +14691,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Cpp"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on cpp rate is the same. */
         if (!strcmp(modelParams[part1].cppRatePr,"Exponential") && !strcmp(modelParams[part2].cppRatePr,"Exponential"))
             {
@@ -14705,22 +14705,22 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-    
+
         /* Check to see if cpp rate is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
-            isSame = NO;    
+            isSame = NO;
         }
     else if (whichParam == P_CPPMULTDEV)
         {
         /* Check cpp multiplier deviation prior for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
         silly and doesn't take this information into account) and this parameter is inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-        
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is clock for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14732,7 +14732,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Cpp"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on sigma is the same. */
         if (!strcmp(modelParams[part1].cppMultDevPr,"Fixed") && !strcmp(modelParams[part2].cppMultDevPr,"Fixed"))
             {
@@ -14741,19 +14741,19 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if cpp multiplier sigma is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
-            isSame = NO;    
+            isSame = NO;
         }
     else if (whichParam == P_CPPEVENTS)
         {
         /* Check cpp events for partitions 1 and 2. */
-    
+
         /* Check if the model is parsimony for either partition. If so, then branch lengths do not apply (as parsimony is very
         silly and doesn't take this information into account) and cpp events are inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
 
@@ -14768,19 +14768,19 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Cpp"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the cpp parameter is the same */
         if (IsModelSame (P_CPPRATE, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
         if (linkTable[P_CPPRATE][part1] != linkTable[P_CPPRATE][part2])
             isSame = NO;
-    
+
         /* ... and that the psigamma parameter is the same */
         if (IsModelSame (P_CPPMULTDEV, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
         if (linkTable[P_CPPMULTDEV][part1] != linkTable[P_CPPRATE][part2])
             isSame = NO;
-    
+
         /* Not same if branch lengths are not the same */
         if (IsModelSame(P_BRLENS, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
@@ -14794,14 +14794,14 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_TK02VAR)
         {
         /* Check prior for variance of rate autocorrelation for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
         silly and doesn't take this information into account) and ratevar is inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-        
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is clock for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14813,7 +14813,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "TK02"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on tk02 variance is the same. */
         if (!strcmp(modelParams[part1].tk02varPr,"Uniform") && !strcmp(modelParams[part2].tk02varPr,"Uniform"))
             {
@@ -14834,19 +14834,19 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if tk02 variance is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
-            isSame = NO;    
+            isSame = NO;
         }
     else if (whichParam == P_TK02BRANCHRATES)
         {
         /* Check TK02 relaxed clock branch rates for partitions 1 and 2. */
-    
+
         /* Check if the model is parsimony for either partition. If so, then branch lengths do not apply (as parsimony is very
         silly and doesn't take this information into account) and tk02 relaxed clock branch rates are inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
 
@@ -14861,7 +14861,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "TK02"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the tk02 variance parameter is the same */
         if (IsModelSame (P_TK02VAR, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
@@ -14881,14 +14881,14 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_IGRVAR)
         {
         /* Check prior for igr shape for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
         silly and doesn't take this information into account) and igr shape is inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; 
-        
+            *isApplic2 = NO;
+
         /* Check that the branch length prior is clock for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
@@ -14900,7 +14900,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Igr"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on igr shape is the same. */
         if (!strcmp(modelParams[part1].igrvarPr,"Uniform") && !strcmp(modelParams[part2].igrvarPr,"Uniform"))
             {
@@ -14921,19 +14921,19 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if igr variance is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
-            isSame = NO;    
+            isSame = NO;
         }
     else if (whichParam == P_IGRBRANCHRATES)
         {
         /* Check IGR relaxed clock branch rates for partitions 1 and 2. */
-    
+
         /* Check if the model is parsimony for either partition. If so, then branch lengths do not apply (as parsimony is very
         silly and doesn't take this information into account) and igr relaxed clock branch rates are inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
 
@@ -14948,13 +14948,13 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Igr"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the igr shape parameter is the same */
         if (IsModelSame (P_IGRVAR, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
         if (linkTable[P_IGRVAR][part1] != linkTable[P_IGRVAR][part2])
             isSame = NO;
-    
+
         /* Not same if branch lengths are not the same */
         if (IsModelSame(P_BRLENS, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
@@ -14968,26 +14968,26 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_MIXEDVAR)
         {
         /* Check prior for mixed var for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition. If so, then the branch lengths cannot apply (as parsimony is very
          silly and doesn't take this information into account) and variance is inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
-        
+
         /* Check that the branch length prior is clock for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].brlensPr, "Clock"))
             *isApplic2 = NO;
-        
+
         /* Check that the clock rate prior is mixed for both partitions */
         if (strcmp(modelParams[part1].clockVarPr, "Mixed"))
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Mixed"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the prior on var mixed is the same. */
         if (!strcmp(modelParams[part1].mixedvarPr,"Uniform") && !strcmp(modelParams[part2].mixedvarPr,"Uniform"))
             {
@@ -15008,7 +15008,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             }
         else
             isSame = NO;
-        
+
         /* Check to see if variance is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
@@ -15016,38 +15016,38 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_MIXEDBRCHRATES)
         {
         /* Check mixed relaxed clock branch rates for partitions 1 and 2. */
-        
+
         /* Check if the model is parsimony for either partition. If so, then branch lengths do not apply (as parsimony is very
          silly and doesn't take this information into account) and relaxed clock branch rates are inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
             *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
-        
+
         /* Check that the branch length prior is clock for both partitions. */
         if (strcmp(modelParams[part1].brlensPr, "Clock"))
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].brlensPr, "Clock"))
             *isApplic2 = NO;
-        
+
         /* Check that the clock rate prior is mixed for both partitions */
         if (strcmp(modelParams[part1].clockVarPr, "Mixed"))
             *isApplic1 = NO;
         if (strcmp(modelParams[part2].clockVarPr, "Mixed"))
             *isApplic2 = NO;
-        
+
         /* Now, check that the var parameter is the same */
         if (IsModelSame (P_MIXEDVAR, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
         if (linkTable[P_MIXEDVAR][part1] != linkTable[P_MIXEDVAR][part2])
             isSame = NO;
-        
+
         /* Not same if branch lengths are not the same */
         if (IsModelSame(P_BRLENS, part1, part2, &temp1, &temp2) == NO)
             isSame = NO;
         if (linkTable[P_BRLENS][part1] != linkTable[P_BRLENS][part2])
             isSame = NO;
-        
+
         /* Set isSame to NO if mixed branch rates are inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
@@ -15055,11 +15055,11 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     else if (whichParam == P_CLOCKRATE)
         {
         /* Check base substitution rates of clock tree for partitions 1 and 2. */
-    
+
         /* Check if the model is parsimony for either partition. If so, then branch lengths do not apply (as parsimony is very
         silly and doesn't take this information into account) and clock branch rates are inapplicable. */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; 
+            *isApplic1 = NO;
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO;
 
@@ -15102,7 +15102,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         MrBayesPrint ("%s   Could not find parameter in IsModelSame\n", spacer);
         return (NO);
         }
-    
+
     return (isSame);
 }
 
@@ -15118,7 +15118,7 @@ int LargestMovableSubtree(Param *treeParam)
 
     if (treeParam->paramType == P_SPECIESTREE)
         return numLocalTaxa;    /* no constraints allowed in species tree; set constraints in gene trees instead */
-    
+
     /* This is difficult because we cannot rely on the tree being initialized.
        We need to retrieve the bitfields ourselves and figure out what they mean. */
     nLongsNeeded = ((numLocalTaxa - 1) / nBitsInALong) + 1;
@@ -15129,11 +15129,11 @@ int LargestMovableSubtree(Param *treeParam)
         constraintPartition[i] = constraintPartition[i-1] + nLongsNeeded;
     testPartition = subtreePartition + nLongsNeeded;
     mask = testPartition + nLongsNeeded;
-    
+
     /* set mask (needed to take care of unused bits when flipping partitions) */
     for (i=0; i<numLocalTaxa; i++)
         SetBit (i, mask);
-    
+
     /* retrieve partitions */
     numPartitions = 0;
     foundAllSpeciesPartition = NO;
@@ -15141,7 +15141,7 @@ int LargestMovableSubtree(Param *treeParam)
         {
         if (mp->activeConstraints[a] == NO || definedConstraintsType[a] != HARD)
             continue;
-        
+
         /* set bits in partition under consideration */
         ClearBits(constraintPartition[numPartitions], nLongsNeeded);
         for (i=j=0; i<numTaxa; i++)
@@ -15152,23 +15152,23 @@ int LargestMovableSubtree(Param *treeParam)
                 SetBit(j, constraintPartition[numPartitions]);
             j++;
             }
-        
+
         /* make sure outgroup is outside constrained partition (marked 0) */
         if (strcmp(mp->brlensPr,"Clock") != 0 && IsBitSet(localOutGroup, constraintPartition[numPartitions]) == YES)
             FlipBits(constraintPartition[numPartitions], nLongsNeeded, mask);
-        
+
         /* skip partition if uninformative */
         k = NumBits(constraintPartition[numPartitions], nLongsNeeded);
         if (k == 0 || k == 1)
             continue;
-        
+
         /* record if we hit an all-species partition */
         if (k == numLocalTaxa)
             foundAllSpeciesPartition = YES;
-        
+
         numPartitions++;
         }
-    
+
     /* Add all-species partition if not already present */
     if (foundAllSpeciesPartition == NO)
     {
@@ -15182,7 +15182,7 @@ int LargestMovableSubtree(Param *treeParam)
         }
         numPartitions++;
     }
-    
+
     /* Now we have all constraints. Calculate the movable subtree for each */
     largestSubtree = 0;
     for (i=0; i<numPartitions; i++)
@@ -15213,7 +15213,7 @@ int LargestMovableSubtree(Param *treeParam)
     free(subtreePartition);
     free(constraintPartition[0]);
     free(constraintPartition);
-   
+
     return largestSubtree;
 }
 
@@ -15221,7 +15221,7 @@ int LargestMovableSubtree(Param *treeParam)
 int Link (void)
 {
     int         i, j;
-    
+
     for (j=0; j<NUM_LINKED; j++)
         {
         MrBayesPrint ("%4d -- ", j+1);
@@ -15229,7 +15229,7 @@ int Link (void)
             MrBayesPrint (" %2d", tempLinkUnlink[j][i]);
         MrBayesPrint ("\n");
         }
-        
+
     return (NO_ERROR);
 }
 
@@ -15237,7 +15237,7 @@ int Link (void)
 int NumActiveParts (void)
 {
     int     i, nApplied;
-    
+
     nApplied = 0;
     for (i=0; i<numCurrentDivisions; i++)
         if (activeParts[i] == YES)
@@ -15251,9 +15251,9 @@ int NumInformativeHardConstraints (ModelParams *mp)
 {
     int             i, j, k, a, numInformativeHardConstraints, nLongsNeeded;
     BitsLong        *constraintPartition, *mask;
-       
+
     numInformativeHardConstraints = 0;
-    
+
     nLongsNeeded = ((numLocalTaxa - 1) / nBitsInALong) + 1;
     constraintPartition = (BitsLong *) SafeCalloc (2*nLongsNeeded, sizeof(BitsLong));
     if (!constraintPartition)
@@ -15266,12 +15266,12 @@ int NumInformativeHardConstraints (ModelParams *mp)
     /* set mask (needed to take care of unused bits when flipping partitions) */
     for (i=0; i<numLocalTaxa; i++)
         SetBit (i, mask);
-        
+
     for (a=0; a<numDefinedConstraints; a++)
         {
         if (mp->activeConstraints[a] == NO || definedConstraintsType[a] != HARD)
             continue;
-            
+
         /* set bits in partition to add */
         ClearBits(constraintPartition, nLongsNeeded);
         for (i=j=0; i<numTaxa; i++)
@@ -15282,11 +15282,11 @@ int NumInformativeHardConstraints (ModelParams *mp)
                     SetBit(j, constraintPartition);
                 j++;
             }
-            
+
         /* make sure outgroup is outside constrained partition (marked 0) */
         if (strcmp(mp->brlensPr,"Clock") != 0 && IsBitSet(localOutGroup, constraintPartition) == YES)
             FlipBits(constraintPartition, nLongsNeeded, mask);
-            
+
         /* skip partition if uninformative */
         k = NumBits(constraintPartition, nLongsNeeded);
         if (k == 0 || k == 1)
@@ -15294,7 +15294,7 @@ int NumInformativeHardConstraints (ModelParams *mp)
 
         numInformativeHardConstraints++;
         }
-        
+
     return numInformativeHardConstraints;
 }
 
@@ -15302,7 +15302,7 @@ int NumInformativeHardConstraints (ModelParams *mp)
 int NumNonExcludedChar (void)
 {
     int     i, n;
-    
+
     /* count number of non-excluded characters */
     n = 0;
     for (i=0; i<numChar; i++)
@@ -15312,7 +15312,7 @@ int NumNonExcludedChar (void)
             n++;
             }
         }
-    
+
     return n;
 }
 
@@ -15361,7 +15361,7 @@ int NumStates (int part)
         {
         return (10);
         }
-        
+
     return (-1);
 }
 
@@ -15383,7 +15383,7 @@ int PrintCompMatrix (void)
         return ERROR;
 
     whichChar = &WhichNuc;
-    
+
     for (d=0; d<numCurrentDivisions; d++)
         {
         m = &modelSettings[d];
@@ -15399,7 +15399,7 @@ int PrintCompMatrix (void)
             whichChar = &WhichStand;
 
         MrBayesPrint ("\nCompressed matrix for division %d\n\n", d+1);
-        
+
         k = 66;
         if (mp->dataType == CONTINUOUS)
             k /= 4;
@@ -15519,9 +15519,9 @@ int PrintMatrix (void)
 
     if (!matrix)
         return ERROR;
-    
+
     MrBayesPrint ("\nData matrix\n\n");
-    
+
     printWidth = 79;
 
     for (c=0; c<numChar; c=j)
@@ -15537,7 +15537,7 @@ int PrintMatrix (void)
                 if (charInfo[j].charType == CONTINUOUS && nextColumn < printWidth - 3)
                     break;
                 if (charInfo[j].charType == CONTINUOUS)
-                    {   
+                    {
                     MrBayesPrint ("%3d ", matrix[pos(i,j,numChar)]);
                     nextColumn += 3;
                     }
@@ -15586,13 +15586,13 @@ int ProcessStdChars (RandLong *seed)
 
         numStandardChars += m->numChars;
         }
-    
+
     /* return if there are no standard characters */
     if (numStandardChars == 0)
         return (NO_ERROR);
 
     /* we are still here so we have standard characters and need to deal with them */
-    
+
     /* first allocate space for stdType, stateSize, tiIndex, bsIndex */
     if (memAllocs[ALLOC_STDTYPE] == YES)
         {
@@ -15617,7 +15617,7 @@ int ProcessStdChars (RandLong *seed)
         {
         mp = &modelParams[d];
         m = &modelSettings[d];
-        
+
         if (mp->dataType != STANDARD)
             continue;
 
@@ -15642,7 +15642,7 @@ int ProcessStdChars (RandLong *seed)
                 m->cType[c] = charInfo[origChar[c + m->compMatrixStart]].ctype;
                 m->nStates[c] = charInfo[origChar[c + m->compMatrixStart]].numStates;
                 }
-            
+
             /* check ctype settings */
             if (m->nStates[c] < 2)
                 {
@@ -15662,7 +15662,7 @@ int ProcessStdChars (RandLong *seed)
                 MrBayesPrint ("%s   Irreversible model not yet supported\n", spacer);
                 return ERROR;
                 }
-            
+
             /* find max number of states */
             if (m->nStates[c] > m->numModelStates)
                 m->numModelStates = m->nStates[c];
@@ -15760,7 +15760,7 @@ int ProcessStdChars (RandLong *seed)
             }
         j += m->numChars;
         }
-    
+
     /* deal with bsIndex */
     for (k=0; k<numParams; k++)
         {
@@ -15845,7 +15845,7 @@ int ProcessStdChars (RandLong *seed)
             }
         p->nStdStateFreqs = index;
         }
-    
+
     /* allocate space for bsIndex, sympiIndex, stdStateFreqs; then fill */
 
     /* first count number of sympis needed */
@@ -15854,7 +15854,7 @@ int ProcessStdChars (RandLong *seed)
         p = &params[k];
         n += p->nSympi;     /* nsympi calculated above */
         }
-    
+
     /* then allocate and fill in */
     if (n > 0)
         {
@@ -15873,7 +15873,7 @@ int ProcessStdChars (RandLong *seed)
             }
         else
             memAllocs[ALLOC_SYMPIINDEX] = YES;
-        
+
         /* set up sympi pointers and fill sympiIndex */
         for (k=i=0; k<numParams; k++)
             {
@@ -15886,7 +15886,7 @@ int ProcessStdChars (RandLong *seed)
                 p->sympinStates = sympiIndex + i + n;
                 p->sympiCType = sympiIndex + i + (2 * n);
                 for (j=0; j<p->nRelParts; j++)
-                    {                       
+                    {
                     m = &modelSettings[p->relParts[j]];
                     for (c=0; c<m->numChars; c++)
                         {
@@ -15911,7 +15911,7 @@ int ProcessStdChars (RandLong *seed)
             }
         assert (i == n);
         }
-    
+
     /* count space needed for state frequencies */
     for (k=n=0; k<numParams; k++)
         {
@@ -15920,9 +15920,9 @@ int ProcessStdChars (RandLong *seed)
             continue;
         n += p->nStdStateFreqs;
         }
-    
+
     stdStateFreqsRowSize = n;
-    
+
     /* allocate space */
     if (memAllocs[ALLOC_STDSTATEFREQS] == YES)
         {
@@ -15938,7 +15938,7 @@ int ProcessStdChars (RandLong *seed)
         }
     else
         memAllocs[ALLOC_STDSTATEFREQS] = YES;
-    
+
     /* set pointers */
     for (k=n=0; k<numParams; k++)
         {
@@ -15948,7 +15948,7 @@ int ProcessStdChars (RandLong *seed)
         p->stdStateFreqs = stdStateFreqs + n;
         n += p->nStdStateFreqs;
         }
-    
+
     FillStdStateFreqs (0 , numGlobalChains, seed);
 
     return (NO_ERROR);
@@ -15959,89 +15959,89 @@ int SetAARates (void)
 {
     int         i, j;
     MrBFlt      diff, sum, scaler;
-    
+
     /* A R N D C Q E G H I L K M F P S T W Y V */
 
     /* jones */
-    aaJones[ 0][ 0] =   0; aaJones[ 0][ 1] =  58; aaJones[ 0][ 2] =  54; aaJones[ 0][ 3] =  81; aaJones[ 0][ 4] =  56; 
-    aaJones[ 0][ 5] =  57; aaJones[ 0][ 6] = 105; aaJones[ 0][ 7] = 179; aaJones[ 0][ 8] =  27; aaJones[ 0][ 9] =  36; 
-    aaJones[ 0][10] =  30; aaJones[ 0][11] =  35; aaJones[ 0][12] =  54; aaJones[ 0][13] =  15; aaJones[ 0][14] = 194; 
-    aaJones[ 0][15] = 378; aaJones[ 0][16] = 475; aaJones[ 0][17] =   9; aaJones[ 0][18] =  11; aaJones[ 0][19] = 298; 
-    aaJones[ 1][ 0] =  58; aaJones[ 1][ 1] =   0; aaJones[ 1][ 2] =  45; aaJones[ 1][ 3] =  16; aaJones[ 1][ 4] = 113; 
-    aaJones[ 1][ 5] = 310; aaJones[ 1][ 6] =  29; aaJones[ 1][ 7] = 137; aaJones[ 1][ 8] = 328; aaJones[ 1][ 9] =  22; 
-    aaJones[ 1][10] =  38; aaJones[ 1][11] = 646; aaJones[ 1][12] =  44; aaJones[ 1][13] =   5; aaJones[ 1][14] =  74; 
-    aaJones[ 1][15] = 101; aaJones[ 1][16] =  64; aaJones[ 1][17] = 126; aaJones[ 1][18] =  20; aaJones[ 1][19] =  17; 
-    aaJones[ 2][ 0] =  54; aaJones[ 2][ 1] =  45; aaJones[ 2][ 2] =   0; aaJones[ 2][ 3] = 528; aaJones[ 2][ 4] =  34; 
-    aaJones[ 2][ 5] =  86; aaJones[ 2][ 6] =  58; aaJones[ 2][ 7] =  81; aaJones[ 2][ 8] = 391; aaJones[ 2][ 9] =  47; 
-    aaJones[ 2][10] =  12; aaJones[ 2][11] = 263; aaJones[ 2][12] =  30; aaJones[ 2][13] =  10; aaJones[ 2][14] =  15; 
-    aaJones[ 2][15] = 503; aaJones[ 2][16] = 232; aaJones[ 2][17] =   8; aaJones[ 2][18] =  70; aaJones[ 2][19] =  16; 
-    aaJones[ 3][ 0] =  81; aaJones[ 3][ 1] =  16; aaJones[ 3][ 2] = 528; aaJones[ 3][ 3] =   0; aaJones[ 3][ 4] =  10; 
-    aaJones[ 3][ 5] =  49; aaJones[ 3][ 6] = 767; aaJones[ 3][ 7] = 130; aaJones[ 3][ 8] = 112; aaJones[ 3][ 9] =  11; 
-    aaJones[ 3][10] =   7; aaJones[ 3][11] =  26; aaJones[ 3][12] =  15; aaJones[ 3][13] =   4; aaJones[ 3][14] =  15; 
-    aaJones[ 3][15] =  59; aaJones[ 3][16] =  38; aaJones[ 3][17] =   4; aaJones[ 3][18] =  46; aaJones[ 3][19] =  31; 
-    aaJones[ 4][ 0] =  56; aaJones[ 4][ 1] = 113; aaJones[ 4][ 2] =  34; aaJones[ 4][ 3] =  10; aaJones[ 4][ 4] =   0; 
-    aaJones[ 4][ 5] =   9; aaJones[ 4][ 6] =   5; aaJones[ 4][ 7] =  59; aaJones[ 4][ 8] =  69; aaJones[ 4][ 9] =  17; 
-    aaJones[ 4][10] =  23; aaJones[ 4][11] =   7; aaJones[ 4][12] =  31; aaJones[ 4][13] =  78; aaJones[ 4][14] =  14; 
-    aaJones[ 4][15] = 223; aaJones[ 4][16] =  42; aaJones[ 4][17] = 115; aaJones[ 4][18] = 209; aaJones[ 4][19] =  62; 
-    aaJones[ 5][ 0] =  57; aaJones[ 5][ 1] = 310; aaJones[ 5][ 2] =  86; aaJones[ 5][ 3] =  49; aaJones[ 5][ 4] =   9; 
-    aaJones[ 5][ 5] =   0; aaJones[ 5][ 6] = 323; aaJones[ 5][ 7] =  26; aaJones[ 5][ 8] = 597; aaJones[ 5][ 9] =   9; 
-    aaJones[ 5][10] =  72; aaJones[ 5][11] = 292; aaJones[ 5][12] =  43; aaJones[ 5][13] =   4; aaJones[ 5][14] = 164; 
-    aaJones[ 5][15] =  53; aaJones[ 5][16] =  51; aaJones[ 5][17] =  18; aaJones[ 5][18] =  24; aaJones[ 5][19] =  20; 
-    aaJones[ 6][ 0] = 105; aaJones[ 6][ 1] =  29; aaJones[ 6][ 2] =  58; aaJones[ 6][ 3] = 767; aaJones[ 6][ 4] =   5; 
-    aaJones[ 6][ 5] = 323; aaJones[ 6][ 6] =   0; aaJones[ 6][ 7] = 119; aaJones[ 6][ 8] =  26; aaJones[ 6][ 9] =  12; 
-    aaJones[ 6][10] =   9; aaJones[ 6][11] = 181; aaJones[ 6][12] =  18; aaJones[ 6][13] =   5; aaJones[ 6][14] =  18; 
-    aaJones[ 6][15] =  30; aaJones[ 6][16] =  32; aaJones[ 6][17] =  10; aaJones[ 6][18] =   7; aaJones[ 6][19] =  45; 
-    aaJones[ 7][ 0] = 179; aaJones[ 7][ 1] = 137; aaJones[ 7][ 2] =  81; aaJones[ 7][ 3] = 130; aaJones[ 7][ 4] =  59; 
-    aaJones[ 7][ 5] =  26; aaJones[ 7][ 6] = 119; aaJones[ 7][ 7] =   0; aaJones[ 7][ 8] =  23; aaJones[ 7][ 9] =   6; 
-    aaJones[ 7][10] =   6; aaJones[ 7][11] =  27; aaJones[ 7][12] =  14; aaJones[ 7][13] =   5; aaJones[ 7][14] =  24; 
-    aaJones[ 7][15] = 201; aaJones[ 7][16] =  33; aaJones[ 7][17] =  55; aaJones[ 7][18] =   8; aaJones[ 7][19] =  47; 
-    aaJones[ 8][ 0] =  27; aaJones[ 8][ 1] = 328; aaJones[ 8][ 2] = 391; aaJones[ 8][ 3] = 112; aaJones[ 8][ 4] =  69; 
-    aaJones[ 8][ 5] = 597; aaJones[ 8][ 6] =  26; aaJones[ 8][ 7] =  23; aaJones[ 8][ 8] =   0; aaJones[ 8][ 9] =  16; 
-    aaJones[ 8][10] =  56; aaJones[ 8][11] =  45; aaJones[ 8][12] =  33; aaJones[ 8][13] =  40; aaJones[ 8][14] = 115; 
-    aaJones[ 8][15] =  73; aaJones[ 8][16] =  46; aaJones[ 8][17] =   8; aaJones[ 8][18] = 573; aaJones[ 8][19] =  11; 
-    aaJones[ 9][ 0] =  36; aaJones[ 9][ 1] =  22; aaJones[ 9][ 2] =  47; aaJones[ 9][ 3] =  11; aaJones[ 9][ 4] =  17; 
-    aaJones[ 9][ 5] =   9; aaJones[ 9][ 6] =  12; aaJones[ 9][ 7] =   6; aaJones[ 9][ 8] =  16; aaJones[ 9][ 9] =   0; 
-    aaJones[ 9][10] = 229; aaJones[ 9][11] =  21; aaJones[ 9][12] = 479; aaJones[ 9][13] =  89; aaJones[ 9][14] =  10; 
-    aaJones[ 9][15] =  40; aaJones[ 9][16] = 245; aaJones[ 9][17] =   9; aaJones[ 9][18] =  32; aaJones[ 9][19] = 961; 
-    aaJones[10][ 0] =  30; aaJones[10][ 1] =  38; aaJones[10][ 2] =  12; aaJones[10][ 3] =   7; aaJones[10][ 4] =  23; 
-    aaJones[10][ 5] =  72; aaJones[10][ 6] =   9; aaJones[10][ 7] =   6; aaJones[10][ 8] =  56; aaJones[10][ 9] = 229; 
-    aaJones[10][10] =   0; aaJones[10][11] =  14; aaJones[10][12] = 388; aaJones[10][13] = 248; aaJones[10][14] = 102; 
-    aaJones[10][15] =  59; aaJones[10][16] =  25; aaJones[10][17] =  52; aaJones[10][18] =  24; aaJones[10][19] = 180; 
-    aaJones[11][ 0] =  35; aaJones[11][ 1] = 646; aaJones[11][ 2] = 263; aaJones[11][ 3] =  26; aaJones[11][ 4] =   7; 
-    aaJones[11][ 5] = 292; aaJones[11][ 6] = 181; aaJones[11][ 7] =  27; aaJones[11][ 8] =  45; aaJones[11][ 9] =  21; 
-    aaJones[11][10] =  14; aaJones[11][11] =   0; aaJones[11][12] =  65; aaJones[11][13] =   4; aaJones[11][14] =  21; 
-    aaJones[11][15] =  47; aaJones[11][16] = 103; aaJones[11][17] =  10; aaJones[11][18] =   8; aaJones[11][19] =  14; 
-    aaJones[12][ 0] =  54; aaJones[12][ 1] =  44; aaJones[12][ 2] =  30; aaJones[12][ 3] =  15; aaJones[12][ 4] =  31; 
-    aaJones[12][ 5] =  43; aaJones[12][ 6] =  18; aaJones[12][ 7] =  14; aaJones[12][ 8] =  33; aaJones[12][ 9] = 479; 
-    aaJones[12][10] = 388; aaJones[12][11] =  65; aaJones[12][12] =   0; aaJones[12][13] =  43; aaJones[12][14] =  16; 
-    aaJones[12][15] =  29; aaJones[12][16] = 226; aaJones[12][17] =  24; aaJones[12][18] =  18; aaJones[12][19] = 323; 
-    aaJones[13][ 0] =  15; aaJones[13][ 1] =   5; aaJones[13][ 2] =  10; aaJones[13][ 3] =   4; aaJones[13][ 4] =  78; 
-    aaJones[13][ 5] =   4; aaJones[13][ 6] =   5; aaJones[13][ 7] =   5; aaJones[13][ 8] =  40; aaJones[13][ 9] =  89; 
-    aaJones[13][10] = 248; aaJones[13][11] =   4; aaJones[13][12] =  43; aaJones[13][13] =   0; aaJones[13][14] =  17; 
-    aaJones[13][15] =  92; aaJones[13][16] =  12; aaJones[13][17] =  53; aaJones[13][18] = 536; aaJones[13][19] =  62; 
-    aaJones[14][ 0] = 194; aaJones[14][ 1] =  74; aaJones[14][ 2] =  15; aaJones[14][ 3] =  15; aaJones[14][ 4] =  14; 
-    aaJones[14][ 5] = 164; aaJones[14][ 6] =  18; aaJones[14][ 7] =  24; aaJones[14][ 8] = 115; aaJones[14][ 9] =  10; 
-    aaJones[14][10] = 102; aaJones[14][11] =  21; aaJones[14][12] =  16; aaJones[14][13] =  17; aaJones[14][14] =   0; 
-    aaJones[14][15] = 285; aaJones[14][16] = 118; aaJones[14][17] =   6; aaJones[14][18] =  10; aaJones[14][19] =  23; 
-    aaJones[15][ 0] = 378; aaJones[15][ 1] = 101; aaJones[15][ 2] = 503; aaJones[15][ 3] =  59; aaJones[15][ 4] = 223; 
-    aaJones[15][ 5] =  53; aaJones[15][ 6] =  30; aaJones[15][ 7] = 201; aaJones[15][ 8] =  73; aaJones[15][ 9] =  40; 
-    aaJones[15][10] =  59; aaJones[15][11] =  47; aaJones[15][12] =  29; aaJones[15][13] =  92; aaJones[15][14] = 285; 
-    aaJones[15][15] =   0; aaJones[15][16] = 477; aaJones[15][17] =  35; aaJones[15][18] =  63; aaJones[15][19] =  38; 
-    aaJones[16][ 0] = 475; aaJones[16][ 1] =  64; aaJones[16][ 2] = 232; aaJones[16][ 3] =  38; aaJones[16][ 4] =  42; 
-    aaJones[16][ 5] =  51; aaJones[16][ 6] =  32; aaJones[16][ 7] =  33; aaJones[16][ 8] =  46; aaJones[16][ 9] = 245; 
-    aaJones[16][10] =  25; aaJones[16][11] = 103; aaJones[16][12] = 226; aaJones[16][13] =  12; aaJones[16][14] = 118; 
-    aaJones[16][15] = 477; aaJones[16][16] =   0; aaJones[16][17] =  12; aaJones[16][18] =  21; aaJones[16][19] = 112; 
-    aaJones[17][ 0] =   9; aaJones[17][ 1] = 126; aaJones[17][ 2] =   8; aaJones[17][ 3] =   4; aaJones[17][ 4] = 115; 
-    aaJones[17][ 5] =  18; aaJones[17][ 6] =  10; aaJones[17][ 7] =  55; aaJones[17][ 8] =   8; aaJones[17][ 9] =   9; 
-    aaJones[17][10] =  52; aaJones[17][11] =  10; aaJones[17][12] =  24; aaJones[17][13] =  53; aaJones[17][14] =   6; 
-    aaJones[17][15] =  35; aaJones[17][16] =  12; aaJones[17][17] =   0; aaJones[17][18] =  71; aaJones[17][19] =  25; 
-    aaJones[18][ 0] =  11; aaJones[18][ 1] =  20; aaJones[18][ 2] =  70; aaJones[18][ 3] =  46; aaJones[18][ 4] = 209; 
-    aaJones[18][ 5] =  24; aaJones[18][ 6] =   7; aaJones[18][ 7] =   8; aaJones[18][ 8] = 573; aaJones[18][ 9] =  32; 
-    aaJones[18][10] =  24; aaJones[18][11] =   8; aaJones[18][12] =  18; aaJones[18][13] = 536; aaJones[18][14] =  10; 
-    aaJones[18][15] =  63; aaJones[18][16] =  21; aaJones[18][17] =  71; aaJones[18][18] =   0; aaJones[18][19] =  16; 
-    aaJones[19][ 0] = 298; aaJones[19][ 1] =  17; aaJones[19][ 2] =  16; aaJones[19][ 3] =  31; aaJones[19][ 4] =  62; 
-    aaJones[19][ 5] =  20; aaJones[19][ 6] =  45; aaJones[19][ 7] =  47; aaJones[19][ 8] =  11; aaJones[19][ 9] = 961; 
-    aaJones[19][10] = 180; aaJones[19][11] =  14; aaJones[19][12] = 323; aaJones[19][13] =  62; aaJones[19][14] =  23; 
+    aaJones[ 0][ 0] =   0; aaJones[ 0][ 1] =  58; aaJones[ 0][ 2] =  54; aaJones[ 0][ 3] =  81; aaJones[ 0][ 4] =  56;
+    aaJones[ 0][ 5] =  57; aaJones[ 0][ 6] = 105; aaJones[ 0][ 7] = 179; aaJones[ 0][ 8] =  27; aaJones[ 0][ 9] =  36;
+    aaJones[ 0][10] =  30; aaJones[ 0][11] =  35; aaJones[ 0][12] =  54; aaJones[ 0][13] =  15; aaJones[ 0][14] = 194;
+    aaJones[ 0][15] = 378; aaJones[ 0][16] = 475; aaJones[ 0][17] =   9; aaJones[ 0][18] =  11; aaJones[ 0][19] = 298;
+    aaJones[ 1][ 0] =  58; aaJones[ 1][ 1] =   0; aaJones[ 1][ 2] =  45; aaJones[ 1][ 3] =  16; aaJones[ 1][ 4] = 113;
+    aaJones[ 1][ 5] = 310; aaJones[ 1][ 6] =  29; aaJones[ 1][ 7] = 137; aaJones[ 1][ 8] = 328; aaJones[ 1][ 9] =  22;
+    aaJones[ 1][10] =  38; aaJones[ 1][11] = 646; aaJones[ 1][12] =  44; aaJones[ 1][13] =   5; aaJones[ 1][14] =  74;
+    aaJones[ 1][15] = 101; aaJones[ 1][16] =  64; aaJones[ 1][17] = 126; aaJones[ 1][18] =  20; aaJones[ 1][19] =  17;
+    aaJones[ 2][ 0] =  54; aaJones[ 2][ 1] =  45; aaJones[ 2][ 2] =   0; aaJones[ 2][ 3] = 528; aaJones[ 2][ 4] =  34;
+    aaJones[ 2][ 5] =  86; aaJones[ 2][ 6] =  58; aaJones[ 2][ 7] =  81; aaJones[ 2][ 8] = 391; aaJones[ 2][ 9] =  47;
+    aaJones[ 2][10] =  12; aaJones[ 2][11] = 263; aaJones[ 2][12] =  30; aaJones[ 2][13] =  10; aaJones[ 2][14] =  15;
+    aaJones[ 2][15] = 503; aaJones[ 2][16] = 232; aaJones[ 2][17] =   8; aaJones[ 2][18] =  70; aaJones[ 2][19] =  16;
+    aaJones[ 3][ 0] =  81; aaJones[ 3][ 1] =  16; aaJones[ 3][ 2] = 528; aaJones[ 3][ 3] =   0; aaJones[ 3][ 4] =  10;
+    aaJones[ 3][ 5] =  49; aaJones[ 3][ 6] = 767; aaJones[ 3][ 7] = 130; aaJones[ 3][ 8] = 112; aaJones[ 3][ 9] =  11;
+    aaJones[ 3][10] =   7; aaJones[ 3][11] =  26; aaJones[ 3][12] =  15; aaJones[ 3][13] =   4; aaJones[ 3][14] =  15;
+    aaJones[ 3][15] =  59; aaJones[ 3][16] =  38; aaJones[ 3][17] =   4; aaJones[ 3][18] =  46; aaJones[ 3][19] =  31;
+    aaJones[ 4][ 0] =  56; aaJones[ 4][ 1] = 113; aaJones[ 4][ 2] =  34; aaJones[ 4][ 3] =  10; aaJones[ 4][ 4] =   0;
+    aaJones[ 4][ 5] =   9; aaJones[ 4][ 6] =   5; aaJones[ 4][ 7] =  59; aaJones[ 4][ 8] =  69; aaJones[ 4][ 9] =  17;
+    aaJones[ 4][10] =  23; aaJones[ 4][11] =   7; aaJones[ 4][12] =  31; aaJones[ 4][13] =  78; aaJones[ 4][14] =  14;
+    aaJones[ 4][15] = 223; aaJones[ 4][16] =  42; aaJones[ 4][17] = 115; aaJones[ 4][18] = 209; aaJones[ 4][19] =  62;
+    aaJones[ 5][ 0] =  57; aaJones[ 5][ 1] = 310; aaJones[ 5][ 2] =  86; aaJones[ 5][ 3] =  49; aaJones[ 5][ 4] =   9;
+    aaJones[ 5][ 5] =   0; aaJones[ 5][ 6] = 323; aaJones[ 5][ 7] =  26; aaJones[ 5][ 8] = 597; aaJones[ 5][ 9] =   9;
+    aaJones[ 5][10] =  72; aaJones[ 5][11] = 292; aaJones[ 5][12] =  43; aaJones[ 5][13] =   4; aaJones[ 5][14] = 164;
+    aaJones[ 5][15] =  53; aaJones[ 5][16] =  51; aaJones[ 5][17] =  18; aaJones[ 5][18] =  24; aaJones[ 5][19] =  20;
+    aaJones[ 6][ 0] = 105; aaJones[ 6][ 1] =  29; aaJones[ 6][ 2] =  58; aaJones[ 6][ 3] = 767; aaJones[ 6][ 4] =   5;
+    aaJones[ 6][ 5] = 323; aaJones[ 6][ 6] =   0; aaJones[ 6][ 7] = 119; aaJones[ 6][ 8] =  26; aaJones[ 6][ 9] =  12;
+    aaJones[ 6][10] =   9; aaJones[ 6][11] = 181; aaJones[ 6][12] =  18; aaJones[ 6][13] =   5; aaJones[ 6][14] =  18;
+    aaJones[ 6][15] =  30; aaJones[ 6][16] =  32; aaJones[ 6][17] =  10; aaJones[ 6][18] =   7; aaJones[ 6][19] =  45;
+    aaJones[ 7][ 0] = 179; aaJones[ 7][ 1] = 137; aaJones[ 7][ 2] =  81; aaJones[ 7][ 3] = 130; aaJones[ 7][ 4] =  59;
+    aaJones[ 7][ 5] =  26; aaJones[ 7][ 6] = 119; aaJones[ 7][ 7] =   0; aaJones[ 7][ 8] =  23; aaJones[ 7][ 9] =   6;
+    aaJones[ 7][10] =   6; aaJones[ 7][11] =  27; aaJones[ 7][12] =  14; aaJones[ 7][13] =   5; aaJones[ 7][14] =  24;
+    aaJones[ 7][15] = 201; aaJones[ 7][16] =  33; aaJones[ 7][17] =  55; aaJones[ 7][18] =   8; aaJones[ 7][19] =  47;
+    aaJones[ 8][ 0] =  27; aaJones[ 8][ 1] = 328; aaJones[ 8][ 2] = 391; aaJones[ 8][ 3] = 112; aaJones[ 8][ 4] =  69;
+    aaJones[ 8][ 5] = 597; aaJones[ 8][ 6] =  26; aaJones[ 8][ 7] =  23; aaJones[ 8][ 8] =   0; aaJones[ 8][ 9] =  16;
+    aaJones[ 8][10] =  56; aaJones[ 8][11] =  45; aaJones[ 8][12] =  33; aaJones[ 8][13] =  40; aaJones[ 8][14] = 115;
+    aaJones[ 8][15] =  73; aaJones[ 8][16] =  46; aaJones[ 8][17] =   8; aaJones[ 8][18] = 573; aaJones[ 8][19] =  11;
+    aaJones[ 9][ 0] =  36; aaJones[ 9][ 1] =  22; aaJones[ 9][ 2] =  47; aaJones[ 9][ 3] =  11; aaJones[ 9][ 4] =  17;
+    aaJones[ 9][ 5] =   9; aaJones[ 9][ 6] =  12; aaJones[ 9][ 7] =   6; aaJones[ 9][ 8] =  16; aaJones[ 9][ 9] =   0;
+    aaJones[ 9][10] = 229; aaJones[ 9][11] =  21; aaJones[ 9][12] = 479; aaJones[ 9][13] =  89; aaJones[ 9][14] =  10;
+    aaJones[ 9][15] =  40; aaJones[ 9][16] = 245; aaJones[ 9][17] =   9; aaJones[ 9][18] =  32; aaJones[ 9][19] = 961;
+    aaJones[10][ 0] =  30; aaJones[10][ 1] =  38; aaJones[10][ 2] =  12; aaJones[10][ 3] =   7; aaJones[10][ 4] =  23;
+    aaJones[10][ 5] =  72; aaJones[10][ 6] =   9; aaJones[10][ 7] =   6; aaJones[10][ 8] =  56; aaJones[10][ 9] = 229;
+    aaJones[10][10] =   0; aaJones[10][11] =  14; aaJones[10][12] = 388; aaJones[10][13] = 248; aaJones[10][14] = 102;
+    aaJones[10][15] =  59; aaJones[10][16] =  25; aaJones[10][17] =  52; aaJones[10][18] =  24; aaJones[10][19] = 180;
+    aaJones[11][ 0] =  35; aaJones[11][ 1] = 646; aaJones[11][ 2] = 263; aaJones[11][ 3] =  26; aaJones[11][ 4] =   7;
+    aaJones[11][ 5] = 292; aaJones[11][ 6] = 181; aaJones[11][ 7] =  27; aaJones[11][ 8] =  45; aaJones[11][ 9] =  21;
+    aaJones[11][10] =  14; aaJones[11][11] =   0; aaJones[11][12] =  65; aaJones[11][13] =   4; aaJones[11][14] =  21;
+    aaJones[11][15] =  47; aaJones[11][16] = 103; aaJones[11][17] =  10; aaJones[11][18] =   8; aaJones[11][19] =  14;
+    aaJones[12][ 0] =  54; aaJones[12][ 1] =  44; aaJones[12][ 2] =  30; aaJones[12][ 3] =  15; aaJones[12][ 4] =  31;
+    aaJones[12][ 5] =  43; aaJones[12][ 6] =  18; aaJones[12][ 7] =  14; aaJones[12][ 8] =  33; aaJones[12][ 9] = 479;
+    aaJones[12][10] = 388; aaJones[12][11] =  65; aaJones[12][12] =   0; aaJones[12][13] =  43; aaJones[12][14] =  16;
+    aaJones[12][15] =  29; aaJones[12][16] = 226; aaJones[12][17] =  24; aaJones[12][18] =  18; aaJones[12][19] = 323;
+    aaJones[13][ 0] =  15; aaJones[13][ 1] =   5; aaJones[13][ 2] =  10; aaJones[13][ 3] =   4; aaJones[13][ 4] =  78;
+    aaJones[13][ 5] =   4; aaJones[13][ 6] =   5; aaJones[13][ 7] =   5; aaJones[13][ 8] =  40; aaJones[13][ 9] =  89;
+    aaJones[13][10] = 248; aaJones[13][11] =   4; aaJones[13][12] =  43; aaJones[13][13] =   0; aaJones[13][14] =  17;
+    aaJones[13][15] =  92; aaJones[13][16] =  12; aaJones[13][17] =  53; aaJones[13][18] = 536; aaJones[13][19] =  62;
+    aaJones[14][ 0] = 194; aaJones[14][ 1] =  74; aaJones[14][ 2] =  15; aaJones[14][ 3] =  15; aaJones[14][ 4] =  14;
+    aaJones[14][ 5] = 164; aaJones[14][ 6] =  18; aaJones[14][ 7] =  24; aaJones[14][ 8] = 115; aaJones[14][ 9] =  10;
+    aaJones[14][10] = 102; aaJones[14][11] =  21; aaJones[14][12] =  16; aaJones[14][13] =  17; aaJones[14][14] =   0;
+    aaJones[14][15] = 285; aaJones[14][16] = 118; aaJones[14][17] =   6; aaJones[14][18] =  10; aaJones[14][19] =  23;
+    aaJones[15][ 0] = 378; aaJones[15][ 1] = 101; aaJones[15][ 2] = 503; aaJones[15][ 3] =  59; aaJones[15][ 4] = 223;
+    aaJones[15][ 5] =  53; aaJones[15][ 6] =  30; aaJones[15][ 7] = 201; aaJones[15][ 8] =  73; aaJones[15][ 9] =  40;
+    aaJones[15][10] =  59; aaJones[15][11] =  47; aaJones[15][12] =  29; aaJones[15][13] =  92; aaJones[15][14] = 285;
+    aaJones[15][15] =   0; aaJones[15][16] = 477; aaJones[15][17] =  35; aaJones[15][18] =  63; aaJones[15][19] =  38;
+    aaJones[16][ 0] = 475; aaJones[16][ 1] =  64; aaJones[16][ 2] = 232; aaJones[16][ 3] =  38; aaJones[16][ 4] =  42;
+    aaJones[16][ 5] =  51; aaJones[16][ 6] =  32; aaJones[16][ 7] =  33; aaJones[16][ 8] =  46; aaJones[16][ 9] = 245;
+    aaJones[16][10] =  25; aaJones[16][11] = 103; aaJones[16][12] = 226; aaJones[16][13] =  12; aaJones[16][14] = 118;
+    aaJones[16][15] = 477; aaJones[16][16] =   0; aaJones[16][17] =  12; aaJones[16][18] =  21; aaJones[16][19] = 112;
+    aaJones[17][ 0] =   9; aaJones[17][ 1] = 126; aaJones[17][ 2] =   8; aaJones[17][ 3] =   4; aaJones[17][ 4] = 115;
+    aaJones[17][ 5] =  18; aaJones[17][ 6] =  10; aaJones[17][ 7] =  55; aaJones[17][ 8] =   8; aaJones[17][ 9] =   9;
+    aaJones[17][10] =  52; aaJones[17][11] =  10; aaJones[17][12] =  24; aaJones[17][13] =  53; aaJones[17][14] =   6;
+    aaJones[17][15] =  35; aaJones[17][16] =  12; aaJones[17][17] =   0; aaJones[17][18] =  71; aaJones[17][19] =  25;
+    aaJones[18][ 0] =  11; aaJones[18][ 1] =  20; aaJones[18][ 2] =  70; aaJones[18][ 3] =  46; aaJones[18][ 4] = 209;
+    aaJones[18][ 5] =  24; aaJones[18][ 6] =   7; aaJones[18][ 7] =   8; aaJones[18][ 8] = 573; aaJones[18][ 9] =  32;
+    aaJones[18][10] =  24; aaJones[18][11] =   8; aaJones[18][12] =  18; aaJones[18][13] = 536; aaJones[18][14] =  10;
+    aaJones[18][15] =  63; aaJones[18][16] =  21; aaJones[18][17] =  71; aaJones[18][18] =   0; aaJones[18][19] =  16;
+    aaJones[19][ 0] = 298; aaJones[19][ 1] =  17; aaJones[19][ 2] =  16; aaJones[19][ 3] =  31; aaJones[19][ 4] =  62;
+    aaJones[19][ 5] =  20; aaJones[19][ 6] =  45; aaJones[19][ 7] =  47; aaJones[19][ 8] =  11; aaJones[19][ 9] = 961;
+    aaJones[19][10] = 180; aaJones[19][11] =  14; aaJones[19][12] = 323; aaJones[19][13] =  62; aaJones[19][14] =  23;
     aaJones[19][15] =  38; aaJones[19][16] = 112; aaJones[19][17] =  25; aaJones[19][18] =  16; aaJones[19][19] =   0;
 
     jonesPi[ 0] = 0.076748;
@@ -16066,85 +16066,85 @@ int SetAARates (void)
     jonesPi[19] = 0.066005;
 
     /* dayhoff */
-    aaDayhoff[ 0][ 0] =   0; aaDayhoff[ 0][ 1] =  27; aaDayhoff[ 0][ 2] =  98; aaDayhoff[ 0][ 3] = 120; aaDayhoff[ 0][ 4] =  36; 
-    aaDayhoff[ 0][ 5] =  89; aaDayhoff[ 0][ 6] = 198; aaDayhoff[ 0][ 7] = 240; aaDayhoff[ 0][ 8] =  23; aaDayhoff[ 0][ 9] =  65; 
-    aaDayhoff[ 0][10] =  41; aaDayhoff[ 0][11] =  26; aaDayhoff[ 0][12] =  72; aaDayhoff[ 0][13] =  18; aaDayhoff[ 0][14] = 250; 
-    aaDayhoff[ 0][15] = 409; aaDayhoff[ 0][16] = 371; aaDayhoff[ 0][17] =   0; aaDayhoff[ 0][18] =  24; aaDayhoff[ 0][19] = 208; 
-    aaDayhoff[ 1][ 0] =  27; aaDayhoff[ 1][ 1] =   0; aaDayhoff[ 1][ 2] =  32; aaDayhoff[ 1][ 3] =   0; aaDayhoff[ 1][ 4] =  23; 
-    aaDayhoff[ 1][ 5] = 246; aaDayhoff[ 1][ 6] =   1; aaDayhoff[ 1][ 7] =   9; aaDayhoff[ 1][ 8] = 240; aaDayhoff[ 1][ 9] =  64; 
-    aaDayhoff[ 1][10] =  15; aaDayhoff[ 1][11] = 464; aaDayhoff[ 1][12] =  90; aaDayhoff[ 1][13] =  14; aaDayhoff[ 1][14] = 103; 
-    aaDayhoff[ 1][15] = 154; aaDayhoff[ 1][16] =  26; aaDayhoff[ 1][17] = 201; aaDayhoff[ 1][18] =   8; aaDayhoff[ 1][19] =  24; 
-    aaDayhoff[ 2][ 0] =  98; aaDayhoff[ 2][ 1] =  32; aaDayhoff[ 2][ 2] =   0; aaDayhoff[ 2][ 3] = 905; aaDayhoff[ 2][ 4] =   0; 
-    aaDayhoff[ 2][ 5] = 103; aaDayhoff[ 2][ 6] = 148; aaDayhoff[ 2][ 7] = 139; aaDayhoff[ 2][ 8] = 535; aaDayhoff[ 2][ 9] =  77; 
-    aaDayhoff[ 2][10] =  34; aaDayhoff[ 2][11] = 318; aaDayhoff[ 2][12] =   1; aaDayhoff[ 2][13] =  14; aaDayhoff[ 2][14] =  42; 
-    aaDayhoff[ 2][15] = 495; aaDayhoff[ 2][16] = 229; aaDayhoff[ 2][17] =  23; aaDayhoff[ 2][18] =  95; aaDayhoff[ 2][19] =  15; 
-    aaDayhoff[ 3][ 0] = 120; aaDayhoff[ 3][ 1] =   0; aaDayhoff[ 3][ 2] = 905; aaDayhoff[ 3][ 3] =   0; aaDayhoff[ 3][ 4] =   0; 
-    aaDayhoff[ 3][ 5] = 134; aaDayhoff[ 3][ 6] = 1153; aaDayhoff[ 3][ 7] = 125; aaDayhoff[ 3][ 8] =  86; aaDayhoff[ 3][ 9] =  24; 
-    aaDayhoff[ 3][10] =   0; aaDayhoff[ 3][11] =  71; aaDayhoff[ 3][12] =   0; aaDayhoff[ 3][13] =   0; aaDayhoff[ 3][14] =  13; 
-    aaDayhoff[ 3][15] =  95; aaDayhoff[ 3][16] =  66; aaDayhoff[ 3][17] =   0; aaDayhoff[ 3][18] =   0; aaDayhoff[ 3][19] =  18; 
-    aaDayhoff[ 4][ 0] =  36; aaDayhoff[ 4][ 1] =  23; aaDayhoff[ 4][ 2] =   0; aaDayhoff[ 4][ 3] =   0; aaDayhoff[ 4][ 4] =   0; 
-    aaDayhoff[ 4][ 5] =   0; aaDayhoff[ 4][ 6] =   0; aaDayhoff[ 4][ 7] =  11; aaDayhoff[ 4][ 8] =  28; aaDayhoff[ 4][ 9] =  44; 
-    aaDayhoff[ 4][10] =   0; aaDayhoff[ 4][11] =   0; aaDayhoff[ 4][12] =   0; aaDayhoff[ 4][13] =   0; aaDayhoff[ 4][14] =  19; 
-    aaDayhoff[ 4][15] = 161; aaDayhoff[ 4][16] =  16; aaDayhoff[ 4][17] =   0; aaDayhoff[ 4][18] =  96; aaDayhoff[ 4][19] =  49; 
-    aaDayhoff[ 5][ 0] =  89; aaDayhoff[ 5][ 1] = 246; aaDayhoff[ 5][ 2] = 103; aaDayhoff[ 5][ 3] = 134; aaDayhoff[ 5][ 4] =   0; 
-    aaDayhoff[ 5][ 5] =   0; aaDayhoff[ 5][ 6] = 716; aaDayhoff[ 5][ 7] =  28; aaDayhoff[ 5][ 8] = 606; aaDayhoff[ 5][ 9] =  18; 
-    aaDayhoff[ 5][10] =  73; aaDayhoff[ 5][11] = 153; aaDayhoff[ 5][12] = 114; aaDayhoff[ 5][13] =   0; aaDayhoff[ 5][14] = 153; 
-    aaDayhoff[ 5][15] =  56; aaDayhoff[ 5][16] =  53; aaDayhoff[ 5][17] =   0; aaDayhoff[ 5][18] =   0; aaDayhoff[ 5][19] =  35; 
-    aaDayhoff[ 6][ 0] = 198; aaDayhoff[ 6][ 1] =   1; aaDayhoff[ 6][ 2] = 148; aaDayhoff[ 6][ 3] = 1153; aaDayhoff[ 6][ 4] =   0; 
-    aaDayhoff[ 6][ 5] = 716; aaDayhoff[ 6][ 6] =   0; aaDayhoff[ 6][ 7] =  81; aaDayhoff[ 6][ 8] =  43; aaDayhoff[ 6][ 9] =  61; 
-    aaDayhoff[ 6][10] =  11; aaDayhoff[ 6][11] =  83; aaDayhoff[ 6][12] =  30; aaDayhoff[ 6][13] =   0; aaDayhoff[ 6][14] =  51; 
-    aaDayhoff[ 6][15] =  79; aaDayhoff[ 6][16] =  34; aaDayhoff[ 6][17] =   0; aaDayhoff[ 6][18] =  22; aaDayhoff[ 6][19] =  37; 
-    aaDayhoff[ 7][ 0] = 240; aaDayhoff[ 7][ 1] =   9; aaDayhoff[ 7][ 2] = 139; aaDayhoff[ 7][ 3] = 125; aaDayhoff[ 7][ 4] =  11; 
-    aaDayhoff[ 7][ 5] =  28; aaDayhoff[ 7][ 6] =  81; aaDayhoff[ 7][ 7] =   0; aaDayhoff[ 7][ 8] =  10; aaDayhoff[ 7][ 9] =   0; 
-    aaDayhoff[ 7][10] =   7; aaDayhoff[ 7][11] =  27; aaDayhoff[ 7][12] =  17; aaDayhoff[ 7][13] =  15; aaDayhoff[ 7][14] =  34; 
-    aaDayhoff[ 7][15] = 234; aaDayhoff[ 7][16] =  30; aaDayhoff[ 7][17] =   0; aaDayhoff[ 7][18] =   0; aaDayhoff[ 7][19] =  54; 
-    aaDayhoff[ 8][ 0] =  23; aaDayhoff[ 8][ 1] = 240; aaDayhoff[ 8][ 2] = 535; aaDayhoff[ 8][ 3] =  86; aaDayhoff[ 8][ 4] =  28; 
-    aaDayhoff[ 8][ 5] = 606; aaDayhoff[ 8][ 6] =  43; aaDayhoff[ 8][ 7] =  10; aaDayhoff[ 8][ 8] =   0; aaDayhoff[ 8][ 9] =   7; 
-    aaDayhoff[ 8][10] =  44; aaDayhoff[ 8][11] =  26; aaDayhoff[ 8][12] =   0; aaDayhoff[ 8][13] =  48; aaDayhoff[ 8][14] =  94; 
-    aaDayhoff[ 8][15] =  35; aaDayhoff[ 8][16] =  22; aaDayhoff[ 8][17] =  27; aaDayhoff[ 8][18] = 127; aaDayhoff[ 8][19] =  44; 
-    aaDayhoff[ 9][ 0] =  65; aaDayhoff[ 9][ 1] =  64; aaDayhoff[ 9][ 2] =  77; aaDayhoff[ 9][ 3] =  24; aaDayhoff[ 9][ 4] =  44; 
-    aaDayhoff[ 9][ 5] =  18; aaDayhoff[ 9][ 6] =  61; aaDayhoff[ 9][ 7] =   0; aaDayhoff[ 9][ 8] =   7; aaDayhoff[ 9][ 9] =   0; 
-    aaDayhoff[ 9][10] = 257; aaDayhoff[ 9][11] =  46; aaDayhoff[ 9][12] = 336; aaDayhoff[ 9][13] = 196; aaDayhoff[ 9][14] =  12; 
-    aaDayhoff[ 9][15] =  24; aaDayhoff[ 9][16] = 192; aaDayhoff[ 9][17] =   0; aaDayhoff[ 9][18] =  37; aaDayhoff[ 9][19] = 889; 
-    aaDayhoff[10][ 0] =  41; aaDayhoff[10][ 1] =  15; aaDayhoff[10][ 2] =  34; aaDayhoff[10][ 3] =   0; aaDayhoff[10][ 4] =   0; 
-    aaDayhoff[10][ 5] =  73; aaDayhoff[10][ 6] =  11; aaDayhoff[10][ 7] =   7; aaDayhoff[10][ 8] =  44; aaDayhoff[10][ 9] = 257; 
-    aaDayhoff[10][10] =   0; aaDayhoff[10][11] =  18; aaDayhoff[10][12] = 527; aaDayhoff[10][13] = 157; aaDayhoff[10][14] =  32; 
-    aaDayhoff[10][15] =  17; aaDayhoff[10][16] =  33; aaDayhoff[10][17] =  46; aaDayhoff[10][18] =  28; aaDayhoff[10][19] = 175; 
-    aaDayhoff[11][ 0] =  26; aaDayhoff[11][ 1] = 464; aaDayhoff[11][ 2] = 318; aaDayhoff[11][ 3] =  71; aaDayhoff[11][ 4] =   0; 
-    aaDayhoff[11][ 5] = 153; aaDayhoff[11][ 6] =  83; aaDayhoff[11][ 7] =  27; aaDayhoff[11][ 8] =  26; aaDayhoff[11][ 9] =  46; 
-    aaDayhoff[11][10] =  18; aaDayhoff[11][11] =   0; aaDayhoff[11][12] = 243; aaDayhoff[11][13] =   0; aaDayhoff[11][14] =  33; 
-    aaDayhoff[11][15] =  96; aaDayhoff[11][16] = 136; aaDayhoff[11][17] =   0; aaDayhoff[11][18] =  13; aaDayhoff[11][19] =  10; 
-    aaDayhoff[12][ 0] =  72; aaDayhoff[12][ 1] =  90; aaDayhoff[12][ 2] =   1; aaDayhoff[12][ 3] =   0; aaDayhoff[12][ 4] =   0; 
-    aaDayhoff[12][ 5] = 114; aaDayhoff[12][ 6] =  30; aaDayhoff[12][ 7] =  17; aaDayhoff[12][ 8] =   0; aaDayhoff[12][ 9] = 336; 
-    aaDayhoff[12][10] = 527; aaDayhoff[12][11] = 243; aaDayhoff[12][12] =   0; aaDayhoff[12][13] =  92; aaDayhoff[12][14] =  17; 
-    aaDayhoff[12][15] =  62; aaDayhoff[12][16] = 104; aaDayhoff[12][17] =   0; aaDayhoff[12][18] =   0; aaDayhoff[12][19] = 258; 
-    aaDayhoff[13][ 0] =  18; aaDayhoff[13][ 1] =  14; aaDayhoff[13][ 2] =  14; aaDayhoff[13][ 3] =   0; aaDayhoff[13][ 4] =   0; 
-    aaDayhoff[13][ 5] =   0; aaDayhoff[13][ 6] =   0; aaDayhoff[13][ 7] =  15; aaDayhoff[13][ 8] =  48; aaDayhoff[13][ 9] = 196; 
-    aaDayhoff[13][10] = 157; aaDayhoff[13][11] =   0; aaDayhoff[13][12] =  92; aaDayhoff[13][13] =   0; aaDayhoff[13][14] =  11; 
-    aaDayhoff[13][15] =  46; aaDayhoff[13][16] =  13; aaDayhoff[13][17] =  76; aaDayhoff[13][18] = 698; aaDayhoff[13][19] =  12; 
-    aaDayhoff[14][ 0] = 250; aaDayhoff[14][ 1] = 103; aaDayhoff[14][ 2] =  42; aaDayhoff[14][ 3] =  13; aaDayhoff[14][ 4] =  19; 
-    aaDayhoff[14][ 5] = 153; aaDayhoff[14][ 6] =  51; aaDayhoff[14][ 7] =  34; aaDayhoff[14][ 8] =  94; aaDayhoff[14][ 9] =  12; 
-    aaDayhoff[14][10] =  32; aaDayhoff[14][11] =  33; aaDayhoff[14][12] =  17; aaDayhoff[14][13] =  11; aaDayhoff[14][14] =   0; 
-    aaDayhoff[14][15] = 245; aaDayhoff[14][16] =  78; aaDayhoff[14][17] =   0; aaDayhoff[14][18] =   0; aaDayhoff[14][19] =  48; 
-    aaDayhoff[15][ 0] = 409; aaDayhoff[15][ 1] = 154; aaDayhoff[15][ 2] = 495; aaDayhoff[15][ 3] =  95; aaDayhoff[15][ 4] = 161; 
-    aaDayhoff[15][ 5] =  56; aaDayhoff[15][ 6] =  79; aaDayhoff[15][ 7] = 234; aaDayhoff[15][ 8] =  35; aaDayhoff[15][ 9] =  24; 
-    aaDayhoff[15][10] =  17; aaDayhoff[15][11] =  96; aaDayhoff[15][12] =  62; aaDayhoff[15][13] =  46; aaDayhoff[15][14] = 245; 
-    aaDayhoff[15][15] =   0; aaDayhoff[15][16] = 550; aaDayhoff[15][17] =  75; aaDayhoff[15][18] =  34; aaDayhoff[15][19] =  30; 
-    aaDayhoff[16][ 0] = 371; aaDayhoff[16][ 1] =  26; aaDayhoff[16][ 2] = 229; aaDayhoff[16][ 3] =  66; aaDayhoff[16][ 4] =  16; 
-    aaDayhoff[16][ 5] =  53; aaDayhoff[16][ 6] =  34; aaDayhoff[16][ 7] =  30; aaDayhoff[16][ 8] =  22; aaDayhoff[16][ 9] = 192; 
-    aaDayhoff[16][10] =  33; aaDayhoff[16][11] = 136; aaDayhoff[16][12] = 104; aaDayhoff[16][13] =  13; aaDayhoff[16][14] =  78; 
-    aaDayhoff[16][15] = 550; aaDayhoff[16][16] =   0; aaDayhoff[16][17] =   0; aaDayhoff[16][18] =  42; aaDayhoff[16][19] = 157; 
-    aaDayhoff[17][ 0] =   0; aaDayhoff[17][ 1] = 201; aaDayhoff[17][ 2] =  23; aaDayhoff[17][ 3] =   0; aaDayhoff[17][ 4] =   0; 
-    aaDayhoff[17][ 5] =   0; aaDayhoff[17][ 6] =   0; aaDayhoff[17][ 7] =   0; aaDayhoff[17][ 8] =  27; aaDayhoff[17][ 9] =   0; 
-    aaDayhoff[17][10] =  46; aaDayhoff[17][11] =   0; aaDayhoff[17][12] =   0; aaDayhoff[17][13] =  76; aaDayhoff[17][14] =   0; 
-    aaDayhoff[17][15] =  75; aaDayhoff[17][16] =   0; aaDayhoff[17][17] =   0; aaDayhoff[17][18] =  61; aaDayhoff[17][19] =   0; 
-    aaDayhoff[18][ 0] =  24; aaDayhoff[18][ 1] =   8; aaDayhoff[18][ 2] =  95; aaDayhoff[18][ 3] =   0; aaDayhoff[18][ 4] =  96; 
-    aaDayhoff[18][ 5] =   0; aaDayhoff[18][ 6] =  22; aaDayhoff[18][ 7] =   0; aaDayhoff[18][ 8] = 127; aaDayhoff[18][ 9] =  37; 
-    aaDayhoff[18][10] =  28; aaDayhoff[18][11] =  13; aaDayhoff[18][12] =   0; aaDayhoff[18][13] = 698; aaDayhoff[18][14] =   0; 
-    aaDayhoff[18][15] =  34; aaDayhoff[18][16] =  42; aaDayhoff[18][17] =  61; aaDayhoff[18][18] =   0; aaDayhoff[18][19] =  28; 
-    aaDayhoff[19][ 0] = 208; aaDayhoff[19][ 1] =  24; aaDayhoff[19][ 2] =  15; aaDayhoff[19][ 3] =  18; aaDayhoff[19][ 4] =  49; 
-    aaDayhoff[19][ 5] =  35; aaDayhoff[19][ 6] =  37; aaDayhoff[19][ 7] =  54; aaDayhoff[19][ 8] =  44; aaDayhoff[19][ 9] = 889; 
-    aaDayhoff[19][10] = 175; aaDayhoff[19][11] =  10; aaDayhoff[19][12] = 258; aaDayhoff[19][13] =  12; aaDayhoff[19][14] =  48; 
+    aaDayhoff[ 0][ 0] =   0; aaDayhoff[ 0][ 1] =  27; aaDayhoff[ 0][ 2] =  98; aaDayhoff[ 0][ 3] = 120; aaDayhoff[ 0][ 4] =  36;
+    aaDayhoff[ 0][ 5] =  89; aaDayhoff[ 0][ 6] = 198; aaDayhoff[ 0][ 7] = 240; aaDayhoff[ 0][ 8] =  23; aaDayhoff[ 0][ 9] =  65;
+    aaDayhoff[ 0][10] =  41; aaDayhoff[ 0][11] =  26; aaDayhoff[ 0][12] =  72; aaDayhoff[ 0][13] =  18; aaDayhoff[ 0][14] = 250;
+    aaDayhoff[ 0][15] = 409; aaDayhoff[ 0][16] = 371; aaDayhoff[ 0][17] =   0; aaDayhoff[ 0][18] =  24; aaDayhoff[ 0][19] = 208;
+    aaDayhoff[ 1][ 0] =  27; aaDayhoff[ 1][ 1] =   0; aaDayhoff[ 1][ 2] =  32; aaDayhoff[ 1][ 3] =   0; aaDayhoff[ 1][ 4] =  23;
+    aaDayhoff[ 1][ 5] = 246; aaDayhoff[ 1][ 6] =   1; aaDayhoff[ 1][ 7] =   9; aaDayhoff[ 1][ 8] = 240; aaDayhoff[ 1][ 9] =  64;
+    aaDayhoff[ 1][10] =  15; aaDayhoff[ 1][11] = 464; aaDayhoff[ 1][12] =  90; aaDayhoff[ 1][13] =  14; aaDayhoff[ 1][14] = 103;
+    aaDayhoff[ 1][15] = 154; aaDayhoff[ 1][16] =  26; aaDayhoff[ 1][17] = 201; aaDayhoff[ 1][18] =   8; aaDayhoff[ 1][19] =  24;
+    aaDayhoff[ 2][ 0] =  98; aaDayhoff[ 2][ 1] =  32; aaDayhoff[ 2][ 2] =   0; aaDayhoff[ 2][ 3] = 905; aaDayhoff[ 2][ 4] =   0;
+    aaDayhoff[ 2][ 5] = 103; aaDayhoff[ 2][ 6] = 148; aaDayhoff[ 2][ 7] = 139; aaDayhoff[ 2][ 8] = 535; aaDayhoff[ 2][ 9] =  77;
+    aaDayhoff[ 2][10] =  34; aaDayhoff[ 2][11] = 318; aaDayhoff[ 2][12] =   1; aaDayhoff[ 2][13] =  14; aaDayhoff[ 2][14] =  42;
+    aaDayhoff[ 2][15] = 495; aaDayhoff[ 2][16] = 229; aaDayhoff[ 2][17] =  23; aaDayhoff[ 2][18] =  95; aaDayhoff[ 2][19] =  15;
+    aaDayhoff[ 3][ 0] = 120; aaDayhoff[ 3][ 1] =   0; aaDayhoff[ 3][ 2] = 905; aaDayhoff[ 3][ 3] =   0; aaDayhoff[ 3][ 4] =   0;
+    aaDayhoff[ 3][ 5] = 134; aaDayhoff[ 3][ 6] = 1153; aaDayhoff[ 3][ 7] = 125; aaDayhoff[ 3][ 8] =  86; aaDayhoff[ 3][ 9] =  24;
+    aaDayhoff[ 3][10] =   0; aaDayhoff[ 3][11] =  71; aaDayhoff[ 3][12] =   0; aaDayhoff[ 3][13] =   0; aaDayhoff[ 3][14] =  13;
+    aaDayhoff[ 3][15] =  95; aaDayhoff[ 3][16] =  66; aaDayhoff[ 3][17] =   0; aaDayhoff[ 3][18] =   0; aaDayhoff[ 3][19] =  18;
+    aaDayhoff[ 4][ 0] =  36; aaDayhoff[ 4][ 1] =  23; aaDayhoff[ 4][ 2] =   0; aaDayhoff[ 4][ 3] =   0; aaDayhoff[ 4][ 4] =   0;
+    aaDayhoff[ 4][ 5] =   0; aaDayhoff[ 4][ 6] =   0; aaDayhoff[ 4][ 7] =  11; aaDayhoff[ 4][ 8] =  28; aaDayhoff[ 4][ 9] =  44;
+    aaDayhoff[ 4][10] =   0; aaDayhoff[ 4][11] =   0; aaDayhoff[ 4][12] =   0; aaDayhoff[ 4][13] =   0; aaDayhoff[ 4][14] =  19;
+    aaDayhoff[ 4][15] = 161; aaDayhoff[ 4][16] =  16; aaDayhoff[ 4][17] =   0; aaDayhoff[ 4][18] =  96; aaDayhoff[ 4][19] =  49;
+    aaDayhoff[ 5][ 0] =  89; aaDayhoff[ 5][ 1] = 246; aaDayhoff[ 5][ 2] = 103; aaDayhoff[ 5][ 3] = 134; aaDayhoff[ 5][ 4] =   0;
+    aaDayhoff[ 5][ 5] =   0; aaDayhoff[ 5][ 6] = 716; aaDayhoff[ 5][ 7] =  28; aaDayhoff[ 5][ 8] = 606; aaDayhoff[ 5][ 9] =  18;
+    aaDayhoff[ 5][10] =  73; aaDayhoff[ 5][11] = 153; aaDayhoff[ 5][12] = 114; aaDayhoff[ 5][13] =   0; aaDayhoff[ 5][14] = 153;
+    aaDayhoff[ 5][15] =  56; aaDayhoff[ 5][16] =  53; aaDayhoff[ 5][17] =   0; aaDayhoff[ 5][18] =   0; aaDayhoff[ 5][19] =  35;
+    aaDayhoff[ 6][ 0] = 198; aaDayhoff[ 6][ 1] =   1; aaDayhoff[ 6][ 2] = 148; aaDayhoff[ 6][ 3] = 1153; aaDayhoff[ 6][ 4] =   0;
+    aaDayhoff[ 6][ 5] = 716; aaDayhoff[ 6][ 6] =   0; aaDayhoff[ 6][ 7] =  81; aaDayhoff[ 6][ 8] =  43; aaDayhoff[ 6][ 9] =  61;
+    aaDayhoff[ 6][10] =  11; aaDayhoff[ 6][11] =  83; aaDayhoff[ 6][12] =  30; aaDayhoff[ 6][13] =   0; aaDayhoff[ 6][14] =  51;
+    aaDayhoff[ 6][15] =  79; aaDayhoff[ 6][16] =  34; aaDayhoff[ 6][17] =   0; aaDayhoff[ 6][18] =  22; aaDayhoff[ 6][19] =  37;
+    aaDayhoff[ 7][ 0] = 240; aaDayhoff[ 7][ 1] =   9; aaDayhoff[ 7][ 2] = 139; aaDayhoff[ 7][ 3] = 125; aaDayhoff[ 7][ 4] =  11;
+    aaDayhoff[ 7][ 5] =  28; aaDayhoff[ 7][ 6] =  81; aaDayhoff[ 7][ 7] =   0; aaDayhoff[ 7][ 8] =  10; aaDayhoff[ 7][ 9] =   0;
+    aaDayhoff[ 7][10] =   7; aaDayhoff[ 7][11] =  27; aaDayhoff[ 7][12] =  17; aaDayhoff[ 7][13] =  15; aaDayhoff[ 7][14] =  34;
+    aaDayhoff[ 7][15] = 234; aaDayhoff[ 7][16] =  30; aaDayhoff[ 7][17] =   0; aaDayhoff[ 7][18] =   0; aaDayhoff[ 7][19] =  54;
+    aaDayhoff[ 8][ 0] =  23; aaDayhoff[ 8][ 1] = 240; aaDayhoff[ 8][ 2] = 535; aaDayhoff[ 8][ 3] =  86; aaDayhoff[ 8][ 4] =  28;
+    aaDayhoff[ 8][ 5] = 606; aaDayhoff[ 8][ 6] =  43; aaDayhoff[ 8][ 7] =  10; aaDayhoff[ 8][ 8] =   0; aaDayhoff[ 8][ 9] =   7;
+    aaDayhoff[ 8][10] =  44; aaDayhoff[ 8][11] =  26; aaDayhoff[ 8][12] =   0; aaDayhoff[ 8][13] =  48; aaDayhoff[ 8][14] =  94;
+    aaDayhoff[ 8][15] =  35; aaDayhoff[ 8][16] =  22; aaDayhoff[ 8][17] =  27; aaDayhoff[ 8][18] = 127; aaDayhoff[ 8][19] =  44;
+    aaDayhoff[ 9][ 0] =  65; aaDayhoff[ 9][ 1] =  64; aaDayhoff[ 9][ 2] =  77; aaDayhoff[ 9][ 3] =  24; aaDayhoff[ 9][ 4] =  44;
+    aaDayhoff[ 9][ 5] =  18; aaDayhoff[ 9][ 6] =  61; aaDayhoff[ 9][ 7] =   0; aaDayhoff[ 9][ 8] =   7; aaDayhoff[ 9][ 9] =   0;
+    aaDayhoff[ 9][10] = 257; aaDayhoff[ 9][11] =  46; aaDayhoff[ 9][12] = 336; aaDayhoff[ 9][13] = 196; aaDayhoff[ 9][14] =  12;
+    aaDayhoff[ 9][15] =  24; aaDayhoff[ 9][16] = 192; aaDayhoff[ 9][17] =   0; aaDayhoff[ 9][18] =  37; aaDayhoff[ 9][19] = 889;
+    aaDayhoff[10][ 0] =  41; aaDayhoff[10][ 1] =  15; aaDayhoff[10][ 2] =  34; aaDayhoff[10][ 3] =   0; aaDayhoff[10][ 4] =   0;
+    aaDayhoff[10][ 5] =  73; aaDayhoff[10][ 6] =  11; aaDayhoff[10][ 7] =   7; aaDayhoff[10][ 8] =  44; aaDayhoff[10][ 9] = 257;
+    aaDayhoff[10][10] =   0; aaDayhoff[10][11] =  18; aaDayhoff[10][12] = 527; aaDayhoff[10][13] = 157; aaDayhoff[10][14] =  32;
+    aaDayhoff[10][15] =  17; aaDayhoff[10][16] =  33; aaDayhoff[10][17] =  46; aaDayhoff[10][18] =  28; aaDayhoff[10][19] = 175;
+    aaDayhoff[11][ 0] =  26; aaDayhoff[11][ 1] = 464; aaDayhoff[11][ 2] = 318; aaDayhoff[11][ 3] =  71; aaDayhoff[11][ 4] =   0;
+    aaDayhoff[11][ 5] = 153; aaDayhoff[11][ 6] =  83; aaDayhoff[11][ 7] =  27; aaDayhoff[11][ 8] =  26; aaDayhoff[11][ 9] =  46;
+    aaDayhoff[11][10] =  18; aaDayhoff[11][11] =   0; aaDayhoff[11][12] = 243; aaDayhoff[11][13] =   0; aaDayhoff[11][14] =  33;
+    aaDayhoff[11][15] =  96; aaDayhoff[11][16] = 136; aaDayhoff[11][17] =   0; aaDayhoff[11][18] =  13; aaDayhoff[11][19] =  10;
+    aaDayhoff[12][ 0] =  72; aaDayhoff[12][ 1] =  90; aaDayhoff[12][ 2] =   1; aaDayhoff[12][ 3] =   0; aaDayhoff[12][ 4] =   0;
+    aaDayhoff[12][ 5] = 114; aaDayhoff[12][ 6] =  30; aaDayhoff[12][ 7] =  17; aaDayhoff[12][ 8] =   0; aaDayhoff[12][ 9] = 336;
+    aaDayhoff[12][10] = 527; aaDayhoff[12][11] = 243; aaDayhoff[12][12] =   0; aaDayhoff[12][13] =  92; aaDayhoff[12][14] =  17;
+    aaDayhoff[12][15] =  62; aaDayhoff[12][16] = 104; aaDayhoff[12][17] =   0; aaDayhoff[12][18] =   0; aaDayhoff[12][19] = 258;
+    aaDayhoff[13][ 0] =  18; aaDayhoff[13][ 1] =  14; aaDayhoff[13][ 2] =  14; aaDayhoff[13][ 3] =   0; aaDayhoff[13][ 4] =   0;
+    aaDayhoff[13][ 5] =   0; aaDayhoff[13][ 6] =   0; aaDayhoff[13][ 7] =  15; aaDayhoff[13][ 8] =  48; aaDayhoff[13][ 9] = 196;
+    aaDayhoff[13][10] = 157; aaDayhoff[13][11] =   0; aaDayhoff[13][12] =  92; aaDayhoff[13][13] =   0; aaDayhoff[13][14] =  11;
+    aaDayhoff[13][15] =  46; aaDayhoff[13][16] =  13; aaDayhoff[13][17] =  76; aaDayhoff[13][18] = 698; aaDayhoff[13][19] =  12;
+    aaDayhoff[14][ 0] = 250; aaDayhoff[14][ 1] = 103; aaDayhoff[14][ 2] =  42; aaDayhoff[14][ 3] =  13; aaDayhoff[14][ 4] =  19;
+    aaDayhoff[14][ 5] = 153; aaDayhoff[14][ 6] =  51; aaDayhoff[14][ 7] =  34; aaDayhoff[14][ 8] =  94; aaDayhoff[14][ 9] =  12;
+    aaDayhoff[14][10] =  32; aaDayhoff[14][11] =  33; aaDayhoff[14][12] =  17; aaDayhoff[14][13] =  11; aaDayhoff[14][14] =   0;
+    aaDayhoff[14][15] = 245; aaDayhoff[14][16] =  78; aaDayhoff[14][17] =   0; aaDayhoff[14][18] =   0; aaDayhoff[14][19] =  48;
+    aaDayhoff[15][ 0] = 409; aaDayhoff[15][ 1] = 154; aaDayhoff[15][ 2] = 495; aaDayhoff[15][ 3] =  95; aaDayhoff[15][ 4] = 161;
+    aaDayhoff[15][ 5] =  56; aaDayhoff[15][ 6] =  79; aaDayhoff[15][ 7] = 234; aaDayhoff[15][ 8] =  35; aaDayhoff[15][ 9] =  24;
+    aaDayhoff[15][10] =  17; aaDayhoff[15][11] =  96; aaDayhoff[15][12] =  62; aaDayhoff[15][13] =  46; aaDayhoff[15][14] = 245;
+    aaDayhoff[15][15] =   0; aaDayhoff[15][16] = 550; aaDayhoff[15][17] =  75; aaDayhoff[15][18] =  34; aaDayhoff[15][19] =  30;
+    aaDayhoff[16][ 0] = 371; aaDayhoff[16][ 1] =  26; aaDayhoff[16][ 2] = 229; aaDayhoff[16][ 3] =  66; aaDayhoff[16][ 4] =  16;
+    aaDayhoff[16][ 5] =  53; aaDayhoff[16][ 6] =  34; aaDayhoff[16][ 7] =  30; aaDayhoff[16][ 8] =  22; aaDayhoff[16][ 9] = 192;
+    aaDayhoff[16][10] =  33; aaDayhoff[16][11] = 136; aaDayhoff[16][12] = 104; aaDayhoff[16][13] =  13; aaDayhoff[16][14] =  78;
+    aaDayhoff[16][15] = 550; aaDayhoff[16][16] =   0; aaDayhoff[16][17] =   0; aaDayhoff[16][18] =  42; aaDayhoff[16][19] = 157;
+    aaDayhoff[17][ 0] =   0; aaDayhoff[17][ 1] = 201; aaDayhoff[17][ 2] =  23; aaDayhoff[17][ 3] =   0; aaDayhoff[17][ 4] =   0;
+    aaDayhoff[17][ 5] =   0; aaDayhoff[17][ 6] =   0; aaDayhoff[17][ 7] =   0; aaDayhoff[17][ 8] =  27; aaDayhoff[17][ 9] =   0;
+    aaDayhoff[17][10] =  46; aaDayhoff[17][11] =   0; aaDayhoff[17][12] =   0; aaDayhoff[17][13] =  76; aaDayhoff[17][14] =   0;
+    aaDayhoff[17][15] =  75; aaDayhoff[17][16] =   0; aaDayhoff[17][17] =   0; aaDayhoff[17][18] =  61; aaDayhoff[17][19] =   0;
+    aaDayhoff[18][ 0] =  24; aaDayhoff[18][ 1] =   8; aaDayhoff[18][ 2] =  95; aaDayhoff[18][ 3] =   0; aaDayhoff[18][ 4] =  96;
+    aaDayhoff[18][ 5] =   0; aaDayhoff[18][ 6] =  22; aaDayhoff[18][ 7] =   0; aaDayhoff[18][ 8] = 127; aaDayhoff[18][ 9] =  37;
+    aaDayhoff[18][10] =  28; aaDayhoff[18][11] =  13; aaDayhoff[18][12] =   0; aaDayhoff[18][13] = 698; aaDayhoff[18][14] =   0;
+    aaDayhoff[18][15] =  34; aaDayhoff[18][16] =  42; aaDayhoff[18][17] =  61; aaDayhoff[18][18] =   0; aaDayhoff[18][19] =  28;
+    aaDayhoff[19][ 0] = 208; aaDayhoff[19][ 1] =  24; aaDayhoff[19][ 2] =  15; aaDayhoff[19][ 3] =  18; aaDayhoff[19][ 4] =  49;
+    aaDayhoff[19][ 5] =  35; aaDayhoff[19][ 6] =  37; aaDayhoff[19][ 7] =  54; aaDayhoff[19][ 8] =  44; aaDayhoff[19][ 9] = 889;
+    aaDayhoff[19][10] = 175; aaDayhoff[19][11] =  10; aaDayhoff[19][12] = 258; aaDayhoff[19][13] =  12; aaDayhoff[19][14] =  48;
     aaDayhoff[19][15] =  30; aaDayhoff[19][16] = 157; aaDayhoff[19][17] =   0; aaDayhoff[19][18] =  28; aaDayhoff[19][19] =   0;
 
     dayhoffPi[ 0] = 0.087127;
@@ -16270,7 +16270,7 @@ int SetAARates (void)
     mtrev24Pi[17] = 0.029;
     mtrev24Pi[18] = 0.033;
     mtrev24Pi[19] = 0.043;
-    
+
     /* mtmam */
     aaMtmam[ 0][ 0] =   0; aaMtmam[ 0][ 1] =  32; aaMtmam[ 0][ 2] =   2; aaMtmam[ 0][ 3] =  11; aaMtmam[ 0][ 4] =   0;
     aaMtmam[ 0][ 5] =   0; aaMtmam[ 0][ 6] =   0; aaMtmam[ 0][ 7] =  78; aaMtmam[ 0][ 8] =   8; aaMtmam[ 0][ 9] =  75;
@@ -16373,7 +16373,7 @@ int SetAARates (void)
     mtmamPi[17] = 0.0293;
     mtmamPi[18] = 0.0340;
     mtmamPi[19] = 0.0428;
-    
+
     /* rtRev */
     aartREV[ 0][ 0] =   0; aartREV[ 1][ 0] =  34; aartREV[ 2][ 0] =  51; aartREV[ 3][ 0] =  10; aartREV[ 4][ 0] = 439;
     aartREV[ 5][ 0] =  32; aartREV[ 6][ 0] =  81; aartREV[ 7][ 0] = 135; aartREV[ 8][ 0] =  30; aartREV[ 9][ 0] =   1;
@@ -16475,87 +16475,87 @@ int SetAARates (void)
     rtrevPi[17] = 0.0251;
     rtrevPi[18] = 0.0318;
     rtrevPi[19] = 0.0619;
-    
+
     /* wag */
-    aaWAG[ 0][ 0] = 0.0000000; aaWAG[ 1][ 0] = 0.5515710; aaWAG[ 2][ 0] = 0.5098480; aaWAG[ 3][ 0] = 0.7389980; aaWAG[ 4][ 0] = 1.0270400; 
-    aaWAG[ 5][ 0] = 0.9085980; aaWAG[ 6][ 0] = 1.5828500; aaWAG[ 7][ 0] = 1.4167200; aaWAG[ 8][ 0] = 0.3169540; aaWAG[ 9][ 0] = 0.1933350; 
-    aaWAG[10][ 0] = 0.3979150; aaWAG[11][ 0] = 0.9062650; aaWAG[12][ 0] = 0.8934960; aaWAG[13][ 0] = 0.2104940; aaWAG[14][ 0] = 1.4385500; 
+    aaWAG[ 0][ 0] = 0.0000000; aaWAG[ 1][ 0] = 0.5515710; aaWAG[ 2][ 0] = 0.5098480; aaWAG[ 3][ 0] = 0.7389980; aaWAG[ 4][ 0] = 1.0270400;
+    aaWAG[ 5][ 0] = 0.9085980; aaWAG[ 6][ 0] = 1.5828500; aaWAG[ 7][ 0] = 1.4167200; aaWAG[ 8][ 0] = 0.3169540; aaWAG[ 9][ 0] = 0.1933350;
+    aaWAG[10][ 0] = 0.3979150; aaWAG[11][ 0] = 0.9062650; aaWAG[12][ 0] = 0.8934960; aaWAG[13][ 0] = 0.2104940; aaWAG[14][ 0] = 1.4385500;
     aaWAG[15][ 0] = 3.3707900; aaWAG[16][ 0] = 2.1211100; aaWAG[17][ 0] = 0.1131330; aaWAG[18][ 0] = 0.2407350; aaWAG[19][ 0] = 2.0060100;
-    aaWAG[ 0][ 1] = 0.5515710; aaWAG[ 1][ 1] = 0.0000000; aaWAG[ 2][ 1] = 0.6353460; aaWAG[ 3][ 1] = 0.1473040; aaWAG[ 4][ 1] = 0.5281910;  
-    aaWAG[ 5][ 1] = 3.0355000; aaWAG[ 6][ 1] = 0.4391570; aaWAG[ 7][ 1] = 0.5846650; aaWAG[ 8][ 1] = 2.1371500; aaWAG[ 9][ 1] = 0.1869790;  
-    aaWAG[10][ 1] = 0.4976710; aaWAG[11][ 1] = 5.3514200; aaWAG[12][ 1] = 0.6831620; aaWAG[13][ 1] = 0.1027110; aaWAG[14][ 1] = 0.6794890;  
+    aaWAG[ 0][ 1] = 0.5515710; aaWAG[ 1][ 1] = 0.0000000; aaWAG[ 2][ 1] = 0.6353460; aaWAG[ 3][ 1] = 0.1473040; aaWAG[ 4][ 1] = 0.5281910;
+    aaWAG[ 5][ 1] = 3.0355000; aaWAG[ 6][ 1] = 0.4391570; aaWAG[ 7][ 1] = 0.5846650; aaWAG[ 8][ 1] = 2.1371500; aaWAG[ 9][ 1] = 0.1869790;
+    aaWAG[10][ 1] = 0.4976710; aaWAG[11][ 1] = 5.3514200; aaWAG[12][ 1] = 0.6831620; aaWAG[13][ 1] = 0.1027110; aaWAG[14][ 1] = 0.6794890;
     aaWAG[15][ 1] = 1.2241900; aaWAG[16][ 1] = 0.5544130; aaWAG[17][ 1] = 1.1639200; aaWAG[18][ 1] = 0.3815330; aaWAG[19][ 1] = 0.2518490;
-    aaWAG[ 0][ 2] = 0.5098480; aaWAG[ 1][ 2] = 0.6353460; aaWAG[ 2][ 2] = 0.0000000; aaWAG[ 3][ 2] = 5.4294200; aaWAG[ 4][ 2] = 0.2652560;  
-    aaWAG[ 5][ 2] = 1.5436400; aaWAG[ 6][ 2] = 0.9471980; aaWAG[ 7][ 2] = 1.1255600; aaWAG[ 8][ 2] = 3.9562900; aaWAG[ 9][ 2] = 0.5542360;  
-    aaWAG[10][ 2] = 0.1315280; aaWAG[11][ 2] = 3.0120100; aaWAG[12][ 2] = 0.1982210; aaWAG[13][ 2] = 0.0961621; aaWAG[14][ 2] = 0.1950810;  
+    aaWAG[ 0][ 2] = 0.5098480; aaWAG[ 1][ 2] = 0.6353460; aaWAG[ 2][ 2] = 0.0000000; aaWAG[ 3][ 2] = 5.4294200; aaWAG[ 4][ 2] = 0.2652560;
+    aaWAG[ 5][ 2] = 1.5436400; aaWAG[ 6][ 2] = 0.9471980; aaWAG[ 7][ 2] = 1.1255600; aaWAG[ 8][ 2] = 3.9562900; aaWAG[ 9][ 2] = 0.5542360;
+    aaWAG[10][ 2] = 0.1315280; aaWAG[11][ 2] = 3.0120100; aaWAG[12][ 2] = 0.1982210; aaWAG[13][ 2] = 0.0961621; aaWAG[14][ 2] = 0.1950810;
     aaWAG[15][ 2] = 3.9742300; aaWAG[16][ 2] = 2.0300600; aaWAG[17][ 2] = 0.0719167; aaWAG[18][ 2] = 1.0860000; aaWAG[19][ 2] = 0.1962460;
-    aaWAG[ 0][ 3] = 0.7389980; aaWAG[ 1][ 3] = 0.1473040; aaWAG[ 2][ 3] = 5.4294200; aaWAG[ 3][ 3] = 0.0000000; aaWAG[ 4][ 3] = 0.0302949;  
-    aaWAG[ 5][ 3] = 0.6167830; aaWAG[ 6][ 3] = 6.1741600; aaWAG[ 7][ 3] = 0.8655840; aaWAG[ 8][ 3] = 0.9306760; aaWAG[ 9][ 3] = 0.0394370;  
-    aaWAG[10][ 3] = 0.0848047; aaWAG[11][ 3] = 0.4798550; aaWAG[12][ 3] = 0.1037540; aaWAG[13][ 3] = 0.0467304; aaWAG[14][ 3] = 0.4239840;  
+    aaWAG[ 0][ 3] = 0.7389980; aaWAG[ 1][ 3] = 0.1473040; aaWAG[ 2][ 3] = 5.4294200; aaWAG[ 3][ 3] = 0.0000000; aaWAG[ 4][ 3] = 0.0302949;
+    aaWAG[ 5][ 3] = 0.6167830; aaWAG[ 6][ 3] = 6.1741600; aaWAG[ 7][ 3] = 0.8655840; aaWAG[ 8][ 3] = 0.9306760; aaWAG[ 9][ 3] = 0.0394370;
+    aaWAG[10][ 3] = 0.0848047; aaWAG[11][ 3] = 0.4798550; aaWAG[12][ 3] = 0.1037540; aaWAG[13][ 3] = 0.0467304; aaWAG[14][ 3] = 0.4239840;
     aaWAG[15][ 3] = 1.0717600; aaWAG[16][ 3] = 0.3748660; aaWAG[17][ 3] = 0.1297670; aaWAG[18][ 3] = 0.3257110; aaWAG[19][ 3] = 0.1523350;
-    aaWAG[ 0][ 4] = 1.0270400; aaWAG[ 1][ 4] = 0.5281910; aaWAG[ 2][ 4] = 0.2652560; aaWAG[ 3][ 4] = 0.0302949; aaWAG[ 4][ 4] = 0.0000000;  
-    aaWAG[ 5][ 4] = 0.0988179; aaWAG[ 6][ 4] = 0.0213520; aaWAG[ 7][ 4] = 0.3066740; aaWAG[ 8][ 4] = 0.2489720; aaWAG[ 9][ 4] = 0.1701350;  
-    aaWAG[10][ 4] = 0.3842870; aaWAG[11][ 4] = 0.0740339; aaWAG[12][ 4] = 0.3904820; aaWAG[13][ 4] = 0.3980200; aaWAG[14][ 4] = 0.1094040;  
+    aaWAG[ 0][ 4] = 1.0270400; aaWAG[ 1][ 4] = 0.5281910; aaWAG[ 2][ 4] = 0.2652560; aaWAG[ 3][ 4] = 0.0302949; aaWAG[ 4][ 4] = 0.0000000;
+    aaWAG[ 5][ 4] = 0.0988179; aaWAG[ 6][ 4] = 0.0213520; aaWAG[ 7][ 4] = 0.3066740; aaWAG[ 8][ 4] = 0.2489720; aaWAG[ 9][ 4] = 0.1701350;
+    aaWAG[10][ 4] = 0.3842870; aaWAG[11][ 4] = 0.0740339; aaWAG[12][ 4] = 0.3904820; aaWAG[13][ 4] = 0.3980200; aaWAG[14][ 4] = 0.1094040;
     aaWAG[15][ 4] = 1.4076600; aaWAG[16][ 4] = 0.5129840; aaWAG[17][ 4] = 0.7170700; aaWAG[18][ 4] = 0.5438330; aaWAG[19][ 4] = 1.0021400;
-    aaWAG[ 0][ 5] = 0.9085980; aaWAG[ 1][ 5] = 3.0355000; aaWAG[ 2][ 5] = 1.5436400; aaWAG[ 3][ 5] = 0.6167830; aaWAG[ 4][ 5] = 0.0988179;  
-    aaWAG[ 5][ 5] = 0.0000000; aaWAG[ 6][ 5] = 5.4694700; aaWAG[ 7][ 5] = 0.3300520; aaWAG[ 8][ 5] = 4.2941100; aaWAG[ 9][ 5] = 0.1139170;  
-    aaWAG[10][ 5] = 0.8694890; aaWAG[11][ 5] = 3.8949000; aaWAG[12][ 5] = 1.5452600; aaWAG[13][ 5] = 0.0999208; aaWAG[14][ 5] = 0.9333720;  
+    aaWAG[ 0][ 5] = 0.9085980; aaWAG[ 1][ 5] = 3.0355000; aaWAG[ 2][ 5] = 1.5436400; aaWAG[ 3][ 5] = 0.6167830; aaWAG[ 4][ 5] = 0.0988179;
+    aaWAG[ 5][ 5] = 0.0000000; aaWAG[ 6][ 5] = 5.4694700; aaWAG[ 7][ 5] = 0.3300520; aaWAG[ 8][ 5] = 4.2941100; aaWAG[ 9][ 5] = 0.1139170;
+    aaWAG[10][ 5] = 0.8694890; aaWAG[11][ 5] = 3.8949000; aaWAG[12][ 5] = 1.5452600; aaWAG[13][ 5] = 0.0999208; aaWAG[14][ 5] = 0.9333720;
     aaWAG[15][ 5] = 1.0288700; aaWAG[16][ 5] = 0.8579280; aaWAG[17][ 5] = 0.2157370; aaWAG[18][ 5] = 0.2277100; aaWAG[19][ 5] = 0.3012810;
-    aaWAG[ 0][ 6] = 1.5828500; aaWAG[ 1][ 6] = 0.4391570; aaWAG[ 2][ 6] = 0.9471980; aaWAG[ 3][ 6] = 6.1741600; aaWAG[ 4][ 6] = 0.0213520;  
-    aaWAG[ 5][ 6] = 5.4694700; aaWAG[ 6][ 6] = 0.0000000; aaWAG[ 7][ 6] = 0.5677170; aaWAG[ 8][ 6] = 0.5700250; aaWAG[ 9][ 6] = 0.1273950;  
-    aaWAG[10][ 6] = 0.1542630; aaWAG[11][ 6] = 2.5844300; aaWAG[12][ 6] = 0.3151240; aaWAG[13][ 6] = 0.0811339; aaWAG[14][ 6] = 0.6823550;  
+    aaWAG[ 0][ 6] = 1.5828500; aaWAG[ 1][ 6] = 0.4391570; aaWAG[ 2][ 6] = 0.9471980; aaWAG[ 3][ 6] = 6.1741600; aaWAG[ 4][ 6] = 0.0213520;
+    aaWAG[ 5][ 6] = 5.4694700; aaWAG[ 6][ 6] = 0.0000000; aaWAG[ 7][ 6] = 0.5677170; aaWAG[ 8][ 6] = 0.5700250; aaWAG[ 9][ 6] = 0.1273950;
+    aaWAG[10][ 6] = 0.1542630; aaWAG[11][ 6] = 2.5844300; aaWAG[12][ 6] = 0.3151240; aaWAG[13][ 6] = 0.0811339; aaWAG[14][ 6] = 0.6823550;
     aaWAG[15][ 6] = 0.7049390; aaWAG[16][ 6] = 0.8227650; aaWAG[17][ 6] = 0.1565570; aaWAG[18][ 6] = 0.1963030; aaWAG[19][ 6] = 0.5887310;
-    aaWAG[ 0][ 7] = 1.4167200; aaWAG[ 1][ 7] = 0.5846650; aaWAG[ 2][ 7] = 1.1255600; aaWAG[ 3][ 7] = 0.8655840; aaWAG[ 4][ 7] = 0.3066740;  
-    aaWAG[ 5][ 7] = 0.3300520; aaWAG[ 6][ 7] = 0.5677170; aaWAG[ 7][ 7] = 0.0000000; aaWAG[ 8][ 7] = 0.2494100; aaWAG[ 9][ 7] = 0.0304501;  
-    aaWAG[10][ 7] = 0.0613037; aaWAG[11][ 7] = 0.3735580; aaWAG[12][ 7] = 0.1741000; aaWAG[13][ 7] = 0.0499310; aaWAG[14][ 7] = 0.2435700;  
+    aaWAG[ 0][ 7] = 1.4167200; aaWAG[ 1][ 7] = 0.5846650; aaWAG[ 2][ 7] = 1.1255600; aaWAG[ 3][ 7] = 0.8655840; aaWAG[ 4][ 7] = 0.3066740;
+    aaWAG[ 5][ 7] = 0.3300520; aaWAG[ 6][ 7] = 0.5677170; aaWAG[ 7][ 7] = 0.0000000; aaWAG[ 8][ 7] = 0.2494100; aaWAG[ 9][ 7] = 0.0304501;
+    aaWAG[10][ 7] = 0.0613037; aaWAG[11][ 7] = 0.3735580; aaWAG[12][ 7] = 0.1741000; aaWAG[13][ 7] = 0.0499310; aaWAG[14][ 7] = 0.2435700;
     aaWAG[15][ 7] = 1.3418200; aaWAG[16][ 7] = 0.2258330; aaWAG[17][ 7] = 0.3369830; aaWAG[18][ 7] = 0.1036040; aaWAG[19][ 7] = 0.1872470;
-    aaWAG[ 0][ 8] = 0.3169540; aaWAG[ 1][ 8] = 2.1371500; aaWAG[ 2][ 8] = 3.9562900; aaWAG[ 3][ 8] = 0.9306760; aaWAG[ 4][ 8] = 0.2489720;  
-    aaWAG[ 5][ 8] = 4.2941100; aaWAG[ 6][ 8] = 0.5700250; aaWAG[ 7][ 8] = 0.2494100; aaWAG[ 8][ 8] = 0.0000000; aaWAG[ 9][ 8] = 0.1381900;  
-    aaWAG[10][ 8] = 0.4994620; aaWAG[11][ 8] = 0.8904320; aaWAG[12][ 8] = 0.4041410; aaWAG[13][ 8] = 0.6793710; aaWAG[14][ 8] = 0.6961980;  
+    aaWAG[ 0][ 8] = 0.3169540; aaWAG[ 1][ 8] = 2.1371500; aaWAG[ 2][ 8] = 3.9562900; aaWAG[ 3][ 8] = 0.9306760; aaWAG[ 4][ 8] = 0.2489720;
+    aaWAG[ 5][ 8] = 4.2941100; aaWAG[ 6][ 8] = 0.5700250; aaWAG[ 7][ 8] = 0.2494100; aaWAG[ 8][ 8] = 0.0000000; aaWAG[ 9][ 8] = 0.1381900;
+    aaWAG[10][ 8] = 0.4994620; aaWAG[11][ 8] = 0.8904320; aaWAG[12][ 8] = 0.4041410; aaWAG[13][ 8] = 0.6793710; aaWAG[14][ 8] = 0.6961980;
     aaWAG[15][ 8] = 0.7401690; aaWAG[16][ 8] = 0.4733070; aaWAG[17][ 8] = 0.2625690; aaWAG[18][ 8] = 3.8734400; aaWAG[19][ 8] = 0.1183580;
-    aaWAG[ 0][ 9] = 0.1933350; aaWAG[ 1][ 9] = 0.1869790; aaWAG[ 2][ 9] = 0.5542360; aaWAG[ 3][ 9] = 0.0394370; aaWAG[ 4][ 9] = 0.1701350;  
-    aaWAG[ 5][ 9] = 0.1139170; aaWAG[ 6][ 9] = 0.1273950; aaWAG[ 7][ 9] = 0.0304501; aaWAG[ 8][ 9] = 0.1381900; aaWAG[ 9][ 9] = 0.0000000;  
-    aaWAG[10][ 9] = 3.1709700; aaWAG[11][ 9] = 0.3238320; aaWAG[12][ 9] = 4.2574600; aaWAG[13][ 9] = 1.0594700; aaWAG[14][ 9] = 0.0999288;  
+    aaWAG[ 0][ 9] = 0.1933350; aaWAG[ 1][ 9] = 0.1869790; aaWAG[ 2][ 9] = 0.5542360; aaWAG[ 3][ 9] = 0.0394370; aaWAG[ 4][ 9] = 0.1701350;
+    aaWAG[ 5][ 9] = 0.1139170; aaWAG[ 6][ 9] = 0.1273950; aaWAG[ 7][ 9] = 0.0304501; aaWAG[ 8][ 9] = 0.1381900; aaWAG[ 9][ 9] = 0.0000000;
+    aaWAG[10][ 9] = 3.1709700; aaWAG[11][ 9] = 0.3238320; aaWAG[12][ 9] = 4.2574600; aaWAG[13][ 9] = 1.0594700; aaWAG[14][ 9] = 0.0999288;
     aaWAG[15][ 9] = 0.3194400; aaWAG[16][ 9] = 1.4581600; aaWAG[17][ 9] = 0.2124830; aaWAG[18][ 9] = 0.4201700; aaWAG[19][ 9] = 7.8213000;
-    aaWAG[ 0][10] = 0.3979150; aaWAG[ 1][10] = 0.4976710; aaWAG[ 2][10] = 0.1315280; aaWAG[ 3][10] = 0.0848047; aaWAG[ 4][10] = 0.3842870;  
-    aaWAG[ 5][10] = 0.8694890; aaWAG[ 6][10] = 0.1542630; aaWAG[ 7][10] = 0.0613037; aaWAG[ 8][10] = 0.4994620; aaWAG[ 9][10] = 3.1709700;  
-    aaWAG[10][10] = 0.0000000; aaWAG[11][10] = 0.2575550; aaWAG[12][10] = 4.8540200; aaWAG[13][10] = 2.1151700; aaWAG[14][10] = 0.4158440;  
+    aaWAG[ 0][10] = 0.3979150; aaWAG[ 1][10] = 0.4976710; aaWAG[ 2][10] = 0.1315280; aaWAG[ 3][10] = 0.0848047; aaWAG[ 4][10] = 0.3842870;
+    aaWAG[ 5][10] = 0.8694890; aaWAG[ 6][10] = 0.1542630; aaWAG[ 7][10] = 0.0613037; aaWAG[ 8][10] = 0.4994620; aaWAG[ 9][10] = 3.1709700;
+    aaWAG[10][10] = 0.0000000; aaWAG[11][10] = 0.2575550; aaWAG[12][10] = 4.8540200; aaWAG[13][10] = 2.1151700; aaWAG[14][10] = 0.4158440;
     aaWAG[15][10] = 0.3447390; aaWAG[16][10] = 0.3266220; aaWAG[17][10] = 0.6653090; aaWAG[18][10] = 0.3986180; aaWAG[19][10] = 1.8003400;
-    aaWAG[ 0][11] = 0.9062650; aaWAG[ 1][11] = 5.3514200; aaWAG[ 2][11] = 3.0120100; aaWAG[ 3][11] = 0.4798550; aaWAG[ 4][11] = 0.0740339;  
-    aaWAG[ 5][11] = 3.8949000; aaWAG[ 6][11] = 2.5844300; aaWAG[ 7][11] = 0.3735580; aaWAG[ 8][11] = 0.8904320; aaWAG[ 9][11] = 0.3238320;  
-    aaWAG[10][11] = 0.2575550; aaWAG[11][11] = 0.0000000; aaWAG[12][11] = 0.9342760; aaWAG[13][11] = 0.0888360; aaWAG[14][11] = 0.5568960;  
+    aaWAG[ 0][11] = 0.9062650; aaWAG[ 1][11] = 5.3514200; aaWAG[ 2][11] = 3.0120100; aaWAG[ 3][11] = 0.4798550; aaWAG[ 4][11] = 0.0740339;
+    aaWAG[ 5][11] = 3.8949000; aaWAG[ 6][11] = 2.5844300; aaWAG[ 7][11] = 0.3735580; aaWAG[ 8][11] = 0.8904320; aaWAG[ 9][11] = 0.3238320;
+    aaWAG[10][11] = 0.2575550; aaWAG[11][11] = 0.0000000; aaWAG[12][11] = 0.9342760; aaWAG[13][11] = 0.0888360; aaWAG[14][11] = 0.5568960;
     aaWAG[15][11] = 0.9671300; aaWAG[16][11] = 1.3869800; aaWAG[17][11] = 0.1375050; aaWAG[18][11] = 0.1332640; aaWAG[19][11] = 0.3054340;
-    aaWAG[ 0][12] = 0.8934960; aaWAG[ 1][12] = 0.6831620; aaWAG[ 2][12] = 0.1982210; aaWAG[ 3][12] = 0.1037540; aaWAG[ 4][12] = 0.3904820;  
-    aaWAG[ 5][12] = 1.5452600; aaWAG[ 6][12] = 0.3151240; aaWAG[ 7][12] = 0.1741000; aaWAG[ 8][12] = 0.4041410; aaWAG[ 9][12] = 4.2574600;  
-    aaWAG[10][12] = 4.8540200; aaWAG[11][12] = 0.9342760; aaWAG[12][12] = 0.0000000; aaWAG[13][12] = 1.1906300; aaWAG[14][12] = 0.1713290;  
+    aaWAG[ 0][12] = 0.8934960; aaWAG[ 1][12] = 0.6831620; aaWAG[ 2][12] = 0.1982210; aaWAG[ 3][12] = 0.1037540; aaWAG[ 4][12] = 0.3904820;
+    aaWAG[ 5][12] = 1.5452600; aaWAG[ 6][12] = 0.3151240; aaWAG[ 7][12] = 0.1741000; aaWAG[ 8][12] = 0.4041410; aaWAG[ 9][12] = 4.2574600;
+    aaWAG[10][12] = 4.8540200; aaWAG[11][12] = 0.9342760; aaWAG[12][12] = 0.0000000; aaWAG[13][12] = 1.1906300; aaWAG[14][12] = 0.1713290;
     aaWAG[15][12] = 0.4939050; aaWAG[16][12] = 1.5161200; aaWAG[17][12] = 0.5157060; aaWAG[18][12] = 0.4284370; aaWAG[19][12] = 2.0584500;
-    aaWAG[ 0][13] = 0.2104940; aaWAG[ 1][13] = 0.1027110; aaWAG[ 2][13] = 0.0961621; aaWAG[ 3][13] = 0.0467304; aaWAG[ 4][13] = 0.3980200;  
-    aaWAG[ 5][13] = 0.0999208; aaWAG[ 6][13] = 0.0811339; aaWAG[ 7][13] = 0.0499310; aaWAG[ 8][13] = 0.6793710; aaWAG[ 9][13] = 1.0594700;  
-    aaWAG[10][13] = 2.1151700; aaWAG[11][13] = 0.0888360; aaWAG[12][13] = 1.1906300; aaWAG[13][13] = 0.0000000; aaWAG[14][13] = 0.1614440;  
+    aaWAG[ 0][13] = 0.2104940; aaWAG[ 1][13] = 0.1027110; aaWAG[ 2][13] = 0.0961621; aaWAG[ 3][13] = 0.0467304; aaWAG[ 4][13] = 0.3980200;
+    aaWAG[ 5][13] = 0.0999208; aaWAG[ 6][13] = 0.0811339; aaWAG[ 7][13] = 0.0499310; aaWAG[ 8][13] = 0.6793710; aaWAG[ 9][13] = 1.0594700;
+    aaWAG[10][13] = 2.1151700; aaWAG[11][13] = 0.0888360; aaWAG[12][13] = 1.1906300; aaWAG[13][13] = 0.0000000; aaWAG[14][13] = 0.1614440;
     aaWAG[15][13] = 0.5459310; aaWAG[16][13] = 0.1719030; aaWAG[17][13] = 1.5296400; aaWAG[18][13] = 6.4542800; aaWAG[19][13] = 0.6498920;
-    aaWAG[ 0][14] = 1.4385500; aaWAG[ 1][14] = 0.6794890; aaWAG[ 2][14] = 0.1950810; aaWAG[ 3][14] = 0.4239840; aaWAG[ 4][14] = 0.1094040;  
-    aaWAG[ 5][14] = 0.9333720; aaWAG[ 6][14] = 0.6823550; aaWAG[ 7][14] = 0.2435700; aaWAG[ 8][14] = 0.6961980; aaWAG[ 9][14] = 0.0999288;  
-    aaWAG[10][14] = 0.4158440; aaWAG[11][14] = 0.5568960; aaWAG[12][14] = 0.1713290; aaWAG[13][14] = 0.1614440; aaWAG[14][14] = 0.0000000;  
+    aaWAG[ 0][14] = 1.4385500; aaWAG[ 1][14] = 0.6794890; aaWAG[ 2][14] = 0.1950810; aaWAG[ 3][14] = 0.4239840; aaWAG[ 4][14] = 0.1094040;
+    aaWAG[ 5][14] = 0.9333720; aaWAG[ 6][14] = 0.6823550; aaWAG[ 7][14] = 0.2435700; aaWAG[ 8][14] = 0.6961980; aaWAG[ 9][14] = 0.0999288;
+    aaWAG[10][14] = 0.4158440; aaWAG[11][14] = 0.5568960; aaWAG[12][14] = 0.1713290; aaWAG[13][14] = 0.1614440; aaWAG[14][14] = 0.0000000;
     aaWAG[15][14] = 1.6132800; aaWAG[16][14] = 0.7953840; aaWAG[17][14] = 0.1394050; aaWAG[18][14] = 0.2160460; aaWAG[19][14] = 0.3148870;
-    aaWAG[ 0][15] = 3.3707900; aaWAG[ 1][15] = 1.2241900; aaWAG[ 2][15] = 3.9742300; aaWAG[ 3][15] = 1.0717600; aaWAG[ 4][15] = 1.4076600;  
-    aaWAG[ 5][15] = 1.0288700; aaWAG[ 6][15] = 0.7049390; aaWAG[ 7][15] = 1.3418200; aaWAG[ 8][15] = 0.7401690; aaWAG[ 9][15] = 0.3194400;  
-    aaWAG[10][15] = 0.3447390; aaWAG[11][15] = 0.9671300; aaWAG[12][15] = 0.4939050; aaWAG[13][15] = 0.5459310; aaWAG[14][15] = 1.6132800;  
+    aaWAG[ 0][15] = 3.3707900; aaWAG[ 1][15] = 1.2241900; aaWAG[ 2][15] = 3.9742300; aaWAG[ 3][15] = 1.0717600; aaWAG[ 4][15] = 1.4076600;
+    aaWAG[ 5][15] = 1.0288700; aaWAG[ 6][15] = 0.7049390; aaWAG[ 7][15] = 1.3418200; aaWAG[ 8][15] = 0.7401690; aaWAG[ 9][15] = 0.3194400;
+    aaWAG[10][15] = 0.3447390; aaWAG[11][15] = 0.9671300; aaWAG[12][15] = 0.4939050; aaWAG[13][15] = 0.5459310; aaWAG[14][15] = 1.6132800;
     aaWAG[15][15] = 0.0000000; aaWAG[16][15] = 4.3780200; aaWAG[17][15] = 0.5237420; aaWAG[18][15] = 0.7869930; aaWAG[19][15] = 0.2327390;
-    aaWAG[ 0][16] = 2.1211100; aaWAG[ 1][16] = 0.5544130; aaWAG[ 2][16] = 2.0300600; aaWAG[ 3][16] = 0.3748660; aaWAG[ 4][16] = 0.5129840;  
-    aaWAG[ 5][16] = 0.8579280; aaWAG[ 6][16] = 0.8227650; aaWAG[ 7][16] = 0.2258330; aaWAG[ 8][16] = 0.4733070; aaWAG[ 9][16] = 1.4581600;  
-    aaWAG[10][16] = 0.3266220; aaWAG[11][16] = 1.3869800; aaWAG[12][16] = 1.5161200; aaWAG[13][16] = 0.1719030; aaWAG[14][16] = 0.7953840;  
+    aaWAG[ 0][16] = 2.1211100; aaWAG[ 1][16] = 0.5544130; aaWAG[ 2][16] = 2.0300600; aaWAG[ 3][16] = 0.3748660; aaWAG[ 4][16] = 0.5129840;
+    aaWAG[ 5][16] = 0.8579280; aaWAG[ 6][16] = 0.8227650; aaWAG[ 7][16] = 0.2258330; aaWAG[ 8][16] = 0.4733070; aaWAG[ 9][16] = 1.4581600;
+    aaWAG[10][16] = 0.3266220; aaWAG[11][16] = 1.3869800; aaWAG[12][16] = 1.5161200; aaWAG[13][16] = 0.1719030; aaWAG[14][16] = 0.7953840;
     aaWAG[15][16] = 4.3780200; aaWAG[16][16] = 0.0000000; aaWAG[17][16] = 0.1108640; aaWAG[18][16] = 0.2911480; aaWAG[19][16] = 1.3882300;
-    aaWAG[ 0][17] = 0.1131330; aaWAG[ 1][17] = 1.1639200; aaWAG[ 2][17] = 0.0719167; aaWAG[ 3][17] = 0.1297670; aaWAG[ 4][17] = 0.7170700;  
-    aaWAG[ 5][17] = 0.2157370; aaWAG[ 6][17] = 0.1565570; aaWAG[ 7][17] = 0.3369830; aaWAG[ 8][17] = 0.2625690; aaWAG[ 9][17] = 0.2124830;  
-    aaWAG[10][17] = 0.6653090; aaWAG[11][17] = 0.1375050; aaWAG[12][17] = 0.5157060; aaWAG[13][17] = 1.5296400; aaWAG[14][17] = 0.1394050;  
+    aaWAG[ 0][17] = 0.1131330; aaWAG[ 1][17] = 1.1639200; aaWAG[ 2][17] = 0.0719167; aaWAG[ 3][17] = 0.1297670; aaWAG[ 4][17] = 0.7170700;
+    aaWAG[ 5][17] = 0.2157370; aaWAG[ 6][17] = 0.1565570; aaWAG[ 7][17] = 0.3369830; aaWAG[ 8][17] = 0.2625690; aaWAG[ 9][17] = 0.2124830;
+    aaWAG[10][17] = 0.6653090; aaWAG[11][17] = 0.1375050; aaWAG[12][17] = 0.5157060; aaWAG[13][17] = 1.5296400; aaWAG[14][17] = 0.1394050;
     aaWAG[15][17] = 0.5237420; aaWAG[16][17] = 0.1108640; aaWAG[17][17] = 0.0000000; aaWAG[18][17] = 2.4853900; aaWAG[19][17] = 0.3653690;
-    aaWAG[ 0][18] = 0.2407350; aaWAG[ 1][18] = 0.3815330; aaWAG[ 2][18] = 1.0860000; aaWAG[ 3][18] = 0.3257110; aaWAG[ 4][18] = 0.5438330;  
-    aaWAG[ 5][18] = 0.2277100; aaWAG[ 6][18] = 0.1963030; aaWAG[ 7][18] = 0.1036040; aaWAG[ 8][18] = 3.8734400; aaWAG[ 9][18] = 0.4201700;  
-    aaWAG[10][18] = 0.3986180; aaWAG[11][18] = 0.1332640; aaWAG[12][18] = 0.4284370; aaWAG[13][18] = 6.4542800; aaWAG[14][18] = 0.2160460;  
+    aaWAG[ 0][18] = 0.2407350; aaWAG[ 1][18] = 0.3815330; aaWAG[ 2][18] = 1.0860000; aaWAG[ 3][18] = 0.3257110; aaWAG[ 4][18] = 0.5438330;
+    aaWAG[ 5][18] = 0.2277100; aaWAG[ 6][18] = 0.1963030; aaWAG[ 7][18] = 0.1036040; aaWAG[ 8][18] = 3.8734400; aaWAG[ 9][18] = 0.4201700;
+    aaWAG[10][18] = 0.3986180; aaWAG[11][18] = 0.1332640; aaWAG[12][18] = 0.4284370; aaWAG[13][18] = 6.4542800; aaWAG[14][18] = 0.2160460;
     aaWAG[15][18] = 0.7869930; aaWAG[16][18] = 0.2911480; aaWAG[17][18] = 2.4853900; aaWAG[18][18] = 0.0000000; aaWAG[19][18] = 0.3147300;
-    aaWAG[ 0][19] = 2.0060100; aaWAG[ 1][19] = 0.2518490; aaWAG[ 2][19] = 0.1962460; aaWAG[ 3][19] = 0.1523350; aaWAG[ 4][19] = 1.0021400;  
-    aaWAG[ 5][19] = 0.3012810; aaWAG[ 6][19] = 0.5887310; aaWAG[ 7][19] = 0.1872470; aaWAG[ 8][19] = 0.1183580; aaWAG[ 9][19] = 7.8213000;  
-    aaWAG[10][19] = 1.8003400; aaWAG[11][19] = 0.3054340; aaWAG[12][19] = 2.0584500; aaWAG[13][19] = 0.6498920; aaWAG[14][19] = 0.3148870;  
+    aaWAG[ 0][19] = 2.0060100; aaWAG[ 1][19] = 0.2518490; aaWAG[ 2][19] = 0.1962460; aaWAG[ 3][19] = 0.1523350; aaWAG[ 4][19] = 1.0021400;
+    aaWAG[ 5][19] = 0.3012810; aaWAG[ 6][19] = 0.5887310; aaWAG[ 7][19] = 0.1872470; aaWAG[ 8][19] = 0.1183580; aaWAG[ 9][19] = 7.8213000;
+    aaWAG[10][19] = 1.8003400; aaWAG[11][19] = 0.3054340; aaWAG[12][19] = 2.0584500; aaWAG[13][19] = 0.6498920; aaWAG[14][19] = 0.3148870;
     aaWAG[15][19] = 0.2327390; aaWAG[16][19] = 1.3882300; aaWAG[17][19] = 0.3653690; aaWAG[18][19] = 0.3147300; aaWAG[19][19] = 0.0000000;
     wagPi[ 0] = 0.08662790;
     wagPi[ 1] = 0.04397200;
@@ -16579,85 +16579,85 @@ int SetAARates (void)
     wagPi[19] = 0.07089560;
 
     /* cpRev */
-    aacpREV[ 0][ 0] =    0; aacpREV[ 0][ 1] =  105; aacpREV[ 0][ 2] =  227; aacpREV[ 0][ 3] =  175; aacpREV[ 0][ 4] =  669; 
-    aacpREV[ 0][ 5] =  157; aacpREV[ 0][ 6] =  499; aacpREV[ 0][ 7] =  665; aacpREV[ 0][ 8] =   66; aacpREV[ 0][ 9] =  145; 
-    aacpREV[ 0][10] =  197; aacpREV[ 0][11] =  236; aacpREV[ 0][12] =  185; aacpREV[ 0][13] =   68; aacpREV[ 0][14] =  490; 
-    aacpREV[ 0][15] = 2440; aacpREV[ 0][16] = 1340; aacpREV[ 0][17] =   14; aacpREV[ 0][18] =   56; aacpREV[ 0][19] =  968; 
-    aacpREV[ 1][ 0] =  105; aacpREV[ 1][ 1] =    0; aacpREV[ 1][ 2] =  357; aacpREV[ 1][ 3] =   43; aacpREV[ 1][ 4] =  823; 
-    aacpREV[ 1][ 5] = 1745; aacpREV[ 1][ 6] =  152; aacpREV[ 1][ 7] =  243; aacpREV[ 1][ 8] =  715; aacpREV[ 1][ 9] =  136; 
-    aacpREV[ 1][10] =  203; aacpREV[ 1][11] = 4482; aacpREV[ 1][12] =  125; aacpREV[ 1][13] =   53; aacpREV[ 1][14] =   87; 
-    aacpREV[ 1][15] =  385; aacpREV[ 1][16] =  314; aacpREV[ 1][17] =  230; aacpREV[ 1][18] =  323; aacpREV[ 1][19] =   92; 
-    aacpREV[ 2][ 0] =  227; aacpREV[ 2][ 1] =  357; aacpREV[ 2][ 2] =    0; aacpREV[ 2][ 3] = 4435; aacpREV[ 2][ 4] =  538; 
-    aacpREV[ 2][ 5] =  768; aacpREV[ 2][ 6] = 1055; aacpREV[ 2][ 7] =  653; aacpREV[ 2][ 8] = 1405; aacpREV[ 2][ 9] =  168; 
-    aacpREV[ 2][10] =  113; aacpREV[ 2][11] = 2430; aacpREV[ 2][12] =   61; aacpREV[ 2][13] =   97; aacpREV[ 2][14] =  173; 
-    aacpREV[ 2][15] = 2085; aacpREV[ 2][16] = 1393; aacpREV[ 2][17] =   40; aacpREV[ 2][18] =  754; aacpREV[ 2][19] =   83; 
-    aacpREV[ 3][ 0] =  175; aacpREV[ 3][ 1] =   43; aacpREV[ 3][ 2] = 4435; aacpREV[ 3][ 3] =    0; aacpREV[ 3][ 4] =   10; 
-    aacpREV[ 3][ 5] =  400; aacpREV[ 3][ 6] = 3691; aacpREV[ 3][ 7] =  431; aacpREV[ 3][ 8] =  331; aacpREV[ 3][ 9] =   10; 
-    aacpREV[ 3][10] =   10; aacpREV[ 3][11] =  412; aacpREV[ 3][12] =   47; aacpREV[ 3][13] =   22; aacpREV[ 3][14] =  170; 
-    aacpREV[ 3][15] =  590; aacpREV[ 3][16] =  266; aacpREV[ 3][17] =   18; aacpREV[ 3][18] =  281; aacpREV[ 3][19] =   75; 
-    aacpREV[ 4][ 0] =  669; aacpREV[ 4][ 1] =  823; aacpREV[ 4][ 2] =  538; aacpREV[ 4][ 3] =   10; aacpREV[ 4][ 4] =    0; 
-    aacpREV[ 4][ 5] =   10; aacpREV[ 4][ 6] =   10; aacpREV[ 4][ 7] =  303; aacpREV[ 4][ 8] =  441; aacpREV[ 4][ 9] =  280; 
-    aacpREV[ 4][10] =  396; aacpREV[ 4][11] =   48; aacpREV[ 4][12] =  159; aacpREV[ 4][13] =  726; aacpREV[ 4][14] =  285; 
-    aacpREV[ 4][15] = 2331; aacpREV[ 4][16] =  576; aacpREV[ 4][17] =  435; aacpREV[ 4][18] = 1466; aacpREV[ 4][19] =  592; 
-    aacpREV[ 5][ 0] =  157; aacpREV[ 5][ 1] = 1745; aacpREV[ 5][ 2] =  768; aacpREV[ 5][ 3] =  400; aacpREV[ 5][ 4] =   10; 
-    aacpREV[ 5][ 5] =    0; aacpREV[ 5][ 6] = 3122; aacpREV[ 5][ 7] =  133; aacpREV[ 5][ 8] = 1269; aacpREV[ 5][ 9] =   92; 
-    aacpREV[ 5][10] =  286; aacpREV[ 5][11] = 3313; aacpREV[ 5][12] =  202; aacpREV[ 5][13] =   10; aacpREV[ 5][14] =  323; 
-    aacpREV[ 5][15] =  396; aacpREV[ 5][16] =  241; aacpREV[ 5][17] =   53; aacpREV[ 5][18] =  391; aacpREV[ 5][19] =   54; 
-    aacpREV[ 6][ 0] =  499; aacpREV[ 6][ 1] =  152; aacpREV[ 6][ 2] = 1055; aacpREV[ 6][ 3] = 3691; aacpREV[ 6][ 4] =   10; 
-    aacpREV[ 6][ 5] = 3122; aacpREV[ 6][ 6] =    0; aacpREV[ 6][ 7] =  379; aacpREV[ 6][ 8] =  162; aacpREV[ 6][ 9] =  148; 
-    aacpREV[ 6][10] =   82; aacpREV[ 6][11] = 2629; aacpREV[ 6][12] =  113; aacpREV[ 6][13] =  145; aacpREV[ 6][14] =  185; 
-    aacpREV[ 6][15] =  568; aacpREV[ 6][16] =  369; aacpREV[ 6][17] =   63; aacpREV[ 6][18] =  142; aacpREV[ 6][19] =  200; 
-    aacpREV[ 7][ 0] =  665; aacpREV[ 7][ 1] =  243; aacpREV[ 7][ 2] =  653; aacpREV[ 7][ 3] =  431; aacpREV[ 7][ 4] =  303; 
-    aacpREV[ 7][ 5] =  133; aacpREV[ 7][ 6] =  379; aacpREV[ 7][ 7] =    0; aacpREV[ 7][ 8] =   19; aacpREV[ 7][ 9] =   40; 
-    aacpREV[ 7][10] =   20; aacpREV[ 7][11] =  263; aacpREV[ 7][12] =   21; aacpREV[ 7][13] =   25; aacpREV[ 7][14] =   28; 
-    aacpREV[ 7][15] =  691; aacpREV[ 7][16] =   92; aacpREV[ 7][17] =   82; aacpREV[ 7][18] =   10; aacpREV[ 7][19] =   91; 
-    aacpREV[ 8][ 0] =   66; aacpREV[ 8][ 1] =  715; aacpREV[ 8][ 2] = 1405; aacpREV[ 8][ 3] =  331; aacpREV[ 8][ 4] =  441; 
-    aacpREV[ 8][ 5] = 1269; aacpREV[ 8][ 6] =  162; aacpREV[ 8][ 7] =   19; aacpREV[ 8][ 8] =    0; aacpREV[ 8][ 9] =   29; 
-    aacpREV[ 8][10] =   66; aacpREV[ 8][11] =  305; aacpREV[ 8][12] =   10; aacpREV[ 8][13] =  127; aacpREV[ 8][14] =  152; 
-    aacpREV[ 8][15] =  303; aacpREV[ 8][16] =   32; aacpREV[ 8][17] =   69; aacpREV[ 8][18] = 1971; aacpREV[ 8][19] =   25; 
-    aacpREV[ 9][ 0] =  145; aacpREV[ 9][ 1] =  136; aacpREV[ 9][ 2] =  168; aacpREV[ 9][ 3] =   10; aacpREV[ 9][ 4] =  280; 
-    aacpREV[ 9][ 5] =   92; aacpREV[ 9][ 6] =  148; aacpREV[ 9][ 7] =   40; aacpREV[ 9][ 8] =   29; aacpREV[ 9][ 9] =    0; 
-    aacpREV[ 9][10] = 1745; aacpREV[ 9][11] =  345; aacpREV[ 9][12] = 1772; aacpREV[ 9][13] =  454; aacpREV[ 9][14] =  117; 
-    aacpREV[ 9][15] =  216; aacpREV[ 9][16] = 1040; aacpREV[ 9][17] =   42; aacpREV[ 9][18] =   89; aacpREV[ 9][19] = 4797; 
-    aacpREV[10][ 0] =  197; aacpREV[10][ 1] =  203; aacpREV[10][ 2] =  113; aacpREV[10][ 3] =   10; aacpREV[10][ 4] =  396; 
-    aacpREV[10][ 5] =  286; aacpREV[10][ 6] =   82; aacpREV[10][ 7] =   20; aacpREV[10][ 8] =   66; aacpREV[10][ 9] = 1745; 
-    aacpREV[10][10] =    0; aacpREV[10][11] =  218; aacpREV[10][12] = 1351; aacpREV[10][13] = 1268; aacpREV[10][14] =  219; 
-    aacpREV[10][15] =  516; aacpREV[10][16] =  156; aacpREV[10][17] =  159; aacpREV[10][18] =  189; aacpREV[10][19] =  865; 
-    aacpREV[11][ 0] =  236; aacpREV[11][ 1] = 4482; aacpREV[11][ 2] = 2430; aacpREV[11][ 3] =  412; aacpREV[11][ 4] =   48; 
-    aacpREV[11][ 5] = 3313; aacpREV[11][ 6] = 2629; aacpREV[11][ 7] =  263; aacpREV[11][ 8] =  305; aacpREV[11][ 9] =  345; 
-    aacpREV[11][10] =  218; aacpREV[11][11] =    0; aacpREV[11][12] =  193; aacpREV[11][13] =   72; aacpREV[11][14] =  302; 
-    aacpREV[11][15] =  868; aacpREV[11][16] =  918; aacpREV[11][17] =   10; aacpREV[11][18] =  247; aacpREV[11][19] =  249; 
-    aacpREV[12][ 0] =  185; aacpREV[12][ 1] =  125; aacpREV[12][ 2] =   61; aacpREV[12][ 3] =   47; aacpREV[12][ 4] =  159; 
-    aacpREV[12][ 5] =  202; aacpREV[12][ 6] =  113; aacpREV[12][ 7] =   21; aacpREV[12][ 8] =   10; aacpREV[12][ 9] = 1772; 
-    aacpREV[12][10] = 1351; aacpREV[12][11] =  193; aacpREV[12][12] =    0; aacpREV[12][13] =  327; aacpREV[12][14] =  100; 
-    aacpREV[12][15] =   93; aacpREV[12][16] =  645; aacpREV[12][17] =   86; aacpREV[12][18] =  215; aacpREV[12][19] =  475; 
-    aacpREV[13][ 0] =   68; aacpREV[13][ 1] =   53; aacpREV[13][ 2] =   97; aacpREV[13][ 3] =   22; aacpREV[13][ 4] =  726; 
-    aacpREV[13][ 5] =   10; aacpREV[13][ 6] =  145; aacpREV[13][ 7] =   25; aacpREV[13][ 8] =  127; aacpREV[13][ 9] =  454; 
-    aacpREV[13][10] = 1268; aacpREV[13][11] =   72; aacpREV[13][12] =  327; aacpREV[13][13] =    0; aacpREV[13][14] =   43; 
-    aacpREV[13][15] =  487; aacpREV[13][16] =  148; aacpREV[13][17] =  468; aacpREV[13][18] = 2370; aacpREV[13][19] =  317; 
-    aacpREV[14][ 0] =  490; aacpREV[14][ 1] =   87; aacpREV[14][ 2] =  173; aacpREV[14][ 3] =  170; aacpREV[14][ 4] =  285; 
-    aacpREV[14][ 5] =  323; aacpREV[14][ 6] =  185; aacpREV[14][ 7] =   28; aacpREV[14][ 8] =  152; aacpREV[14][ 9] =  117; 
-    aacpREV[14][10] =  219; aacpREV[14][11] =  302; aacpREV[14][12] =  100; aacpREV[14][13] =   43; aacpREV[14][14] =    0; 
-    aacpREV[14][15] = 1202; aacpREV[14][16] =  260; aacpREV[14][17] =   49; aacpREV[14][18] =   97; aacpREV[14][19] =  122; 
-    aacpREV[15][ 0] = 2440; aacpREV[15][ 1] =  385; aacpREV[15][ 2] = 2085; aacpREV[15][ 3] =  590; aacpREV[15][ 4] = 2331; 
-    aacpREV[15][ 5] =  396; aacpREV[15][ 6] =  568; aacpREV[15][ 7] =  691; aacpREV[15][ 8] =  303; aacpREV[15][ 9] =  216; 
-    aacpREV[15][10] =  516; aacpREV[15][11] =  868; aacpREV[15][12] =   93; aacpREV[15][13] =  487; aacpREV[15][14] = 1202; 
-    aacpREV[15][15] =    0; aacpREV[15][16] = 2151; aacpREV[15][17] =   73; aacpREV[15][18] =  522; aacpREV[15][19] =  167; 
-    aacpREV[16][ 0] = 1340; aacpREV[16][ 1] =  314; aacpREV[16][ 2] = 1393; aacpREV[16][ 3] =  266; aacpREV[16][ 4] =  576; 
-    aacpREV[16][ 5] =  241; aacpREV[16][ 6] =  369; aacpREV[16][ 7] =   92; aacpREV[16][ 8] =   32; aacpREV[16][ 9] = 1040; 
-    aacpREV[16][10] =  156; aacpREV[16][11] =  918; aacpREV[16][12] =  645; aacpREV[16][13] =  148; aacpREV[16][14] =  260; 
-    aacpREV[16][15] = 2151; aacpREV[16][16] =    0; aacpREV[16][17] =   29; aacpREV[16][18] =   71; aacpREV[16][19] =  760; 
-    aacpREV[17][ 0] =   14; aacpREV[17][ 1] =  230; aacpREV[17][ 2] =   40; aacpREV[17][ 3] =   18; aacpREV[17][ 4] =  435; 
-    aacpREV[17][ 5] =   53; aacpREV[17][ 6] =   63; aacpREV[17][ 7] =   82; aacpREV[17][ 8] =   69; aacpREV[17][ 9] =   42; 
-    aacpREV[17][10] =  159; aacpREV[17][11] =   10; aacpREV[17][12] =   86; aacpREV[17][13] =  468; aacpREV[17][14] =   49; 
-    aacpREV[17][15] =   73; aacpREV[17][16] =   29; aacpREV[17][17] =    0; aacpREV[17][18] =  346; aacpREV[17][19] =   10; 
-    aacpREV[18][ 0] =   56; aacpREV[18][ 1] =  323; aacpREV[18][ 2] =  754; aacpREV[18][ 3] =  281; aacpREV[18][ 4] = 1466; 
-    aacpREV[18][ 5] =  391; aacpREV[18][ 6] =  142; aacpREV[18][ 7] =   10; aacpREV[18][ 8] = 1971; aacpREV[18][ 9] =   89; 
-    aacpREV[18][10] =  189; aacpREV[18][11] =  247; aacpREV[18][12] =  215; aacpREV[18][13] = 2370; aacpREV[18][14] =   97; 
-    aacpREV[18][15] =  522; aacpREV[18][16] =   71; aacpREV[18][17] =  346; aacpREV[18][18] =    0; aacpREV[18][19] =  119; 
-    aacpREV[19][ 0] =  968; aacpREV[19][ 1] =   92; aacpREV[19][ 2] =   83; aacpREV[19][ 3] =   75; aacpREV[19][ 4] =  592; 
-    aacpREV[19][ 5] =   54; aacpREV[19][ 6] =  200; aacpREV[19][ 7] =   91; aacpREV[19][ 8] =   25; aacpREV[19][ 9] = 4797; 
-    aacpREV[19][10] =  865; aacpREV[19][11] =  249; aacpREV[19][12] =  475; aacpREV[19][13] =  317; aacpREV[19][14] =  122; 
+    aacpREV[ 0][ 0] =    0; aacpREV[ 0][ 1] =  105; aacpREV[ 0][ 2] =  227; aacpREV[ 0][ 3] =  175; aacpREV[ 0][ 4] =  669;
+    aacpREV[ 0][ 5] =  157; aacpREV[ 0][ 6] =  499; aacpREV[ 0][ 7] =  665; aacpREV[ 0][ 8] =   66; aacpREV[ 0][ 9] =  145;
+    aacpREV[ 0][10] =  197; aacpREV[ 0][11] =  236; aacpREV[ 0][12] =  185; aacpREV[ 0][13] =   68; aacpREV[ 0][14] =  490;
+    aacpREV[ 0][15] = 2440; aacpREV[ 0][16] = 1340; aacpREV[ 0][17] =   14; aacpREV[ 0][18] =   56; aacpREV[ 0][19] =  968;
+    aacpREV[ 1][ 0] =  105; aacpREV[ 1][ 1] =    0; aacpREV[ 1][ 2] =  357; aacpREV[ 1][ 3] =   43; aacpREV[ 1][ 4] =  823;
+    aacpREV[ 1][ 5] = 1745; aacpREV[ 1][ 6] =  152; aacpREV[ 1][ 7] =  243; aacpREV[ 1][ 8] =  715; aacpREV[ 1][ 9] =  136;
+    aacpREV[ 1][10] =  203; aacpREV[ 1][11] = 4482; aacpREV[ 1][12] =  125; aacpREV[ 1][13] =   53; aacpREV[ 1][14] =   87;
+    aacpREV[ 1][15] =  385; aacpREV[ 1][16] =  314; aacpREV[ 1][17] =  230; aacpREV[ 1][18] =  323; aacpREV[ 1][19] =   92;
+    aacpREV[ 2][ 0] =  227; aacpREV[ 2][ 1] =  357; aacpREV[ 2][ 2] =    0; aacpREV[ 2][ 3] = 4435; aacpREV[ 2][ 4] =  538;
+    aacpREV[ 2][ 5] =  768; aacpREV[ 2][ 6] = 1055; aacpREV[ 2][ 7] =  653; aacpREV[ 2][ 8] = 1405; aacpREV[ 2][ 9] =  168;
+    aacpREV[ 2][10] =  113; aacpREV[ 2][11] = 2430; aacpREV[ 2][12] =   61; aacpREV[ 2][13] =   97; aacpREV[ 2][14] =  173;
+    aacpREV[ 2][15] = 2085; aacpREV[ 2][16] = 1393; aacpREV[ 2][17] =   40; aacpREV[ 2][18] =  754; aacpREV[ 2][19] =   83;
+    aacpREV[ 3][ 0] =  175; aacpREV[ 3][ 1] =   43; aacpREV[ 3][ 2] = 4435; aacpREV[ 3][ 3] =    0; aacpREV[ 3][ 4] =   10;
+    aacpREV[ 3][ 5] =  400; aacpREV[ 3][ 6] = 3691; aacpREV[ 3][ 7] =  431; aacpREV[ 3][ 8] =  331; aacpREV[ 3][ 9] =   10;
+    aacpREV[ 3][10] =   10; aacpREV[ 3][11] =  412; aacpREV[ 3][12] =   47; aacpREV[ 3][13] =   22; aacpREV[ 3][14] =  170;
+    aacpREV[ 3][15] =  590; aacpREV[ 3][16] =  266; aacpREV[ 3][17] =   18; aacpREV[ 3][18] =  281; aacpREV[ 3][19] =   75;
+    aacpREV[ 4][ 0] =  669; aacpREV[ 4][ 1] =  823; aacpREV[ 4][ 2] =  538; aacpREV[ 4][ 3] =   10; aacpREV[ 4][ 4] =    0;
+    aacpREV[ 4][ 5] =   10; aacpREV[ 4][ 6] =   10; aacpREV[ 4][ 7] =  303; aacpREV[ 4][ 8] =  441; aacpREV[ 4][ 9] =  280;
+    aacpREV[ 4][10] =  396; aacpREV[ 4][11] =   48; aacpREV[ 4][12] =  159; aacpREV[ 4][13] =  726; aacpREV[ 4][14] =  285;
+    aacpREV[ 4][15] = 2331; aacpREV[ 4][16] =  576; aacpREV[ 4][17] =  435; aacpREV[ 4][18] = 1466; aacpREV[ 4][19] =  592;
+    aacpREV[ 5][ 0] =  157; aacpREV[ 5][ 1] = 1745; aacpREV[ 5][ 2] =  768; aacpREV[ 5][ 3] =  400; aacpREV[ 5][ 4] =   10;
+    aacpREV[ 5][ 5] =    0; aacpREV[ 5][ 6] = 3122; aacpREV[ 5][ 7] =  133; aacpREV[ 5][ 8] = 1269; aacpREV[ 5][ 9] =   92;
+    aacpREV[ 5][10] =  286; aacpREV[ 5][11] = 3313; aacpREV[ 5][12] =  202; aacpREV[ 5][13] =   10; aacpREV[ 5][14] =  323;
+    aacpREV[ 5][15] =  396; aacpREV[ 5][16] =  241; aacpREV[ 5][17] =   53; aacpREV[ 5][18] =  391; aacpREV[ 5][19] =   54;
+    aacpREV[ 6][ 0] =  499; aacpREV[ 6][ 1] =  152; aacpREV[ 6][ 2] = 1055; aacpREV[ 6][ 3] = 3691; aacpREV[ 6][ 4] =   10;
+    aacpREV[ 6][ 5] = 3122; aacpREV[ 6][ 6] =    0; aacpREV[ 6][ 7] =  379; aacpREV[ 6][ 8] =  162; aacpREV[ 6][ 9] =  148;
+    aacpREV[ 6][10] =   82; aacpREV[ 6][11] = 2629; aacpREV[ 6][12] =  113; aacpREV[ 6][13] =  145; aacpREV[ 6][14] =  185;
+    aacpREV[ 6][15] =  568; aacpREV[ 6][16] =  369; aacpREV[ 6][17] =   63; aacpREV[ 6][18] =  142; aacpREV[ 6][19] =  200;
+    aacpREV[ 7][ 0] =  665; aacpREV[ 7][ 1] =  243; aacpREV[ 7][ 2] =  653; aacpREV[ 7][ 3] =  431; aacpREV[ 7][ 4] =  303;
+    aacpREV[ 7][ 5] =  133; aacpREV[ 7][ 6] =  379; aacpREV[ 7][ 7] =    0; aacpREV[ 7][ 8] =   19; aacpREV[ 7][ 9] =   40;
+    aacpREV[ 7][10] =   20; aacpREV[ 7][11] =  263; aacpREV[ 7][12] =   21; aacpREV[ 7][13] =   25; aacpREV[ 7][14] =   28;
+    aacpREV[ 7][15] =  691; aacpREV[ 7][16] =   92; aacpREV[ 7][17] =   82; aacpREV[ 7][18] =   10; aacpREV[ 7][19] =   91;
+    aacpREV[ 8][ 0] =   66; aacpREV[ 8][ 1] =  715; aacpREV[ 8][ 2] = 1405; aacpREV[ 8][ 3] =  331; aacpREV[ 8][ 4] =  441;
+    aacpREV[ 8][ 5] = 1269; aacpREV[ 8][ 6] =  162; aacpREV[ 8][ 7] =   19; aacpREV[ 8][ 8] =    0; aacpREV[ 8][ 9] =   29;
+    aacpREV[ 8][10] =   66; aacpREV[ 8][11] =  305; aacpREV[ 8][12] =   10; aacpREV[ 8][13] =  127; aacpREV[ 8][14] =  152;
+    aacpREV[ 8][15] =  303; aacpREV[ 8][16] =   32; aacpREV[ 8][17] =   69; aacpREV[ 8][18] = 1971; aacpREV[ 8][19] =   25;
+    aacpREV[ 9][ 0] =  145; aacpREV[ 9][ 1] =  136; aacpREV[ 9][ 2] =  168; aacpREV[ 9][ 3] =   10; aacpREV[ 9][ 4] =  280;
+    aacpREV[ 9][ 5] =   92; aacpREV[ 9][ 6] =  148; aacpREV[ 9][ 7] =   40; aacpREV[ 9][ 8] =   29; aacpREV[ 9][ 9] =    0;
+    aacpREV[ 9][10] = 1745; aacpREV[ 9][11] =  345; aacpREV[ 9][12] = 1772; aacpREV[ 9][13] =  454; aacpREV[ 9][14] =  117;
+    aacpREV[ 9][15] =  216; aacpREV[ 9][16] = 1040; aacpREV[ 9][17] =   42; aacpREV[ 9][18] =   89; aacpREV[ 9][19] = 4797;
+    aacpREV[10][ 0] =  197; aacpREV[10][ 1] =  203; aacpREV[10][ 2] =  113; aacpREV[10][ 3] =   10; aacpREV[10][ 4] =  396;
+    aacpREV[10][ 5] =  286; aacpREV[10][ 6] =   82; aacpREV[10][ 7] =   20; aacpREV[10][ 8] =   66; aacpREV[10][ 9] = 1745;
+    aacpREV[10][10] =    0; aacpREV[10][11] =  218; aacpREV[10][12] = 1351; aacpREV[10][13] = 1268; aacpREV[10][14] =  219;
+    aacpREV[10][15] =  516; aacpREV[10][16] =  156; aacpREV[10][17] =  159; aacpREV[10][18] =  189; aacpREV[10][19] =  865;
+    aacpREV[11][ 0] =  236; aacpREV[11][ 1] = 4482; aacpREV[11][ 2] = 2430; aacpREV[11][ 3] =  412; aacpREV[11][ 4] =   48;
+    aacpREV[11][ 5] = 3313; aacpREV[11][ 6] = 2629; aacpREV[11][ 7] =  263; aacpREV[11][ 8] =  305; aacpREV[11][ 9] =  345;
+    aacpREV[11][10] =  218; aacpREV[11][11] =    0; aacpREV[11][12] =  193; aacpREV[11][13] =   72; aacpREV[11][14] =  302;
+    aacpREV[11][15] =  868; aacpREV[11][16] =  918; aacpREV[11][17] =   10; aacpREV[11][18] =  247; aacpREV[11][19] =  249;
+    aacpREV[12][ 0] =  185; aacpREV[12][ 1] =  125; aacpREV[12][ 2] =   61; aacpREV[12][ 3] =   47; aacpREV[12][ 4] =  159;
+    aacpREV[12][ 5] =  202; aacpREV[12][ 6] =  113; aacpREV[12][ 7] =   21; aacpREV[12][ 8] =   10; aacpREV[12][ 9] = 1772;
+    aacpREV[12][10] = 1351; aacpREV[12][11] =  193; aacpREV[12][12] =    0; aacpREV[12][13] =  327; aacpREV[12][14] =  100;
+    aacpREV[12][15] =   93; aacpREV[12][16] =  645; aacpREV[12][17] =   86; aacpREV[12][18] =  215; aacpREV[12][19] =  475;
+    aacpREV[13][ 0] =   68; aacpREV[13][ 1] =   53; aacpREV[13][ 2] =   97; aacpREV[13][ 3] =   22; aacpREV[13][ 4] =  726;
+    aacpREV[13][ 5] =   10; aacpREV[13][ 6] =  145; aacpREV[13][ 7] =   25; aacpREV[13][ 8] =  127; aacpREV[13][ 9] =  454;
+    aacpREV[13][10] = 1268; aacpREV[13][11] =   72; aacpREV[13][12] =  327; aacpREV[13][13] =    0; aacpREV[13][14] =   43;
+    aacpREV[13][15] =  487; aacpREV[13][16] =  148; aacpREV[13][17] =  468; aacpREV[13][18] = 2370; aacpREV[13][19] =  317;
+    aacpREV[14][ 0] =  490; aacpREV[14][ 1] =   87; aacpREV[14][ 2] =  173; aacpREV[14][ 3] =  170; aacpREV[14][ 4] =  285;
+    aacpREV[14][ 5] =  323; aacpREV[14][ 6] =  185; aacpREV[14][ 7] =   28; aacpREV[14][ 8] =  152; aacpREV[14][ 9] =  117;
+    aacpREV[14][10] =  219; aacpREV[14][11] =  302; aacpREV[14][12] =  100; aacpREV[14][13] =   43; aacpREV[14][14] =    0;
+    aacpREV[14][15] = 1202; aacpREV[14][16] =  260; aacpREV[14][17] =   49; aacpREV[14][18] =   97; aacpREV[14][19] =  122;
+    aacpREV[15][ 0] = 2440; aacpREV[15][ 1] =  385; aacpREV[15][ 2] = 2085; aacpREV[15][ 3] =  590; aacpREV[15][ 4] = 2331;
+    aacpREV[15][ 5] =  396; aacpREV[15][ 6] =  568; aacpREV[15][ 7] =  691; aacpREV[15][ 8] =  303; aacpREV[15][ 9] =  216;
+    aacpREV[15][10] =  516; aacpREV[15][11] =  868; aacpREV[15][12] =   93; aacpREV[15][13] =  487; aacpREV[15][14] = 1202;
+    aacpREV[15][15] =    0; aacpREV[15][16] = 2151; aacpREV[15][17] =   73; aacpREV[15][18] =  522; aacpREV[15][19] =  167;
+    aacpREV[16][ 0] = 1340; aacpREV[16][ 1] =  314; aacpREV[16][ 2] = 1393; aacpREV[16][ 3] =  266; aacpREV[16][ 4] =  576;
+    aacpREV[16][ 5] =  241; aacpREV[16][ 6] =  369; aacpREV[16][ 7] =   92; aacpREV[16][ 8] =   32; aacpREV[16][ 9] = 1040;
+    aacpREV[16][10] =  156; aacpREV[16][11] =  918; aacpREV[16][12] =  645; aacpREV[16][13] =  148; aacpREV[16][14] =  260;
+    aacpREV[16][15] = 2151; aacpREV[16][16] =    0; aacpREV[16][17] =   29; aacpREV[16][18] =   71; aacpREV[16][19] =  760;
+    aacpREV[17][ 0] =   14; aacpREV[17][ 1] =  230; aacpREV[17][ 2] =   40; aacpREV[17][ 3] =   18; aacpREV[17][ 4] =  435;
+    aacpREV[17][ 5] =   53; aacpREV[17][ 6] =   63; aacpREV[17][ 7] =   82; aacpREV[17][ 8] =   69; aacpREV[17][ 9] =   42;
+    aacpREV[17][10] =  159; aacpREV[17][11] =   10; aacpREV[17][12] =   86; aacpREV[17][13] =  468; aacpREV[17][14] =   49;
+    aacpREV[17][15] =   73; aacpREV[17][16] =   29; aacpREV[17][17] =    0; aacpREV[17][18] =  346; aacpREV[17][19] =   10;
+    aacpREV[18][ 0] =   56; aacpREV[18][ 1] =  323; aacpREV[18][ 2] =  754; aacpREV[18][ 3] =  281; aacpREV[18][ 4] = 1466;
+    aacpREV[18][ 5] =  391; aacpREV[18][ 6] =  142; aacpREV[18][ 7] =   10; aacpREV[18][ 8] = 1971; aacpREV[18][ 9] =   89;
+    aacpREV[18][10] =  189; aacpREV[18][11] =  247; aacpREV[18][12] =  215; aacpREV[18][13] = 2370; aacpREV[18][14] =   97;
+    aacpREV[18][15] =  522; aacpREV[18][16] =   71; aacpREV[18][17] =  346; aacpREV[18][18] =    0; aacpREV[18][19] =  119;
+    aacpREV[19][ 0] =  968; aacpREV[19][ 1] =   92; aacpREV[19][ 2] =   83; aacpREV[19][ 3] =   75; aacpREV[19][ 4] =  592;
+    aacpREV[19][ 5] =   54; aacpREV[19][ 6] =  200; aacpREV[19][ 7] =   91; aacpREV[19][ 8] =   25; aacpREV[19][ 9] = 4797;
+    aacpREV[19][10] =  865; aacpREV[19][11] =  249; aacpREV[19][12] =  475; aacpREV[19][13] =  317; aacpREV[19][14] =  122;
     aacpREV[19][15] =  167; aacpREV[19][16] =  760; aacpREV[19][17] =   10; aacpREV[19][18] =  119; aacpREV[19][19] =    0;
 
     cprevPi[0] = 0.076;
@@ -16680,87 +16680,87 @@ int SetAARates (void)
     cprevPi[17] = 0.018;
     cprevPi[18] = 0.031;
     cprevPi[19] = 0.066;
-    
+
     /* VT model */
-    aaVt[ 0][ 0] = 0.000000; aaVt[ 0][ 1] = 0.233108; aaVt[ 0][ 2] = 0.199097; aaVt[ 0][ 3] = 0.265145; aaVt[ 0][ 4] = 0.227333; 
-    aaVt[ 0][ 5] = 0.310084; aaVt[ 0][ 6] = 0.567957; aaVt[ 0][ 7] = 0.876213; aaVt[ 0][ 8] = 0.078692; aaVt[ 0][ 9] = 0.222972; 
-    aaVt[ 0][10] = 0.424630; aaVt[ 0][11] = 0.393245; aaVt[ 0][12] = 0.211550; aaVt[ 0][13] = 0.116646; aaVt[ 0][14] = 0.399143; 
-    aaVt[ 0][15] = 1.817198; aaVt[ 0][16] = 0.877877; aaVt[ 0][17] = 0.030309; aaVt[ 0][18] = 0.087061; aaVt[ 0][19] = 1.230985; 
-    aaVt[ 1][ 0] = 0.233108; aaVt[ 1][ 1] = 0.000000; aaVt[ 1][ 2] = 0.210797; aaVt[ 1][ 3] = 0.105191; aaVt[ 1][ 4] = 0.031726; 
-    aaVt[ 1][ 5] = 0.493763; aaVt[ 1][ 6] = 0.255240; aaVt[ 1][ 7] = 0.156945; aaVt[ 1][ 8] = 0.213164; aaVt[ 1][ 9] = 0.081510; 
-    aaVt[ 1][10] = 0.192364; aaVt[ 1][11] = 1.755838; aaVt[ 1][12] = 0.087930; aaVt[ 1][13] = 0.042569; aaVt[ 1][14] = 0.128480; 
-    aaVt[ 1][15] = 0.292327; aaVt[ 1][16] = 0.204109; aaVt[ 1][17] = 0.046417; aaVt[ 1][18] = 0.097010; aaVt[ 1][19] = 0.113146; 
-    aaVt[ 2][ 0] = 0.199097; aaVt[ 2][ 1] = 0.210797; aaVt[ 2][ 2] = 0.000000; aaVt[ 2][ 3] = 0.883422; aaVt[ 2][ 4] = 0.027495; 
-    aaVt[ 2][ 5] = 0.275700; aaVt[ 2][ 6] = 0.270417; aaVt[ 2][ 7] = 0.362028; aaVt[ 2][ 8] = 0.290006; aaVt[ 2][ 9] = 0.087225; 
-    aaVt[ 2][10] = 0.069245; aaVt[ 2][11] = 0.503060; aaVt[ 2][12] = 0.057420; aaVt[ 2][13] = 0.039769; aaVt[ 2][14] = 0.083956; 
-    aaVt[ 2][15] = 0.847049; aaVt[ 2][16] = 0.471268; aaVt[ 2][17] = 0.010459; aaVt[ 2][18] = 0.093268; aaVt[ 2][19] = 0.049824; 
-    aaVt[ 3][ 0] = 0.265145; aaVt[ 3][ 1] = 0.105191; aaVt[ 3][ 2] = 0.883422; aaVt[ 3][ 3] = 0.000000; aaVt[ 3][ 4] = 0.010313; 
-    aaVt[ 3][ 5] = 0.205842; aaVt[ 3][ 6] = 1.599461; aaVt[ 3][ 7] = 0.311718; aaVt[ 3][ 8] = 0.134252; aaVt[ 3][ 9] = 0.011720; 
-    aaVt[ 3][10] = 0.060863; aaVt[ 3][11] = 0.261101; aaVt[ 3][12] = 0.012182; aaVt[ 3][13] = 0.016577; aaVt[ 3][14] = 0.160063; 
-    aaVt[ 3][15] = 0.461519; aaVt[ 3][16] = 0.178197; aaVt[ 3][17] = 0.011393; aaVt[ 3][18] = 0.051664; aaVt[ 3][19] = 0.048769; 
-    aaVt[ 4][ 0] = 0.227333; aaVt[ 4][ 1] = 0.031726; aaVt[ 4][ 2] = 0.027495; aaVt[ 4][ 3] = 0.010313; aaVt[ 4][ 4] = 0.000000; 
-    aaVt[ 4][ 5] = 0.004315; aaVt[ 4][ 6] = 0.005321; aaVt[ 4][ 7] = 0.050876; aaVt[ 4][ 8] = 0.016695; aaVt[ 4][ 9] = 0.046398; 
-    aaVt[ 4][10] = 0.091709; aaVt[ 4][11] = 0.004067; aaVt[ 4][12] = 0.023690; aaVt[ 4][13] = 0.051127; aaVt[ 4][14] = 0.011137; 
-    aaVt[ 4][15] = 0.175270; aaVt[ 4][16] = 0.079511; aaVt[ 4][17] = 0.007732; aaVt[ 4][18] = 0.042823; aaVt[ 4][19] = 0.163831; 
-    aaVt[ 5][ 0] = 0.310084; aaVt[ 5][ 1] = 0.493763; aaVt[ 5][ 2] = 0.275700; aaVt[ 5][ 3] = 0.205842; aaVt[ 5][ 4] = 0.004315; 
-    aaVt[ 5][ 5] = 0.000000; aaVt[ 5][ 6] = 0.960976; aaVt[ 5][ 7] = 0.128660; aaVt[ 5][ 8] = 0.315521; aaVt[ 5][ 9] = 0.054602; 
-    aaVt[ 5][10] = 0.243530; aaVt[ 5][11] = 0.738208; aaVt[ 5][12] = 0.120801; aaVt[ 5][13] = 0.026235; aaVt[ 5][14] = 0.156570; 
-    aaVt[ 5][15] = 0.358017; aaVt[ 5][16] = 0.248992; aaVt[ 5][17] = 0.021248; aaVt[ 5][18] = 0.062544; aaVt[ 5][19] = 0.112027; 
-    aaVt[ 6][ 0] = 0.567957; aaVt[ 6][ 1] = 0.255240; aaVt[ 6][ 2] = 0.270417; aaVt[ 6][ 3] = 1.599461; aaVt[ 6][ 4] = 0.005321; 
-    aaVt[ 6][ 5] = 0.960976; aaVt[ 6][ 6] = 0.000000; aaVt[ 6][ 7] = 0.250447; aaVt[ 6][ 8] = 0.104458; aaVt[ 6][ 9] = 0.046589; 
-    aaVt[ 6][10] = 0.151924; aaVt[ 6][11] = 0.888630; aaVt[ 6][12] = 0.058643; aaVt[ 6][13] = 0.028168; aaVt[ 6][14] = 0.205134; 
-    aaVt[ 6][15] = 0.406035; aaVt[ 6][16] = 0.321028; aaVt[ 6][17] = 0.018844; aaVt[ 6][18] = 0.055200; aaVt[ 6][19] = 0.205868; 
-    aaVt[ 7][ 0] = 0.876213; aaVt[ 7][ 1] = 0.156945; aaVt[ 7][ 2] = 0.362028; aaVt[ 7][ 3] = 0.311718; aaVt[ 7][ 4] = 0.050876; 
-    aaVt[ 7][ 5] = 0.128660; aaVt[ 7][ 6] = 0.250447; aaVt[ 7][ 7] = 0.000000; aaVt[ 7][ 8] = 0.058131; aaVt[ 7][ 9] = 0.051089; 
-    aaVt[ 7][10] = 0.087056; aaVt[ 7][11] = 0.193243; aaVt[ 7][12] = 0.046560; aaVt[ 7][13] = 0.050143; aaVt[ 7][14] = 0.124492; 
-    aaVt[ 7][15] = 0.612843; aaVt[ 7][16] = 0.136266; aaVt[ 7][17] = 0.023990; aaVt[ 7][18] = 0.037568; aaVt[ 7][19] = 0.082579; 
-    aaVt[ 8][ 0] = 0.078692; aaVt[ 8][ 1] = 0.213164; aaVt[ 8][ 2] = 0.290006; aaVt[ 8][ 3] = 0.134252; aaVt[ 8][ 4] = 0.016695; 
-    aaVt[ 8][ 5] = 0.315521; aaVt[ 8][ 6] = 0.104458; aaVt[ 8][ 7] = 0.058131; aaVt[ 8][ 8] = 0.000000; aaVt[ 8][ 9] = 0.020039; 
-    aaVt[ 8][10] = 0.103552; aaVt[ 8][11] = 0.153323; aaVt[ 8][12] = 0.021157; aaVt[ 8][13] = 0.079807; aaVt[ 8][14] = 0.078892; 
-    aaVt[ 8][15] = 0.167406; aaVt[ 8][16] = 0.101117; aaVt[ 8][17] = 0.020009; aaVt[ 8][18] = 0.286027; aaVt[ 8][19] = 0.068575; 
-    aaVt[ 9][ 0] = 0.222972; aaVt[ 9][ 1] = 0.081510; aaVt[ 9][ 2] = 0.087225; aaVt[ 9][ 3] = 0.011720; aaVt[ 9][ 4] = 0.046398; 
-    aaVt[ 9][ 5] = 0.054602; aaVt[ 9][ 6] = 0.046589; aaVt[ 9][ 7] = 0.051089; aaVt[ 9][ 8] = 0.020039; aaVt[ 9][ 9] = 0.000000; 
-    aaVt[ 9][10] = 2.089890; aaVt[ 9][11] = 0.093181; aaVt[ 9][12] = 0.493845; aaVt[ 9][13] = 0.321020; aaVt[ 9][14] = 0.054797; 
-    aaVt[ 9][15] = 0.081567; aaVt[ 9][16] = 0.376588; aaVt[ 9][17] = 0.034954; aaVt[ 9][18] = 0.086237; aaVt[ 9][19] = 3.654430; 
-    aaVt[10][ 0] = 0.424630; aaVt[10][ 1] = 0.192364; aaVt[10][ 2] = 0.069245; aaVt[10][ 3] = 0.060863; aaVt[10][ 4] = 0.091709; 
-    aaVt[10][ 5] = 0.243530; aaVt[10][ 6] = 0.151924; aaVt[10][ 7] = 0.087056; aaVt[10][ 8] = 0.103552; aaVt[10][ 9] = 2.089890; 
-    aaVt[10][10] = 0.000000; aaVt[10][11] = 0.201204; aaVt[10][12] = 1.105667; aaVt[10][13] = 0.946499; aaVt[10][14] = 0.169784; 
-    aaVt[10][15] = 0.214977; aaVt[10][16] = 0.243227; aaVt[10][17] = 0.083439; aaVt[10][18] = 0.189842; aaVt[10][19] = 1.337571; 
-    aaVt[11][ 0] = 0.393245; aaVt[11][ 1] = 1.755838; aaVt[11][ 2] = 0.503060; aaVt[11][ 3] = 0.261101; aaVt[11][ 4] = 0.004067; 
-    aaVt[11][ 5] = 0.738208; aaVt[11][ 6] = 0.888630; aaVt[11][ 7] = 0.193243; aaVt[11][ 8] = 0.153323; aaVt[11][ 9] = 0.093181; 
-    aaVt[11][10] = 0.201204; aaVt[11][11] = 0.000000; aaVt[11][12] = 0.096474; aaVt[11][13] = 0.038261; aaVt[11][14] = 0.212302; 
-    aaVt[11][15] = 0.400072; aaVt[11][16] = 0.446646; aaVt[11][17] = 0.023321; aaVt[11][18] = 0.068689; aaVt[11][19] = 0.144587; 
-    aaVt[12][ 0] = 0.211550; aaVt[12][ 1] = 0.087930; aaVt[12][ 2] = 0.057420; aaVt[12][ 3] = 0.012182; aaVt[12][ 4] = 0.023690; 
-    aaVt[12][ 5] = 0.120801; aaVt[12][ 6] = 0.058643; aaVt[12][ 7] = 0.046560; aaVt[12][ 8] = 0.021157; aaVt[12][ 9] = 0.493845; 
-    aaVt[12][10] = 1.105667; aaVt[12][11] = 0.096474; aaVt[12][12] = 0.000000; aaVt[12][13] = 0.173052; aaVt[12][14] = 0.010363; 
-    aaVt[12][15] = 0.090515; aaVt[12][16] = 0.184609; aaVt[12][17] = 0.022019; aaVt[12][18] = 0.073223; aaVt[12][19] = 0.307309; 
-    aaVt[13][ 0] = 0.116646; aaVt[13][ 1] = 0.042569; aaVt[13][ 2] = 0.039769; aaVt[13][ 3] = 0.016577; aaVt[13][ 4] = 0.051127; 
-    aaVt[13][ 5] = 0.026235; aaVt[13][ 6] = 0.028168; aaVt[13][ 7] = 0.050143; aaVt[13][ 8] = 0.079807; aaVt[13][ 9] = 0.321020; 
-    aaVt[13][10] = 0.946499; aaVt[13][11] = 0.038261; aaVt[13][12] = 0.173052; aaVt[13][13] = 0.000000; aaVt[13][14] = 0.042564; 
-    aaVt[13][15] = 0.138119; aaVt[13][16] = 0.085870; aaVt[13][17] = 0.128050; aaVt[13][18] = 0.898663; aaVt[13][19] = 0.247329; 
-    aaVt[14][ 0] = 0.399143; aaVt[14][ 1] = 0.128480; aaVt[14][ 2] = 0.083956; aaVt[14][ 3] = 0.160063; aaVt[14][ 4] = 0.011137; 
-    aaVt[14][ 5] = 0.156570; aaVt[14][ 6] = 0.205134; aaVt[14][ 7] = 0.124492; aaVt[14][ 8] = 0.078892; aaVt[14][ 9] = 0.054797; 
-    aaVt[14][10] = 0.169784; aaVt[14][11] = 0.212302; aaVt[14][12] = 0.010363; aaVt[14][13] = 0.042564; aaVt[14][14] = 0.000000; 
-    aaVt[14][15] = 0.430431; aaVt[14][16] = 0.207143; aaVt[14][17] = 0.014584; aaVt[14][18] = 0.032043; aaVt[14][19] = 0.129315; 
-    aaVt[15][ 0] = 1.817198; aaVt[15][ 1] = 0.292327; aaVt[15][ 2] = 0.847049; aaVt[15][ 3] = 0.461519; aaVt[15][ 4] = 0.175270; 
-    aaVt[15][ 5] = 0.358017; aaVt[15][ 6] = 0.406035; aaVt[15][ 7] = 0.612843; aaVt[15][ 8] = 0.167406; aaVt[15][ 9] = 0.081567; 
-    aaVt[15][10] = 0.214977; aaVt[15][11] = 0.400072; aaVt[15][12] = 0.090515; aaVt[15][13] = 0.138119; aaVt[15][14] = 0.430431; 
-    aaVt[15][15] = 0.000000; aaVt[15][16] = 1.767766; aaVt[15][17] = 0.035933; aaVt[15][18] = 0.121979; aaVt[15][19] = 0.127700; 
-    aaVt[16][ 0] = 0.877877; aaVt[16][ 1] = 0.204109; aaVt[16][ 2] = 0.471268; aaVt[16][ 3] = 0.178197; aaVt[16][ 4] = 0.079511; 
-    aaVt[16][ 5] = 0.248992; aaVt[16][ 6] = 0.321028; aaVt[16][ 7] = 0.136266; aaVt[16][ 8] = 0.101117; aaVt[16][ 9] = 0.376588; 
-    aaVt[16][10] = 0.243227; aaVt[16][11] = 0.446646; aaVt[16][12] = 0.184609; aaVt[16][13] = 0.085870; aaVt[16][14] = 0.207143; 
-    aaVt[16][15] = 1.767766; aaVt[16][16] = 0.000000; aaVt[16][17] = 0.020437; aaVt[16][18] = 0.094617; aaVt[16][19] = 0.740372; 
-    aaVt[17][ 0] = 0.030309; aaVt[17][ 1] = 0.046417; aaVt[17][ 2] = 0.010459; aaVt[17][ 3] = 0.011393; aaVt[17][ 4] = 0.007732; 
-    aaVt[17][ 5] = 0.021248; aaVt[17][ 6] = 0.018844; aaVt[17][ 7] = 0.023990; aaVt[17][ 8] = 0.020009; aaVt[17][ 9] = 0.034954; 
-    aaVt[17][10] = 0.083439; aaVt[17][11] = 0.023321; aaVt[17][12] = 0.022019; aaVt[17][13] = 0.128050; aaVt[17][14] = 0.014584; 
-    aaVt[17][15] = 0.035933; aaVt[17][16] = 0.020437; aaVt[17][17] = 0.000000; aaVt[17][18] = 0.124746; aaVt[17][19] = 0.022134; 
-    aaVt[18][ 0] = 0.087061; aaVt[18][ 1] = 0.097010; aaVt[18][ 2] = 0.093268; aaVt[18][ 3] = 0.051664; aaVt[18][ 4] = 0.042823; 
-    aaVt[18][ 5] = 0.062544; aaVt[18][ 6] = 0.055200; aaVt[18][ 7] = 0.037568; aaVt[18][ 8] = 0.286027; aaVt[18][ 9] = 0.086237; 
-    aaVt[18][10] = 0.189842; aaVt[18][11] = 0.068689; aaVt[18][12] = 0.073223; aaVt[18][13] = 0.898663; aaVt[18][14] = 0.032043; 
-    aaVt[18][15] = 0.121979; aaVt[18][16] = 0.094617; aaVt[18][17] = 0.124746; aaVt[18][18] = 0.000000; aaVt[18][19] = 0.125733; 
-    aaVt[19][ 0] = 1.230985; aaVt[19][ 1] = 0.113146; aaVt[19][ 2] = 0.049824; aaVt[19][ 3] = 0.048769; aaVt[19][ 4] = 0.163831; 
-    aaVt[19][ 5] = 0.112027; aaVt[19][ 6] = 0.205868; aaVt[19][ 7] = 0.082579; aaVt[19][ 8] = 0.068575; aaVt[19][ 9] = 3.654430; 
-    aaVt[19][10] = 1.337571; aaVt[19][11] = 0.144587; aaVt[19][12] = 0.307309; aaVt[19][13] = 0.247329; aaVt[19][14] = 0.129315; 
+    aaVt[ 0][ 0] = 0.000000; aaVt[ 0][ 1] = 0.233108; aaVt[ 0][ 2] = 0.199097; aaVt[ 0][ 3] = 0.265145; aaVt[ 0][ 4] = 0.227333;
+    aaVt[ 0][ 5] = 0.310084; aaVt[ 0][ 6] = 0.567957; aaVt[ 0][ 7] = 0.876213; aaVt[ 0][ 8] = 0.078692; aaVt[ 0][ 9] = 0.222972;
+    aaVt[ 0][10] = 0.424630; aaVt[ 0][11] = 0.393245; aaVt[ 0][12] = 0.211550; aaVt[ 0][13] = 0.116646; aaVt[ 0][14] = 0.399143;
+    aaVt[ 0][15] = 1.817198; aaVt[ 0][16] = 0.877877; aaVt[ 0][17] = 0.030309; aaVt[ 0][18] = 0.087061; aaVt[ 0][19] = 1.230985;
+    aaVt[ 1][ 0] = 0.233108; aaVt[ 1][ 1] = 0.000000; aaVt[ 1][ 2] = 0.210797; aaVt[ 1][ 3] = 0.105191; aaVt[ 1][ 4] = 0.031726;
+    aaVt[ 1][ 5] = 0.493763; aaVt[ 1][ 6] = 0.255240; aaVt[ 1][ 7] = 0.156945; aaVt[ 1][ 8] = 0.213164; aaVt[ 1][ 9] = 0.081510;
+    aaVt[ 1][10] = 0.192364; aaVt[ 1][11] = 1.755838; aaVt[ 1][12] = 0.087930; aaVt[ 1][13] = 0.042569; aaVt[ 1][14] = 0.128480;
+    aaVt[ 1][15] = 0.292327; aaVt[ 1][16] = 0.204109; aaVt[ 1][17] = 0.046417; aaVt[ 1][18] = 0.097010; aaVt[ 1][19] = 0.113146;
+    aaVt[ 2][ 0] = 0.199097; aaVt[ 2][ 1] = 0.210797; aaVt[ 2][ 2] = 0.000000; aaVt[ 2][ 3] = 0.883422; aaVt[ 2][ 4] = 0.027495;
+    aaVt[ 2][ 5] = 0.275700; aaVt[ 2][ 6] = 0.270417; aaVt[ 2][ 7] = 0.362028; aaVt[ 2][ 8] = 0.290006; aaVt[ 2][ 9] = 0.087225;
+    aaVt[ 2][10] = 0.069245; aaVt[ 2][11] = 0.503060; aaVt[ 2][12] = 0.057420; aaVt[ 2][13] = 0.039769; aaVt[ 2][14] = 0.083956;
+    aaVt[ 2][15] = 0.847049; aaVt[ 2][16] = 0.471268; aaVt[ 2][17] = 0.010459; aaVt[ 2][18] = 0.093268; aaVt[ 2][19] = 0.049824;
+    aaVt[ 3][ 0] = 0.265145; aaVt[ 3][ 1] = 0.105191; aaVt[ 3][ 2] = 0.883422; aaVt[ 3][ 3] = 0.000000; aaVt[ 3][ 4] = 0.010313;
+    aaVt[ 3][ 5] = 0.205842; aaVt[ 3][ 6] = 1.599461; aaVt[ 3][ 7] = 0.311718; aaVt[ 3][ 8] = 0.134252; aaVt[ 3][ 9] = 0.011720;
+    aaVt[ 3][10] = 0.060863; aaVt[ 3][11] = 0.261101; aaVt[ 3][12] = 0.012182; aaVt[ 3][13] = 0.016577; aaVt[ 3][14] = 0.160063;
+    aaVt[ 3][15] = 0.461519; aaVt[ 3][16] = 0.178197; aaVt[ 3][17] = 0.011393; aaVt[ 3][18] = 0.051664; aaVt[ 3][19] = 0.048769;
+    aaVt[ 4][ 0] = 0.227333; aaVt[ 4][ 1] = 0.031726; aaVt[ 4][ 2] = 0.027495; aaVt[ 4][ 3] = 0.010313; aaVt[ 4][ 4] = 0.000000;
+    aaVt[ 4][ 5] = 0.004315; aaVt[ 4][ 6] = 0.005321; aaVt[ 4][ 7] = 0.050876; aaVt[ 4][ 8] = 0.016695; aaVt[ 4][ 9] = 0.046398;
+    aaVt[ 4][10] = 0.091709; aaVt[ 4][11] = 0.004067; aaVt[ 4][12] = 0.023690; aaVt[ 4][13] = 0.051127; aaVt[ 4][14] = 0.011137;
+    aaVt[ 4][15] = 0.175270; aaVt[ 4][16] = 0.079511; aaVt[ 4][17] = 0.007732; aaVt[ 4][18] = 0.042823; aaVt[ 4][19] = 0.163831;
+    aaVt[ 5][ 0] = 0.310084; aaVt[ 5][ 1] = 0.493763; aaVt[ 5][ 2] = 0.275700; aaVt[ 5][ 3] = 0.205842; aaVt[ 5][ 4] = 0.004315;
+    aaVt[ 5][ 5] = 0.000000; aaVt[ 5][ 6] = 0.960976; aaVt[ 5][ 7] = 0.128660; aaVt[ 5][ 8] = 0.315521; aaVt[ 5][ 9] = 0.054602;
+    aaVt[ 5][10] = 0.243530; aaVt[ 5][11] = 0.738208; aaVt[ 5][12] = 0.120801; aaVt[ 5][13] = 0.026235; aaVt[ 5][14] = 0.156570;
+    aaVt[ 5][15] = 0.358017; aaVt[ 5][16] = 0.248992; aaVt[ 5][17] = 0.021248; aaVt[ 5][18] = 0.062544; aaVt[ 5][19] = 0.112027;
+    aaVt[ 6][ 0] = 0.567957; aaVt[ 6][ 1] = 0.255240; aaVt[ 6][ 2] = 0.270417; aaVt[ 6][ 3] = 1.599461; aaVt[ 6][ 4] = 0.005321;
+    aaVt[ 6][ 5] = 0.960976; aaVt[ 6][ 6] = 0.000000; aaVt[ 6][ 7] = 0.250447; aaVt[ 6][ 8] = 0.104458; aaVt[ 6][ 9] = 0.046589;
+    aaVt[ 6][10] = 0.151924; aaVt[ 6][11] = 0.888630; aaVt[ 6][12] = 0.058643; aaVt[ 6][13] = 0.028168; aaVt[ 6][14] = 0.205134;
+    aaVt[ 6][15] = 0.406035; aaVt[ 6][16] = 0.321028; aaVt[ 6][17] = 0.018844; aaVt[ 6][18] = 0.055200; aaVt[ 6][19] = 0.205868;
+    aaVt[ 7][ 0] = 0.876213; aaVt[ 7][ 1] = 0.156945; aaVt[ 7][ 2] = 0.362028; aaVt[ 7][ 3] = 0.311718; aaVt[ 7][ 4] = 0.050876;
+    aaVt[ 7][ 5] = 0.128660; aaVt[ 7][ 6] = 0.250447; aaVt[ 7][ 7] = 0.000000; aaVt[ 7][ 8] = 0.058131; aaVt[ 7][ 9] = 0.051089;
+    aaVt[ 7][10] = 0.087056; aaVt[ 7][11] = 0.193243; aaVt[ 7][12] = 0.046560; aaVt[ 7][13] = 0.050143; aaVt[ 7][14] = 0.124492;
+    aaVt[ 7][15] = 0.612843; aaVt[ 7][16] = 0.136266; aaVt[ 7][17] = 0.023990; aaVt[ 7][18] = 0.037568; aaVt[ 7][19] = 0.082579;
+    aaVt[ 8][ 0] = 0.078692; aaVt[ 8][ 1] = 0.213164; aaVt[ 8][ 2] = 0.290006; aaVt[ 8][ 3] = 0.134252; aaVt[ 8][ 4] = 0.016695;
+    aaVt[ 8][ 5] = 0.315521; aaVt[ 8][ 6] = 0.104458; aaVt[ 8][ 7] = 0.058131; aaVt[ 8][ 8] = 0.000000; aaVt[ 8][ 9] = 0.020039;
+    aaVt[ 8][10] = 0.103552; aaVt[ 8][11] = 0.153323; aaVt[ 8][12] = 0.021157; aaVt[ 8][13] = 0.079807; aaVt[ 8][14] = 0.078892;
+    aaVt[ 8][15] = 0.167406; aaVt[ 8][16] = 0.101117; aaVt[ 8][17] = 0.020009; aaVt[ 8][18] = 0.286027; aaVt[ 8][19] = 0.068575;
+    aaVt[ 9][ 0] = 0.222972; aaVt[ 9][ 1] = 0.081510; aaVt[ 9][ 2] = 0.087225; aaVt[ 9][ 3] = 0.011720; aaVt[ 9][ 4] = 0.046398;
+    aaVt[ 9][ 5] = 0.054602; aaVt[ 9][ 6] = 0.046589; aaVt[ 9][ 7] = 0.051089; aaVt[ 9][ 8] = 0.020039; aaVt[ 9][ 9] = 0.000000;
+    aaVt[ 9][10] = 2.089890; aaVt[ 9][11] = 0.093181; aaVt[ 9][12] = 0.493845; aaVt[ 9][13] = 0.321020; aaVt[ 9][14] = 0.054797;
+    aaVt[ 9][15] = 0.081567; aaVt[ 9][16] = 0.376588; aaVt[ 9][17] = 0.034954; aaVt[ 9][18] = 0.086237; aaVt[ 9][19] = 3.654430;
+    aaVt[10][ 0] = 0.424630; aaVt[10][ 1] = 0.192364; aaVt[10][ 2] = 0.069245; aaVt[10][ 3] = 0.060863; aaVt[10][ 4] = 0.091709;
+    aaVt[10][ 5] = 0.243530; aaVt[10][ 6] = 0.151924; aaVt[10][ 7] = 0.087056; aaVt[10][ 8] = 0.103552; aaVt[10][ 9] = 2.089890;
+    aaVt[10][10] = 0.000000; aaVt[10][11] = 0.201204; aaVt[10][12] = 1.105667; aaVt[10][13] = 0.946499; aaVt[10][14] = 0.169784;
+    aaVt[10][15] = 0.214977; aaVt[10][16] = 0.243227; aaVt[10][17] = 0.083439; aaVt[10][18] = 0.189842; aaVt[10][19] = 1.337571;
+    aaVt[11][ 0] = 0.393245; aaVt[11][ 1] = 1.755838; aaVt[11][ 2] = 0.503060; aaVt[11][ 3] = 0.261101; aaVt[11][ 4] = 0.004067;
+    aaVt[11][ 5] = 0.738208; aaVt[11][ 6] = 0.888630; aaVt[11][ 7] = 0.193243; aaVt[11][ 8] = 0.153323; aaVt[11][ 9] = 0.093181;
+    aaVt[11][10] = 0.201204; aaVt[11][11] = 0.000000; aaVt[11][12] = 0.096474; aaVt[11][13] = 0.038261; aaVt[11][14] = 0.212302;
+    aaVt[11][15] = 0.400072; aaVt[11][16] = 0.446646; aaVt[11][17] = 0.023321; aaVt[11][18] = 0.068689; aaVt[11][19] = 0.144587;
+    aaVt[12][ 0] = 0.211550; aaVt[12][ 1] = 0.087930; aaVt[12][ 2] = 0.057420; aaVt[12][ 3] = 0.012182; aaVt[12][ 4] = 0.023690;
+    aaVt[12][ 5] = 0.120801; aaVt[12][ 6] = 0.058643; aaVt[12][ 7] = 0.046560; aaVt[12][ 8] = 0.021157; aaVt[12][ 9] = 0.493845;
+    aaVt[12][10] = 1.105667; aaVt[12][11] = 0.096474; aaVt[12][12] = 0.000000; aaVt[12][13] = 0.173052; aaVt[12][14] = 0.010363;
+    aaVt[12][15] = 0.090515; aaVt[12][16] = 0.184609; aaVt[12][17] = 0.022019; aaVt[12][18] = 0.073223; aaVt[12][19] = 0.307309;
+    aaVt[13][ 0] = 0.116646; aaVt[13][ 1] = 0.042569; aaVt[13][ 2] = 0.039769; aaVt[13][ 3] = 0.016577; aaVt[13][ 4] = 0.051127;
+    aaVt[13][ 5] = 0.026235; aaVt[13][ 6] = 0.028168; aaVt[13][ 7] = 0.050143; aaVt[13][ 8] = 0.079807; aaVt[13][ 9] = 0.321020;
+    aaVt[13][10] = 0.946499; aaVt[13][11] = 0.038261; aaVt[13][12] = 0.173052; aaVt[13][13] = 0.000000; aaVt[13][14] = 0.042564;
+    aaVt[13][15] = 0.138119; aaVt[13][16] = 0.085870; aaVt[13][17] = 0.128050; aaVt[13][18] = 0.898663; aaVt[13][19] = 0.247329;
+    aaVt[14][ 0] = 0.399143; aaVt[14][ 1] = 0.128480; aaVt[14][ 2] = 0.083956; aaVt[14][ 3] = 0.160063; aaVt[14][ 4] = 0.011137;
+    aaVt[14][ 5] = 0.156570; aaVt[14][ 6] = 0.205134; aaVt[14][ 7] = 0.124492; aaVt[14][ 8] = 0.078892; aaVt[14][ 9] = 0.054797;
+    aaVt[14][10] = 0.169784; aaVt[14][11] = 0.212302; aaVt[14][12] = 0.010363; aaVt[14][13] = 0.042564; aaVt[14][14] = 0.000000;
+    aaVt[14][15] = 0.430431; aaVt[14][16] = 0.207143; aaVt[14][17] = 0.014584; aaVt[14][18] = 0.032043; aaVt[14][19] = 0.129315;
+    aaVt[15][ 0] = 1.817198; aaVt[15][ 1] = 0.292327; aaVt[15][ 2] = 0.847049; aaVt[15][ 3] = 0.461519; aaVt[15][ 4] = 0.175270;
+    aaVt[15][ 5] = 0.358017; aaVt[15][ 6] = 0.406035; aaVt[15][ 7] = 0.612843; aaVt[15][ 8] = 0.167406; aaVt[15][ 9] = 0.081567;
+    aaVt[15][10] = 0.214977; aaVt[15][11] = 0.400072; aaVt[15][12] = 0.090515; aaVt[15][13] = 0.138119; aaVt[15][14] = 0.430431;
+    aaVt[15][15] = 0.000000; aaVt[15][16] = 1.767766; aaVt[15][17] = 0.035933; aaVt[15][18] = 0.121979; aaVt[15][19] = 0.127700;
+    aaVt[16][ 0] = 0.877877; aaVt[16][ 1] = 0.204109; aaVt[16][ 2] = 0.471268; aaVt[16][ 3] = 0.178197; aaVt[16][ 4] = 0.079511;
+    aaVt[16][ 5] = 0.248992; aaVt[16][ 6] = 0.321028; aaVt[16][ 7] = 0.136266; aaVt[16][ 8] = 0.101117; aaVt[16][ 9] = 0.376588;
+    aaVt[16][10] = 0.243227; aaVt[16][11] = 0.446646; aaVt[16][12] = 0.184609; aaVt[16][13] = 0.085870; aaVt[16][14] = 0.207143;
+    aaVt[16][15] = 1.767766; aaVt[16][16] = 0.000000; aaVt[16][17] = 0.020437; aaVt[16][18] = 0.094617; aaVt[16][19] = 0.740372;
+    aaVt[17][ 0] = 0.030309; aaVt[17][ 1] = 0.046417; aaVt[17][ 2] = 0.010459; aaVt[17][ 3] = 0.011393; aaVt[17][ 4] = 0.007732;
+    aaVt[17][ 5] = 0.021248; aaVt[17][ 6] = 0.018844; aaVt[17][ 7] = 0.023990; aaVt[17][ 8] = 0.020009; aaVt[17][ 9] = 0.034954;
+    aaVt[17][10] = 0.083439; aaVt[17][11] = 0.023321; aaVt[17][12] = 0.022019; aaVt[17][13] = 0.128050; aaVt[17][14] = 0.014584;
+    aaVt[17][15] = 0.035933; aaVt[17][16] = 0.020437; aaVt[17][17] = 0.000000; aaVt[17][18] = 0.124746; aaVt[17][19] = 0.022134;
+    aaVt[18][ 0] = 0.087061; aaVt[18][ 1] = 0.097010; aaVt[18][ 2] = 0.093268; aaVt[18][ 3] = 0.051664; aaVt[18][ 4] = 0.042823;
+    aaVt[18][ 5] = 0.062544; aaVt[18][ 6] = 0.055200; aaVt[18][ 7] = 0.037568; aaVt[18][ 8] = 0.286027; aaVt[18][ 9] = 0.086237;
+    aaVt[18][10] = 0.189842; aaVt[18][11] = 0.068689; aaVt[18][12] = 0.073223; aaVt[18][13] = 0.898663; aaVt[18][14] = 0.032043;
+    aaVt[18][15] = 0.121979; aaVt[18][16] = 0.094617; aaVt[18][17] = 0.124746; aaVt[18][18] = 0.000000; aaVt[18][19] = 0.125733;
+    aaVt[19][ 0] = 1.230985; aaVt[19][ 1] = 0.113146; aaVt[19][ 2] = 0.049824; aaVt[19][ 3] = 0.048769; aaVt[19][ 4] = 0.163831;
+    aaVt[19][ 5] = 0.112027; aaVt[19][ 6] = 0.205868; aaVt[19][ 7] = 0.082579; aaVt[19][ 8] = 0.068575; aaVt[19][ 9] = 3.654430;
+    aaVt[19][10] = 1.337571; aaVt[19][11] = 0.144587; aaVt[19][12] = 0.307309; aaVt[19][13] = 0.247329; aaVt[19][14] = 0.129315;
     aaVt[19][15] = 0.127700; aaVt[19][16] = 0.740372; aaVt[19][17] = 0.022134; aaVt[19][18] = 0.125733; aaVt[19][19] = 0.000000;
 
     vtPi[ 0] = 0.078837;
@@ -16783,108 +16783,108 @@ int SetAARates (void)
     vtPi[17] = 0.013272;
     vtPi[18] = 0.034399;
     vtPi[19] = 0.073101;
-    
+
     /* Blosum62 */
-    aaBlosum[ 0][ 0] = 0.000000000000; aaBlosum[ 0][ 1] = 0.735790389698; aaBlosum[ 0][ 2] = 0.485391055466; aaBlosum[ 0][ 3] = 0.543161820899; aaBlosum[ 0][ 4] = 1.459995310470; 
-    aaBlosum[ 0][ 5] = 1.199705704602; aaBlosum[ 0][ 6] = 1.170949042800; aaBlosum[ 0][ 7] = 1.955883574960; aaBlosum[ 0][ 8] = 0.716241444998; aaBlosum[ 0][ 9] = 0.605899003687; 
-    aaBlosum[ 0][10] = 0.800016530518; aaBlosum[ 0][11] = 1.295201266783; aaBlosum[ 0][12] = 1.253758266664; aaBlosum[ 0][13] = 0.492964679748; aaBlosum[ 0][14] = 1.173275900924; 
-    aaBlosum[ 0][15] = 4.325092687057; aaBlosum[ 0][16] = 1.729178019485; aaBlosum[ 0][17] = 0.465839367725; aaBlosum[ 0][18] = 0.718206697586; aaBlosum[ 0][19] = 2.187774522005; 
-    aaBlosum[ 1][ 0] = 0.735790389698; aaBlosum[ 1][ 1] = 0.000000000000; aaBlosum[ 1][ 2] = 1.297446705134; aaBlosum[ 1][ 3] = 0.500964408555; aaBlosum[ 1][ 4] = 0.227826574209; 
-    aaBlosum[ 1][ 5] = 3.020833610064; aaBlosum[ 1][ 6] = 1.360574190420; aaBlosum[ 1][ 7] = 0.418763308518; aaBlosum[ 1][ 8] = 1.456141166336; aaBlosum[ 1][ 9] = 0.232036445142; 
-    aaBlosum[ 1][10] = 0.622711669692; aaBlosum[ 1][11] = 5.411115141489; aaBlosum[ 1][12] = 0.983692987457; aaBlosum[ 1][13] = 0.371644693209; aaBlosum[ 1][14] = 0.448133661718; 
-    aaBlosum[ 1][15] = 1.122783104210; aaBlosum[ 1][16] = 0.914665954563; aaBlosum[ 1][17] = 0.426382310122; aaBlosum[ 1][18] = 0.720517441216; aaBlosum[ 1][19] = 0.438388343772; 
-    aaBlosum[ 2][ 0] = 0.485391055466; aaBlosum[ 2][ 1] = 1.297446705134; aaBlosum[ 2][ 2] = 0.000000000000; aaBlosum[ 2][ 3] = 3.180100048216; aaBlosum[ 2][ 4] = 0.397358949897; 
-    aaBlosum[ 2][ 5] = 1.839216146992; aaBlosum[ 2][ 6] = 1.240488508640; aaBlosum[ 2][ 7] = 1.355872344485; aaBlosum[ 2][ 8] = 2.414501434208; aaBlosum[ 2][ 9] = 0.283017326278; 
-    aaBlosum[ 2][10] = 0.211888159615; aaBlosum[ 2][11] = 1.593137043457; aaBlosum[ 2][12] = 0.648441278787; aaBlosum[ 2][13] = 0.354861249223; aaBlosum[ 2][14] = 0.494887043702; 
-    aaBlosum[ 2][15] = 2.904101656456; aaBlosum[ 2][16] = 1.898173634533; aaBlosum[ 2][17] = 0.191482046247; aaBlosum[ 2][18] = 0.538222519037; aaBlosum[ 2][19] = 0.312858797993; 
-    aaBlosum[ 3][ 0] = 0.543161820899; aaBlosum[ 3][ 1] = 0.500964408555; aaBlosum[ 3][ 2] = 3.180100048216; aaBlosum[ 3][ 3] = 0.000000000000; aaBlosum[ 3][ 4] = 0.240836614802; 
-    aaBlosum[ 3][ 5] = 1.190945703396; aaBlosum[ 3][ 6] = 3.761625208368; aaBlosum[ 3][ 7] = 0.798473248968; aaBlosum[ 3][ 8] = 0.778142664022; aaBlosum[ 3][ 9] = 0.418555732462; 
-    aaBlosum[ 3][10] = 0.218131577594; aaBlosum[ 3][11] = 1.032447924952; aaBlosum[ 3][12] = 0.222621897958; aaBlosum[ 3][13] = 0.281730694207; aaBlosum[ 3][14] = 0.730628272998; 
-    aaBlosum[ 3][15] = 1.582754142065; aaBlosum[ 3][16] = 0.934187509431; aaBlosum[ 3][17] = 0.145345046279; aaBlosum[ 3][18] = 0.261422208965; aaBlosum[ 3][19] = 0.258129289418; 
-    aaBlosum[ 4][ 0] = 1.459995310470; aaBlosum[ 4][ 1] = 0.227826574209; aaBlosum[ 4][ 2] = 0.397358949897; aaBlosum[ 4][ 3] = 0.240836614802; aaBlosum[ 4][ 4] = 0.000000000000; 
-    aaBlosum[ 4][ 5] = 0.329801504630; aaBlosum[ 4][ 6] = 0.140748891814; aaBlosum[ 4][ 7] = 0.418203192284; aaBlosum[ 4][ 8] = 0.354058109831; aaBlosum[ 4][ 9] = 0.774894022794; 
-    aaBlosum[ 4][10] = 0.831842640142; aaBlosum[ 4][11] = 0.285078800906; aaBlosum[ 4][12] = 0.767688823480; aaBlosum[ 4][13] = 0.441337471187; aaBlosum[ 4][14] = 0.356008498769; 
-    aaBlosum[ 4][15] = 1.197188415094; aaBlosum[ 4][16] = 1.119831358516; aaBlosum[ 4][17] = 0.527664418872; aaBlosum[ 4][18] = 0.470237733696; aaBlosum[ 4][19] = 1.116352478606; 
-    aaBlosum[ 5][ 0] = 1.199705704602; aaBlosum[ 5][ 1] = 3.020833610064; aaBlosum[ 5][ 2] = 1.839216146992; aaBlosum[ 5][ 3] = 1.190945703396; aaBlosum[ 5][ 4] = 0.329801504630; 
-    aaBlosum[ 5][ 5] = 0.000000000000; aaBlosum[ 5][ 6] = 5.528919177928; aaBlosum[ 5][ 7] = 0.609846305383; aaBlosum[ 5][ 8] = 2.435341131140; aaBlosum[ 5][ 9] = 0.236202451204; 
-    aaBlosum[ 5][10] = 0.580737093181; aaBlosum[ 5][11] = 3.945277674515; aaBlosum[ 5][12] = 2.494896077113; aaBlosum[ 5][13] = 0.144356959750; aaBlosum[ 5][14] = 0.858570575674; 
-    aaBlosum[ 5][15] = 1.934870924596; aaBlosum[ 5][16] = 1.277480294596; aaBlosum[ 5][17] = 0.758653808642; aaBlosum[ 5][18] = 0.958989742850; aaBlosum[ 5][19] = 0.530785790125; 
-    aaBlosum[ 6][ 0] = 1.170949042800; aaBlosum[ 6][ 1] = 1.360574190420; aaBlosum[ 6][ 2] = 1.240488508640; aaBlosum[ 6][ 3] = 3.761625208368; aaBlosum[ 6][ 4] = 0.140748891814; 
-    aaBlosum[ 6][ 5] = 5.528919177928; aaBlosum[ 6][ 6] = 0.000000000000; aaBlosum[ 6][ 7] = 0.423579992176; aaBlosum[ 6][ 8] = 1.626891056982; aaBlosum[ 6][ 9] = 0.186848046932; 
-    aaBlosum[ 6][10] = 0.372625175087; aaBlosum[ 6][11] = 2.802427151679; aaBlosum[ 6][12] = 0.555415397470; aaBlosum[ 6][13] = 0.291409084165; aaBlosum[ 6][14] = 0.926563934846; 
-    aaBlosum[ 6][15] = 1.769893238937; aaBlosum[ 6][16] = 1.071097236007; aaBlosum[ 6][17] = 0.407635648938; aaBlosum[ 6][18] = 0.596719300346; aaBlosum[ 6][19] = 0.524253846338; 
-    aaBlosum[ 7][ 0] = 1.955883574960; aaBlosum[ 7][ 1] = 0.418763308518; aaBlosum[ 7][ 2] = 1.355872344485; aaBlosum[ 7][ 3] = 0.798473248968; aaBlosum[ 7][ 4] = 0.418203192284; 
-    aaBlosum[ 7][ 5] = 0.609846305383; aaBlosum[ 7][ 6] = 0.423579992176; aaBlosum[ 7][ 7] = 0.000000000000; aaBlosum[ 7][ 8] = 0.539859124954; aaBlosum[ 7][ 9] = 0.189296292376; 
-    aaBlosum[ 7][10] = 0.217721159236; aaBlosum[ 7][11] = 0.752042440303; aaBlosum[ 7][12] = 0.459436173579; aaBlosum[ 7][13] = 0.368166464453; aaBlosum[ 7][14] = 0.504086599527; 
-    aaBlosum[ 7][15] = 1.509326253224; aaBlosum[ 7][16] = 0.641436011405; aaBlosum[ 7][17] = 0.508358924638; aaBlosum[ 7][18] = 0.308055737035; aaBlosum[ 7][19] = 0.253340790190; 
-    aaBlosum[ 8][ 0] = 0.716241444998; aaBlosum[ 8][ 1] = 1.456141166336; aaBlosum[ 8][ 2] = 2.414501434208; aaBlosum[ 8][ 3] = 0.778142664022; aaBlosum[ 8][ 4] = 0.354058109831; 
-    aaBlosum[ 8][ 5] = 2.435341131140; aaBlosum[ 8][ 6] = 1.626891056982; aaBlosum[ 8][ 7] = 0.539859124954; aaBlosum[ 8][ 8] = 0.000000000000; aaBlosum[ 8][ 9] = 0.252718447885; 
-    aaBlosum[ 8][10] = 0.348072209797; aaBlosum[ 8][11] = 1.022507035889; aaBlosum[ 8][12] = 0.984311525359; aaBlosum[ 8][13] = 0.714533703928; aaBlosum[ 8][14] = 0.527007339151; 
-    aaBlosum[ 8][15] = 1.117029762910; aaBlosum[ 8][16] = 0.585407090225; aaBlosum[ 8][17] = 0.301248600780; aaBlosum[ 8][18] = 4.218953969389; aaBlosum[ 8][19] = 0.201555971750; 
-    aaBlosum[ 9][ 0] = 0.605899003687; aaBlosum[ 9][ 1] = 0.232036445142; aaBlosum[ 9][ 2] = 0.283017326278; aaBlosum[ 9][ 3] = 0.418555732462; aaBlosum[ 9][ 4] = 0.774894022794; 
-    aaBlosum[ 9][ 5] = 0.236202451204; aaBlosum[ 9][ 6] = 0.186848046932; aaBlosum[ 9][ 7] = 0.189296292376; aaBlosum[ 9][ 8] = 0.252718447885; aaBlosum[ 9][ 9] = 0.000000000000; 
-    aaBlosum[ 9][10] = 3.890963773304; aaBlosum[ 9][11] = 0.406193586642; aaBlosum[ 9][12] = 3.364797763104; aaBlosum[ 9][13] = 1.517359325954; aaBlosum[ 9][14] = 0.388355409206; 
-    aaBlosum[ 9][15] = 0.357544412460; aaBlosum[ 9][16] = 1.179091197260; aaBlosum[ 9][17] = 0.341985787540; aaBlosum[ 9][18] = 0.674617093228; aaBlosum[ 9][19] = 8.311839405458; 
-    aaBlosum[10][ 0] = 0.800016530518; aaBlosum[10][ 1] = 0.622711669692; aaBlosum[10][ 2] = 0.211888159615; aaBlosum[10][ 3] = 0.218131577594; aaBlosum[10][ 4] = 0.831842640142; 
-    aaBlosum[10][ 5] = 0.580737093181; aaBlosum[10][ 6] = 0.372625175087; aaBlosum[10][ 7] = 0.217721159236; aaBlosum[10][ 8] = 0.348072209797; aaBlosum[10][ 9] = 3.890963773304; 
-    aaBlosum[10][10] = 0.000000000000; aaBlosum[10][11] = 0.445570274261; aaBlosum[10][12] = 6.030559379572; aaBlosum[10][13] = 2.064839703237; aaBlosum[10][14] = 0.374555687471; 
-    aaBlosum[10][15] = 0.352969184527; aaBlosum[10][16] = 0.915259857694; aaBlosum[10][17] = 0.691474634600; aaBlosum[10][18] = 0.811245856323; aaBlosum[10][19] = 2.231405688913; 
-    aaBlosum[11][ 0] = 1.295201266783; aaBlosum[11][ 1] = 5.411115141489; aaBlosum[11][ 2] = 1.593137043457; aaBlosum[11][ 3] = 1.032447924952; aaBlosum[11][ 4] = 0.285078800906; 
-    aaBlosum[11][ 5] = 3.945277674515; aaBlosum[11][ 6] = 2.802427151679; aaBlosum[11][ 7] = 0.752042440303; aaBlosum[11][ 8] = 1.022507035889; aaBlosum[11][ 9] = 0.406193586642; 
-    aaBlosum[11][10] = 0.445570274261; aaBlosum[11][11] = 0.000000000000; aaBlosum[11][12] = 1.073061184332; aaBlosum[11][13] = 0.266924750511; aaBlosum[11][14] = 1.047383450722; 
-    aaBlosum[11][15] = 1.752165917819; aaBlosum[11][16] = 1.303875200799; aaBlosum[11][17] = 0.332243040634; aaBlosum[11][18] = 0.717993486900; aaBlosum[11][19] = 0.498138475304; 
-    aaBlosum[12][ 0] = 1.253758266664; aaBlosum[12][ 1] = 0.983692987457; aaBlosum[12][ 2] = 0.648441278787; aaBlosum[12][ 3] = 0.222621897958; aaBlosum[12][ 4] = 0.767688823480; 
-    aaBlosum[12][ 5] = 2.494896077113; aaBlosum[12][ 6] = 0.555415397470; aaBlosum[12][ 7] = 0.459436173579; aaBlosum[12][ 8] = 0.984311525359; aaBlosum[12][ 9] = 3.364797763104; 
-    aaBlosum[12][10] = 6.030559379572; aaBlosum[12][11] = 1.073061184332; aaBlosum[12][12] = 0.000000000000; aaBlosum[12][13] = 1.773855168830; aaBlosum[12][14] = 0.454123625103; 
-    aaBlosum[12][15] = 0.918723415746; aaBlosum[12][16] = 1.488548053722; aaBlosum[12][17] = 0.888101098152; aaBlosum[12][18] = 0.951682162246; aaBlosum[12][19] = 2.575850755315; 
-    aaBlosum[13][ 0] = 0.492964679748; aaBlosum[13][ 1] = 0.371644693209; aaBlosum[13][ 2] = 0.354861249223; aaBlosum[13][ 3] = 0.281730694207; aaBlosum[13][ 4] = 0.441337471187; 
-    aaBlosum[13][ 5] = 0.144356959750; aaBlosum[13][ 6] = 0.291409084165; aaBlosum[13][ 7] = 0.368166464453; aaBlosum[13][ 8] = 0.714533703928; aaBlosum[13][ 9] = 1.517359325954; 
-    aaBlosum[13][10] = 2.064839703237; aaBlosum[13][11] = 0.266924750511; aaBlosum[13][12] = 1.773855168830; aaBlosum[13][13] = 0.000000000000; aaBlosum[13][14] = 0.233597909629; 
-    aaBlosum[13][15] = 0.540027644824; aaBlosum[13][16] = 0.488206118793; aaBlosum[13][17] = 2.074324893497; aaBlosum[13][18] = 6.747260430801; aaBlosum[13][19] = 0.838119610178; 
-    aaBlosum[14][ 0] = 1.173275900924; aaBlosum[14][ 1] = 0.448133661718; aaBlosum[14][ 2] = 0.494887043702; aaBlosum[14][ 3] = 0.730628272998; aaBlosum[14][ 4] = 0.356008498769; 
-    aaBlosum[14][ 5] = 0.858570575674; aaBlosum[14][ 6] = 0.926563934846; aaBlosum[14][ 7] = 0.504086599527; aaBlosum[14][ 8] = 0.527007339151; aaBlosum[14][ 9] = 0.388355409206; 
-    aaBlosum[14][10] = 0.374555687471; aaBlosum[14][11] = 1.047383450722; aaBlosum[14][12] = 0.454123625103; aaBlosum[14][13] = 0.233597909629; aaBlosum[14][14] = 0.000000000000; 
-    aaBlosum[14][15] = 1.169129577716; aaBlosum[14][16] = 1.005451683149; aaBlosum[14][17] = 0.252214830027; aaBlosum[14][18] = 0.369405319355; aaBlosum[14][19] = 0.496908410676; 
-    aaBlosum[15][ 0] = 4.325092687057; aaBlosum[15][ 1] = 1.122783104210; aaBlosum[15][ 2] = 2.904101656456; aaBlosum[15][ 3] = 1.582754142065; aaBlosum[15][ 4] = 1.197188415094; 
-    aaBlosum[15][ 5] = 1.934870924596; aaBlosum[15][ 6] = 1.769893238937; aaBlosum[15][ 7] = 1.509326253224; aaBlosum[15][ 8] = 1.117029762910; aaBlosum[15][ 9] = 0.357544412460; 
-    aaBlosum[15][10] = 0.352969184527; aaBlosum[15][11] = 1.752165917819; aaBlosum[15][12] = 0.918723415746; aaBlosum[15][13] = 0.540027644824; aaBlosum[15][14] = 1.169129577716; 
-    aaBlosum[15][15] = 0.000000000000; aaBlosum[15][16] = 5.151556292270; aaBlosum[15][17] = 0.387925622098; aaBlosum[15][18] = 0.796751520761; aaBlosum[15][19] = 0.561925457442; 
-    aaBlosum[16][ 0] = 1.729178019485; aaBlosum[16][ 1] = 0.914665954563; aaBlosum[16][ 2] = 1.898173634533; aaBlosum[16][ 3] = 0.934187509431; aaBlosum[16][ 4] = 1.119831358516; 
-    aaBlosum[16][ 5] = 1.277480294596; aaBlosum[16][ 6] = 1.071097236007; aaBlosum[16][ 7] = 0.641436011405; aaBlosum[16][ 8] = 0.585407090225; aaBlosum[16][ 9] = 1.179091197260; 
-    aaBlosum[16][10] = 0.915259857694; aaBlosum[16][11] = 1.303875200799; aaBlosum[16][12] = 1.488548053722; aaBlosum[16][13] = 0.488206118793; aaBlosum[16][14] = 1.005451683149; 
-    aaBlosum[16][15] = 5.151556292270; aaBlosum[16][16] = 0.000000000000; aaBlosum[16][17] = 0.513128126891; aaBlosum[16][18] = 0.801010243199; aaBlosum[16][19] = 2.253074051176; 
-    aaBlosum[17][ 0] = 0.465839367725; aaBlosum[17][ 1] = 0.426382310122; aaBlosum[17][ 2] = 0.191482046247; aaBlosum[17][ 3] = 0.145345046279; aaBlosum[17][ 4] = 0.527664418872; 
-    aaBlosum[17][ 5] = 0.758653808642; aaBlosum[17][ 6] = 0.407635648938; aaBlosum[17][ 7] = 0.508358924638; aaBlosum[17][ 8] = 0.301248600780; aaBlosum[17][ 9] = 0.341985787540; 
-    aaBlosum[17][10] = 0.691474634600; aaBlosum[17][11] = 0.332243040634; aaBlosum[17][12] = 0.888101098152; aaBlosum[17][13] = 2.074324893497; aaBlosum[17][14] = 0.252214830027; 
-    aaBlosum[17][15] = 0.387925622098; aaBlosum[17][16] = 0.513128126891; aaBlosum[17][17] = 0.000000000000; aaBlosum[17][18] = 4.054419006558; aaBlosum[17][19] = 0.266508731426; 
-    aaBlosum[18][ 0] = 0.718206697586; aaBlosum[18][ 1] = 0.720517441216; aaBlosum[18][ 2] = 0.538222519037; aaBlosum[18][ 3] = 0.261422208965; aaBlosum[18][ 4] = 0.470237733696; 
-    aaBlosum[18][ 5] = 0.958989742850; aaBlosum[18][ 6] = 0.596719300346; aaBlosum[18][ 7] = 0.308055737035; aaBlosum[18][ 8] = 4.218953969389; aaBlosum[18][ 9] = 0.674617093228; 
-    aaBlosum[18][10] = 0.811245856323; aaBlosum[18][11] = 0.717993486900; aaBlosum[18][12] = 0.951682162246; aaBlosum[18][13] = 6.747260430801; aaBlosum[18][14] = 0.369405319355; 
-    aaBlosum[18][15] = 0.796751520761; aaBlosum[18][16] = 0.801010243199; aaBlosum[18][17] = 4.054419006558; aaBlosum[18][18] = 0.000000000000; aaBlosum[18][19] = 1.000000000000; 
-    aaBlosum[19][ 0] = 2.187774522005; aaBlosum[19][ 1] = 0.438388343772; aaBlosum[19][ 2] = 0.312858797993; aaBlosum[19][ 3] = 0.258129289418; aaBlosum[19][ 4] = 1.116352478606; 
-    aaBlosum[19][ 5] = 0.530785790125; aaBlosum[19][ 6] = 0.524253846338; aaBlosum[19][ 7] = 0.253340790190; aaBlosum[19][ 8] = 0.201555971750; aaBlosum[19][ 9] = 8.311839405458; 
-    aaBlosum[19][10] = 2.231405688913; aaBlosum[19][11] = 0.498138475304; aaBlosum[19][12] = 2.575850755315; aaBlosum[19][13] = 0.838119610178; aaBlosum[19][14] = 0.496908410676; 
+    aaBlosum[ 0][ 0] = 0.000000000000; aaBlosum[ 0][ 1] = 0.735790389698; aaBlosum[ 0][ 2] = 0.485391055466; aaBlosum[ 0][ 3] = 0.543161820899; aaBlosum[ 0][ 4] = 1.459995310470;
+    aaBlosum[ 0][ 5] = 1.199705704602; aaBlosum[ 0][ 6] = 1.170949042800; aaBlosum[ 0][ 7] = 1.955883574960; aaBlosum[ 0][ 8] = 0.716241444998; aaBlosum[ 0][ 9] = 0.605899003687;
+    aaBlosum[ 0][10] = 0.800016530518; aaBlosum[ 0][11] = 1.295201266783; aaBlosum[ 0][12] = 1.253758266664; aaBlosum[ 0][13] = 0.492964679748; aaBlosum[ 0][14] = 1.173275900924;
+    aaBlosum[ 0][15] = 4.325092687057; aaBlosum[ 0][16] = 1.729178019485; aaBlosum[ 0][17] = 0.465839367725; aaBlosum[ 0][18] = 0.718206697586; aaBlosum[ 0][19] = 2.187774522005;
+    aaBlosum[ 1][ 0] = 0.735790389698; aaBlosum[ 1][ 1] = 0.000000000000; aaBlosum[ 1][ 2] = 1.297446705134; aaBlosum[ 1][ 3] = 0.500964408555; aaBlosum[ 1][ 4] = 0.227826574209;
+    aaBlosum[ 1][ 5] = 3.020833610064; aaBlosum[ 1][ 6] = 1.360574190420; aaBlosum[ 1][ 7] = 0.418763308518; aaBlosum[ 1][ 8] = 1.456141166336; aaBlosum[ 1][ 9] = 0.232036445142;
+    aaBlosum[ 1][10] = 0.622711669692; aaBlosum[ 1][11] = 5.411115141489; aaBlosum[ 1][12] = 0.983692987457; aaBlosum[ 1][13] = 0.371644693209; aaBlosum[ 1][14] = 0.448133661718;
+    aaBlosum[ 1][15] = 1.122783104210; aaBlosum[ 1][16] = 0.914665954563; aaBlosum[ 1][17] = 0.426382310122; aaBlosum[ 1][18] = 0.720517441216; aaBlosum[ 1][19] = 0.438388343772;
+    aaBlosum[ 2][ 0] = 0.485391055466; aaBlosum[ 2][ 1] = 1.297446705134; aaBlosum[ 2][ 2] = 0.000000000000; aaBlosum[ 2][ 3] = 3.180100048216; aaBlosum[ 2][ 4] = 0.397358949897;
+    aaBlosum[ 2][ 5] = 1.839216146992; aaBlosum[ 2][ 6] = 1.240488508640; aaBlosum[ 2][ 7] = 1.355872344485; aaBlosum[ 2][ 8] = 2.414501434208; aaBlosum[ 2][ 9] = 0.283017326278;
+    aaBlosum[ 2][10] = 0.211888159615; aaBlosum[ 2][11] = 1.593137043457; aaBlosum[ 2][12] = 0.648441278787; aaBlosum[ 2][13] = 0.354861249223; aaBlosum[ 2][14] = 0.494887043702;
+    aaBlosum[ 2][15] = 2.904101656456; aaBlosum[ 2][16] = 1.898173634533; aaBlosum[ 2][17] = 0.191482046247; aaBlosum[ 2][18] = 0.538222519037; aaBlosum[ 2][19] = 0.312858797993;
+    aaBlosum[ 3][ 0] = 0.543161820899; aaBlosum[ 3][ 1] = 0.500964408555; aaBlosum[ 3][ 2] = 3.180100048216; aaBlosum[ 3][ 3] = 0.000000000000; aaBlosum[ 3][ 4] = 0.240836614802;
+    aaBlosum[ 3][ 5] = 1.190945703396; aaBlosum[ 3][ 6] = 3.761625208368; aaBlosum[ 3][ 7] = 0.798473248968; aaBlosum[ 3][ 8] = 0.778142664022; aaBlosum[ 3][ 9] = 0.418555732462;
+    aaBlosum[ 3][10] = 0.218131577594; aaBlosum[ 3][11] = 1.032447924952; aaBlosum[ 3][12] = 0.222621897958; aaBlosum[ 3][13] = 0.281730694207; aaBlosum[ 3][14] = 0.730628272998;
+    aaBlosum[ 3][15] = 1.582754142065; aaBlosum[ 3][16] = 0.934187509431; aaBlosum[ 3][17] = 0.145345046279; aaBlosum[ 3][18] = 0.261422208965; aaBlosum[ 3][19] = 0.258129289418;
+    aaBlosum[ 4][ 0] = 1.459995310470; aaBlosum[ 4][ 1] = 0.227826574209; aaBlosum[ 4][ 2] = 0.397358949897; aaBlosum[ 4][ 3] = 0.240836614802; aaBlosum[ 4][ 4] = 0.000000000000;
+    aaBlosum[ 4][ 5] = 0.329801504630; aaBlosum[ 4][ 6] = 0.140748891814; aaBlosum[ 4][ 7] = 0.418203192284; aaBlosum[ 4][ 8] = 0.354058109831; aaBlosum[ 4][ 9] = 0.774894022794;
+    aaBlosum[ 4][10] = 0.831842640142; aaBlosum[ 4][11] = 0.285078800906; aaBlosum[ 4][12] = 0.767688823480; aaBlosum[ 4][13] = 0.441337471187; aaBlosum[ 4][14] = 0.356008498769;
+    aaBlosum[ 4][15] = 1.197188415094; aaBlosum[ 4][16] = 1.119831358516; aaBlosum[ 4][17] = 0.527664418872; aaBlosum[ 4][18] = 0.470237733696; aaBlosum[ 4][19] = 1.116352478606;
+    aaBlosum[ 5][ 0] = 1.199705704602; aaBlosum[ 5][ 1] = 3.020833610064; aaBlosum[ 5][ 2] = 1.839216146992; aaBlosum[ 5][ 3] = 1.190945703396; aaBlosum[ 5][ 4] = 0.329801504630;
+    aaBlosum[ 5][ 5] = 0.000000000000; aaBlosum[ 5][ 6] = 5.528919177928; aaBlosum[ 5][ 7] = 0.609846305383; aaBlosum[ 5][ 8] = 2.435341131140; aaBlosum[ 5][ 9] = 0.236202451204;
+    aaBlosum[ 5][10] = 0.580737093181; aaBlosum[ 5][11] = 3.945277674515; aaBlosum[ 5][12] = 2.494896077113; aaBlosum[ 5][13] = 0.144356959750; aaBlosum[ 5][14] = 0.858570575674;
+    aaBlosum[ 5][15] = 1.934870924596; aaBlosum[ 5][16] = 1.277480294596; aaBlosum[ 5][17] = 0.758653808642; aaBlosum[ 5][18] = 0.958989742850; aaBlosum[ 5][19] = 0.530785790125;
+    aaBlosum[ 6][ 0] = 1.170949042800; aaBlosum[ 6][ 1] = 1.360574190420; aaBlosum[ 6][ 2] = 1.240488508640; aaBlosum[ 6][ 3] = 3.761625208368; aaBlosum[ 6][ 4] = 0.140748891814;
+    aaBlosum[ 6][ 5] = 5.528919177928; aaBlosum[ 6][ 6] = 0.000000000000; aaBlosum[ 6][ 7] = 0.423579992176; aaBlosum[ 6][ 8] = 1.626891056982; aaBlosum[ 6][ 9] = 0.186848046932;
+    aaBlosum[ 6][10] = 0.372625175087; aaBlosum[ 6][11] = 2.802427151679; aaBlosum[ 6][12] = 0.555415397470; aaBlosum[ 6][13] = 0.291409084165; aaBlosum[ 6][14] = 0.926563934846;
+    aaBlosum[ 6][15] = 1.769893238937; aaBlosum[ 6][16] = 1.071097236007; aaBlosum[ 6][17] = 0.407635648938; aaBlosum[ 6][18] = 0.596719300346; aaBlosum[ 6][19] = 0.524253846338;
+    aaBlosum[ 7][ 0] = 1.955883574960; aaBlosum[ 7][ 1] = 0.418763308518; aaBlosum[ 7][ 2] = 1.355872344485; aaBlosum[ 7][ 3] = 0.798473248968; aaBlosum[ 7][ 4] = 0.418203192284;
+    aaBlosum[ 7][ 5] = 0.609846305383; aaBlosum[ 7][ 6] = 0.423579992176; aaBlosum[ 7][ 7] = 0.000000000000; aaBlosum[ 7][ 8] = 0.539859124954; aaBlosum[ 7][ 9] = 0.189296292376;
+    aaBlosum[ 7][10] = 0.217721159236; aaBlosum[ 7][11] = 0.752042440303; aaBlosum[ 7][12] = 0.459436173579; aaBlosum[ 7][13] = 0.368166464453; aaBlosum[ 7][14] = 0.504086599527;
+    aaBlosum[ 7][15] = 1.509326253224; aaBlosum[ 7][16] = 0.641436011405; aaBlosum[ 7][17] = 0.508358924638; aaBlosum[ 7][18] = 0.308055737035; aaBlosum[ 7][19] = 0.253340790190;
+    aaBlosum[ 8][ 0] = 0.716241444998; aaBlosum[ 8][ 1] = 1.456141166336; aaBlosum[ 8][ 2] = 2.414501434208; aaBlosum[ 8][ 3] = 0.778142664022; aaBlosum[ 8][ 4] = 0.354058109831;
+    aaBlosum[ 8][ 5] = 2.435341131140; aaBlosum[ 8][ 6] = 1.626891056982; aaBlosum[ 8][ 7] = 0.539859124954; aaBlosum[ 8][ 8] = 0.000000000000; aaBlosum[ 8][ 9] = 0.252718447885;
+    aaBlosum[ 8][10] = 0.348072209797; aaBlosum[ 8][11] = 1.022507035889; aaBlosum[ 8][12] = 0.984311525359; aaBlosum[ 8][13] = 0.714533703928; aaBlosum[ 8][14] = 0.527007339151;
+    aaBlosum[ 8][15] = 1.117029762910; aaBlosum[ 8][16] = 0.585407090225; aaBlosum[ 8][17] = 0.301248600780; aaBlosum[ 8][18] = 4.218953969389; aaBlosum[ 8][19] = 0.201555971750;
+    aaBlosum[ 9][ 0] = 0.605899003687; aaBlosum[ 9][ 1] = 0.232036445142; aaBlosum[ 9][ 2] = 0.283017326278; aaBlosum[ 9][ 3] = 0.418555732462; aaBlosum[ 9][ 4] = 0.774894022794;
+    aaBlosum[ 9][ 5] = 0.236202451204; aaBlosum[ 9][ 6] = 0.186848046932; aaBlosum[ 9][ 7] = 0.189296292376; aaBlosum[ 9][ 8] = 0.252718447885; aaBlosum[ 9][ 9] = 0.000000000000;
+    aaBlosum[ 9][10] = 3.890963773304; aaBlosum[ 9][11] = 0.406193586642; aaBlosum[ 9][12] = 3.364797763104; aaBlosum[ 9][13] = 1.517359325954; aaBlosum[ 9][14] = 0.388355409206;
+    aaBlosum[ 9][15] = 0.357544412460; aaBlosum[ 9][16] = 1.179091197260; aaBlosum[ 9][17] = 0.341985787540; aaBlosum[ 9][18] = 0.674617093228; aaBlosum[ 9][19] = 8.311839405458;
+    aaBlosum[10][ 0] = 0.800016530518; aaBlosum[10][ 1] = 0.622711669692; aaBlosum[10][ 2] = 0.211888159615; aaBlosum[10][ 3] = 0.218131577594; aaBlosum[10][ 4] = 0.831842640142;
+    aaBlosum[10][ 5] = 0.580737093181; aaBlosum[10][ 6] = 0.372625175087; aaBlosum[10][ 7] = 0.217721159236; aaBlosum[10][ 8] = 0.348072209797; aaBlosum[10][ 9] = 3.890963773304;
+    aaBlosum[10][10] = 0.000000000000; aaBlosum[10][11] = 0.445570274261; aaBlosum[10][12] = 6.030559379572; aaBlosum[10][13] = 2.064839703237; aaBlosum[10][14] = 0.374555687471;
+    aaBlosum[10][15] = 0.352969184527; aaBlosum[10][16] = 0.915259857694; aaBlosum[10][17] = 0.691474634600; aaBlosum[10][18] = 0.811245856323; aaBlosum[10][19] = 2.231405688913;
+    aaBlosum[11][ 0] = 1.295201266783; aaBlosum[11][ 1] = 5.411115141489; aaBlosum[11][ 2] = 1.593137043457; aaBlosum[11][ 3] = 1.032447924952; aaBlosum[11][ 4] = 0.285078800906;
+    aaBlosum[11][ 5] = 3.945277674515; aaBlosum[11][ 6] = 2.802427151679; aaBlosum[11][ 7] = 0.752042440303; aaBlosum[11][ 8] = 1.022507035889; aaBlosum[11][ 9] = 0.406193586642;
+    aaBlosum[11][10] = 0.445570274261; aaBlosum[11][11] = 0.000000000000; aaBlosum[11][12] = 1.073061184332; aaBlosum[11][13] = 0.266924750511; aaBlosum[11][14] = 1.047383450722;
+    aaBlosum[11][15] = 1.752165917819; aaBlosum[11][16] = 1.303875200799; aaBlosum[11][17] = 0.332243040634; aaBlosum[11][18] = 0.717993486900; aaBlosum[11][19] = 0.498138475304;
+    aaBlosum[12][ 0] = 1.253758266664; aaBlosum[12][ 1] = 0.983692987457; aaBlosum[12][ 2] = 0.648441278787; aaBlosum[12][ 3] = 0.222621897958; aaBlosum[12][ 4] = 0.767688823480;
+    aaBlosum[12][ 5] = 2.494896077113; aaBlosum[12][ 6] = 0.555415397470; aaBlosum[12][ 7] = 0.459436173579; aaBlosum[12][ 8] = 0.984311525359; aaBlosum[12][ 9] = 3.364797763104;
+    aaBlosum[12][10] = 6.030559379572; aaBlosum[12][11] = 1.073061184332; aaBlosum[12][12] = 0.000000000000; aaBlosum[12][13] = 1.773855168830; aaBlosum[12][14] = 0.454123625103;
+    aaBlosum[12][15] = 0.918723415746; aaBlosum[12][16] = 1.488548053722; aaBlosum[12][17] = 0.888101098152; aaBlosum[12][18] = 0.951682162246; aaBlosum[12][19] = 2.575850755315;
+    aaBlosum[13][ 0] = 0.492964679748; aaBlosum[13][ 1] = 0.371644693209; aaBlosum[13][ 2] = 0.354861249223; aaBlosum[13][ 3] = 0.281730694207; aaBlosum[13][ 4] = 0.441337471187;
+    aaBlosum[13][ 5] = 0.144356959750; aaBlosum[13][ 6] = 0.291409084165; aaBlosum[13][ 7] = 0.368166464453; aaBlosum[13][ 8] = 0.714533703928; aaBlosum[13][ 9] = 1.517359325954;
+    aaBlosum[13][10] = 2.064839703237; aaBlosum[13][11] = 0.266924750511; aaBlosum[13][12] = 1.773855168830; aaBlosum[13][13] = 0.000000000000; aaBlosum[13][14] = 0.233597909629;
+    aaBlosum[13][15] = 0.540027644824; aaBlosum[13][16] = 0.488206118793; aaBlosum[13][17] = 2.074324893497; aaBlosum[13][18] = 6.747260430801; aaBlosum[13][19] = 0.838119610178;
+    aaBlosum[14][ 0] = 1.173275900924; aaBlosum[14][ 1] = 0.448133661718; aaBlosum[14][ 2] = 0.494887043702; aaBlosum[14][ 3] = 0.730628272998; aaBlosum[14][ 4] = 0.356008498769;
+    aaBlosum[14][ 5] = 0.858570575674; aaBlosum[14][ 6] = 0.926563934846; aaBlosum[14][ 7] = 0.504086599527; aaBlosum[14][ 8] = 0.527007339151; aaBlosum[14][ 9] = 0.388355409206;
+    aaBlosum[14][10] = 0.374555687471; aaBlosum[14][11] = 1.047383450722; aaBlosum[14][12] = 0.454123625103; aaBlosum[14][13] = 0.233597909629; aaBlosum[14][14] = 0.000000000000;
+    aaBlosum[14][15] = 1.169129577716; aaBlosum[14][16] = 1.005451683149; aaBlosum[14][17] = 0.252214830027; aaBlosum[14][18] = 0.369405319355; aaBlosum[14][19] = 0.496908410676;
+    aaBlosum[15][ 0] = 4.325092687057; aaBlosum[15][ 1] = 1.122783104210; aaBlosum[15][ 2] = 2.904101656456; aaBlosum[15][ 3] = 1.582754142065; aaBlosum[15][ 4] = 1.197188415094;
+    aaBlosum[15][ 5] = 1.934870924596; aaBlosum[15][ 6] = 1.769893238937; aaBlosum[15][ 7] = 1.509326253224; aaBlosum[15][ 8] = 1.117029762910; aaBlosum[15][ 9] = 0.357544412460;
+    aaBlosum[15][10] = 0.352969184527; aaBlosum[15][11] = 1.752165917819; aaBlosum[15][12] = 0.918723415746; aaBlosum[15][13] = 0.540027644824; aaBlosum[15][14] = 1.169129577716;
+    aaBlosum[15][15] = 0.000000000000; aaBlosum[15][16] = 5.151556292270; aaBlosum[15][17] = 0.387925622098; aaBlosum[15][18] = 0.796751520761; aaBlosum[15][19] = 0.561925457442;
+    aaBlosum[16][ 0] = 1.729178019485; aaBlosum[16][ 1] = 0.914665954563; aaBlosum[16][ 2] = 1.898173634533; aaBlosum[16][ 3] = 0.934187509431; aaBlosum[16][ 4] = 1.119831358516;
+    aaBlosum[16][ 5] = 1.277480294596; aaBlosum[16][ 6] = 1.071097236007; aaBlosum[16][ 7] = 0.641436011405; aaBlosum[16][ 8] = 0.585407090225; aaBlosum[16][ 9] = 1.179091197260;
+    aaBlosum[16][10] = 0.915259857694; aaBlosum[16][11] = 1.303875200799; aaBlosum[16][12] = 1.488548053722; aaBlosum[16][13] = 0.488206118793; aaBlosum[16][14] = 1.005451683149;
+    aaBlosum[16][15] = 5.151556292270; aaBlosum[16][16] = 0.000000000000; aaBlosum[16][17] = 0.513128126891; aaBlosum[16][18] = 0.801010243199; aaBlosum[16][19] = 2.253074051176;
+    aaBlosum[17][ 0] = 0.465839367725; aaBlosum[17][ 1] = 0.426382310122; aaBlosum[17][ 2] = 0.191482046247; aaBlosum[17][ 3] = 0.145345046279; aaBlosum[17][ 4] = 0.527664418872;
+    aaBlosum[17][ 5] = 0.758653808642; aaBlosum[17][ 6] = 0.407635648938; aaBlosum[17][ 7] = 0.508358924638; aaBlosum[17][ 8] = 0.301248600780; aaBlosum[17][ 9] = 0.341985787540;
+    aaBlosum[17][10] = 0.691474634600; aaBlosum[17][11] = 0.332243040634; aaBlosum[17][12] = 0.888101098152; aaBlosum[17][13] = 2.074324893497; aaBlosum[17][14] = 0.252214830027;
+    aaBlosum[17][15] = 0.387925622098; aaBlosum[17][16] = 0.513128126891; aaBlosum[17][17] = 0.000000000000; aaBlosum[17][18] = 4.054419006558; aaBlosum[17][19] = 0.266508731426;
+    aaBlosum[18][ 0] = 0.718206697586; aaBlosum[18][ 1] = 0.720517441216; aaBlosum[18][ 2] = 0.538222519037; aaBlosum[18][ 3] = 0.261422208965; aaBlosum[18][ 4] = 0.470237733696;
+    aaBlosum[18][ 5] = 0.958989742850; aaBlosum[18][ 6] = 0.596719300346; aaBlosum[18][ 7] = 0.308055737035; aaBlosum[18][ 8] = 4.218953969389; aaBlosum[18][ 9] = 0.674617093228;
+    aaBlosum[18][10] = 0.811245856323; aaBlosum[18][11] = 0.717993486900; aaBlosum[18][12] = 0.951682162246; aaBlosum[18][13] = 6.747260430801; aaBlosum[18][14] = 0.369405319355;
+    aaBlosum[18][15] = 0.796751520761; aaBlosum[18][16] = 0.801010243199; aaBlosum[18][17] = 4.054419006558; aaBlosum[18][18] = 0.000000000000; aaBlosum[18][19] = 1.000000000000;
+    aaBlosum[19][ 0] = 2.187774522005; aaBlosum[19][ 1] = 0.438388343772; aaBlosum[19][ 2] = 0.312858797993; aaBlosum[19][ 3] = 0.258129289418; aaBlosum[19][ 4] = 1.116352478606;
+    aaBlosum[19][ 5] = 0.530785790125; aaBlosum[19][ 6] = 0.524253846338; aaBlosum[19][ 7] = 0.253340790190; aaBlosum[19][ 8] = 0.201555971750; aaBlosum[19][ 9] = 8.311839405458;
+    aaBlosum[19][10] = 2.231405688913; aaBlosum[19][11] = 0.498138475304; aaBlosum[19][12] = 2.575850755315; aaBlosum[19][13] = 0.838119610178; aaBlosum[19][14] = 0.496908410676;
     aaBlosum[19][15] = 0.561925457442; aaBlosum[19][16] = 2.253074051176; aaBlosum[19][17] = 0.266508731426; aaBlosum[19][18] = 1.000000000000; aaBlosum[19][19] = 0.000000000000;
 
-    blosPi[ 0] = 0.074; 
-    blosPi[ 1] = 0.052; 
-    blosPi[ 2] = 0.045; 
+    blosPi[ 0] = 0.074;
+    blosPi[ 1] = 0.052;
+    blosPi[ 2] = 0.045;
     blosPi[ 3] = 0.054;
-    blosPi[ 4] = 0.025; 
-    blosPi[ 5] = 0.034; 
-    blosPi[ 6] = 0.054; 
+    blosPi[ 4] = 0.025;
+    blosPi[ 5] = 0.034;
+    blosPi[ 6] = 0.054;
     blosPi[ 7] = 0.074;
-    blosPi[ 8] = 0.026; 
-    blosPi[ 9] = 0.068; 
-    blosPi[10] = 0.099; 
+    blosPi[ 8] = 0.026;
+    blosPi[ 9] = 0.068;
+    blosPi[10] = 0.099;
     blosPi[11] = 0.058;
-    blosPi[12] = 0.025; 
-    blosPi[13] = 0.047; 
-    blosPi[14] = 0.039; 
+    blosPi[12] = 0.025;
+    blosPi[13] = 0.047;
+    blosPi[14] = 0.039;
     blosPi[15] = 0.057;
-    blosPi[16] = 0.051; 
-    blosPi[17] = 0.013; 
-    blosPi[18] = 0.032; 
+    blosPi[16] = 0.051;
+    blosPi[17] = 0.013;
+    blosPi[18] = 0.032;
     blosPi[19] = 0.073;
 
     /* LG */
@@ -17116,7 +17116,7 @@ int SetAARates (void)
                 }
             }
         }
-    
+
     /* rescale stationary frequencies, to make certain they sum to 1.0 */
     sum = 0.0;
     for (i=0; i<20; i++)
@@ -17168,7 +17168,7 @@ int SetAARates (void)
         sum += lgPi[i];
     for (i=0; i<20; i++)
         lgPi[i] /= sum;
-    
+
     /* multiply entries by amino acid frequencies */
     for (i=0; i<20; i++)
         {
@@ -17186,7 +17186,7 @@ int SetAARates (void)
             aaLG[i][j]      *= lgPi[j];
             }
         }
-        
+
     /* rescale, so branch lengths are in terms of expected number of
        amino acid substitutions per site */
     scaler = 0.0;
@@ -17319,7 +17319,7 @@ int SetAARates (void)
     for (i=0; i<20; i++)
         for (j=0; j<20; j++)
             aaLG[i][j] *= scaler;
-    
+
     /* set diagonal of matrix */
     for (i=0; i<20; i++)
         {
@@ -17444,7 +17444,7 @@ int SetAARates (void)
 void SetCode (int part)
 {
     int     i, s, s1, s2, s3, ns;
-    
+
     modelParams[part].codon[ 0] = 12; /* AAA Lys */
     modelParams[part].codon[ 1] =  3; /* AAC Asn */
     modelParams[part].codon[ 2] = 12; /* AAG Lys */
@@ -17509,7 +17509,7 @@ void SetCode (int part)
     modelParams[part].codon[61] = 14; /* TTC Phe */
     modelParams[part].codon[62] = 11; /* TTG Leu */
     modelParams[part].codon[63] = 14; /* TTT Phe */
-    
+
     if (!strcmp(modelParams[part].geneticCode, "Vertmt"))
         {
         /* UGA: Ter -> Trp
@@ -17589,7 +17589,7 @@ void SetCode (int part)
     else
         {
         }
-    
+
     ns = 0;
     for (i=0; i<64; i++)
         {
@@ -17597,7 +17597,7 @@ void SetCode (int part)
             ns++;
         }
     /* printf ("ns = %d\n", ns); */
-    
+
     s = 0;
     for (s1=0; s1<4; s1++)
         for (s2=0; s2<4; s2++)
@@ -17616,7 +17616,7 @@ void SetCode (int part)
 int SetLocalTaxa (void)
 {
     int         i, j;
-    
+
     /* free memory if allocated */
     if (memAllocs[ALLOC_LOCTAXANAMES] == YES)
         {
@@ -17630,7 +17630,7 @@ int SetLocalTaxa (void)
         localTaxonCalibration = NULL;
         memAllocs[ALLOC_LOCALTAXONCALIBRATION] = NO;
         }
-    
+
     /* count number of non-excluded taxa */
     numLocalTaxa = 0;
     for (i=0; i<numTaxa; i++)
@@ -17638,7 +17638,7 @@ int SetLocalTaxa (void)
         if (taxaInfo[i].isDeleted == NO)
             numLocalTaxa++;
         }
-        
+
     /* allocate memory */
     localTaxonNames = (char **)SafeCalloc((size_t)numLocalTaxa, sizeof(char *));
     if (!localTaxonNames)
@@ -17649,7 +17649,7 @@ int SetLocalTaxa (void)
     if (!localTaxonCalibration)
         return (ERROR);
     memAllocs[ALLOC_LOCALTAXONCALIBRATION] = YES;
-        
+
     /* point to names and calibrations of non-excluded taxa */
     localOutGroup = 0;
     for (i=j=0; i<numTaxa; i++)
@@ -17669,7 +17669,7 @@ int SetLocalTaxa (void)
     for (i=0; i<numLocalTaxa; i++)
         MrBayesPrint ("%s   %4d %s\n", spacer, i+1, localTaxonNames[i]);
 #   endif
-        
+
     return (NO_ERROR);
 }
 
@@ -17704,18 +17704,18 @@ int SetModelDefaults (void)
     for (j=0; j<numCurrentDivisions; j++)
         {
         modelParams[j] = defaultModel;                      /* start with default settings */
-        
+
         modelParams[j].dataType = DataType (j);             /* data type for partition                      */
 
         if (modelParams[j].dataType == STANDARD)
             {   /* set default ascertainment bias for partition */
             modelParams[j].coding = VARIABLE;
-            strcpy(modelParams[j].codingString, "Variable"); 
+            strcpy(modelParams[j].codingString, "Variable");
             }
         else if (modelParams[j].dataType == RESTRICTION)
             {
             modelParams[j].coding = NOABSENCESITES;
-            strcpy(modelParams[j].codingString, "Noabsencesites");   
+            strcpy(modelParams[j].codingString, "Noabsencesites");
             }
         else
             {
@@ -17745,7 +17745,7 @@ int SetModelInfo (void)
     int             i, j, chn, ts;
     ModelParams     *mp;
     ModelInfo       *m;
-    
+
     /* wipe all model settings */
     inferSiteRates = NO;
     inferAncStates = NO;
@@ -17755,7 +17755,7 @@ int SetModelInfo (void)
         {
         m = &modelSettings[i];
 
-        /* make certain that we set this intentionally to "NO" so we 
+        /* make certain that we set this intentionally to "NO" so we
            calculate cijk information and calculate cond likes when needed */
         m->upDateCijk = YES;
         m->upDateCl = YES;
@@ -17803,7 +17803,7 @@ int SetModelInfo (void)
         m->StateCode = NULL;
         m->PrintAncStates = NULL;
         m->PrintSiteRates = NULL;
-        
+
         m->printPosSel = NO;
         m->printAncStates = NO;
         m->printSiteRates = NO;
@@ -17845,7 +17845,7 @@ int SetModelInfo (void)
         m->clP_AVX = NULL;
 #endif
 #endif
-            
+
         /* set all memory pointers to NULL */
         m->parsSets = NULL;
         m->numParsSets = 0;
@@ -17883,7 +17883,7 @@ int SetModelInfo (void)
         {
         mp = &modelParams[i];
         m = &modelSettings[i];
-        
+
         if (!strcmp(mp->nucModel,"Protein") && (mp->dataType == DNA || mp->dataType == RNA))
             m->dataType = PROTEIN;
         else
@@ -17898,7 +17898,7 @@ int SetModelInfo (void)
             m->nucModelId = NUCMODEL_AA;
         else /* if (!strcmp(mp->nucModelId, "Codon")) */
             m->nucModelId = NUCMODEL_CODON;
-            
+
         /* model nst */
         if (!strcmp(mp->nst, "1"))
             m->nst = 1;
@@ -17908,7 +17908,7 @@ int SetModelInfo (void)
             m->nst = 6;
         else
             m->nst = NST_MIXED;
-            
+
         /* We set the aa model here. We have two options. First, the model
            could be fixed, in which case mp->aaModel has been set. We then
            go ahead and also set the model settings. Second, the model
@@ -17951,7 +17951,7 @@ int SetModelInfo (void)
             }
         else
             m->aaModelId = -1;
-            
+
         /* parsimony model? */
         if (!strcmp(mp->parsModel, "Yes"))
             m->parsModelId = YES;
@@ -18006,7 +18006,7 @@ int SetModelInfo (void)
             m->numStates = 20;
         else
             m->numStates = mp->nStates;
-        
+
         /* number of model states including hidden ones */
         if ((mp->dataType == DNA || mp->dataType == RNA) && !strcmp (mp->covarionModel, "Yes") && !strcmp(mp->nucModel, "4by4"))
             m->numModelStates = mp->nStates * 2;
@@ -18023,8 +18023,8 @@ int SetModelInfo (void)
             }
         else
             m->numModelStates = m->numStates;
-            
-        /* Fill in some information for calculating cijk. We will use m->cijkLength to 
+
+        /* Fill in some information for calculating cijk. We will use m->cijkLength to
            figure out if we need to diagonalize Q to calculate transition probabilities.
            If cijkLength = 0, then we won't bother. We use cijkLength later in this function. */
         m->cijkLength = 0;
@@ -18145,7 +18145,7 @@ int SetModelInfo (void)
             }
         }
 
-    return (NO_ERROR);  
+    return (NO_ERROR);
 }
 
 
@@ -18265,7 +18265,7 @@ int SetModelParams (void)
                 break;
         mp = &modelParams[i];
         m  = &modelSettings[i];
-        
+
         /* Set default min and max */
         p->min = p->max = NEG_INFINITY;
 
@@ -18279,19 +18279,19 @@ int SetModelParams (void)
         p->nIntValues = 0;
         p->nSympi = 0;
         p->hasBinaryStd = NO;
-        
+
         /* should this parameter be printed to a file? */
         p->printParam = NO;
 
         /* set print subparams to 0 */
         p->nPrintSubParams = 0;
-        
+
         /* check constraints for tree parameter ? */
         p->checkConstraints = NO;
 
         /* set index number of parameter */
         p->index = k;
-        
+
         /* set prior function to NULL */
         p->LnPriorRatio = NULL;
 
@@ -18321,7 +18321,7 @@ int SetModelParams (void)
         /* get partition descriptor */
         SafeStrcat(&partString,"");
         FillRelPartsString (p, &partString);
-            
+
         /* set up information for parameter */
         if (j == P_TRATIO)
             {
@@ -18334,7 +18334,7 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].tRatio = p;
-    
+
             p->paramTypeName = "Transition and transversion rates";
             SafeStrcat(&p->name, "Tratio");
             SafeStrcat(&p->name, partString);
@@ -18346,7 +18346,7 @@ int SetModelParams (void)
                 }
             else
                 p->paramId = TRATIO_FIX;
-                
+
             if (p->paramId != TRATIO_FIX)
                 p->printParam = YES;
             if (!strcmp(mp->tratioFormat,"Ratio"))
@@ -18363,6 +18363,68 @@ int SetModelParams (void)
                 SafeStrcat (&p->paramHeader, "\ttv");
                 SafeStrcat (&p->paramHeader, partString);
                 }
+            }
+        else if (j == P_RHO)
+            {
+            /* Set up rho for correlation model ***********************************************************************/
+            p->paramType = P_RHO;
+            p->nValues = 1;
+            p->nSubValues = 0;
+            p->min = 0.0;
+            p->max = 1.0;
+            for (i=0; i<numCurrentDivisions; i++)
+                if (isPartTouched[i] == YES)
+                    modelSettings[i].rho = p;
+
+            p->paramTypeName = "Inverse correlation factor";
+            SafeStrcat(&p->name, "rho");
+            SafeStrcat(&p->name, partString);
+
+            /* find the parameter x prior type */
+            if (!strcmp(mp->rhoPr,"Exponential"))
+                {
+                p->paramId = RHO_EXP;
+                }
+            else
+                p->paramId = RHO_FIX;
+
+            if (p->paramId != RHO_FIX)
+                p->printParam = YES;
+
+            /* report rho (inverse correlation factor) */
+            SafeStrcat (&p->paramHeader,"rho");
+            SafeStrcat (&p->paramHeader, partString);
+            }
+        else if (j == P_ALPHADIR)
+            {
+            /* Set up alpha_dir for correlation model DPMM ***********************************************************/
+            p->paramType = P_ALPHADIR;
+            p->nValues = 1;
+            p->nSubValues = 0;
+            p->min = 0.0;
+            p->max = POS_INFINITY;
+            for (i=0; i<numCurrentDivisions; i++)
+                if (isPartTouched[i] == YES)
+                    modelSettings[i].alphaDir = p;
+
+            p->paramTypeName = "DPMM scaling parameter";
+            SafeStrcat(&p->name, "alphaDir");
+            SafeStrcat(&p->name, partString);
+
+            /* find the parameter x prior type */
+            if (!strcmp(mp->alphaDirPr,"Exponential"))
+                {
+                p->paramId = ALPHADIR_EXP;
+                }
+            else
+                p->paramId = ALPHADIR_FIX;
+
+            if (p->paramId != ALPHADIR_FIX)
+                p->printParam = YES;
+
+            /* report alphaDir (DPMM scaling factor) */
+            SafeStrcat (&p->paramHeader,"alphaDir");
+            SafeStrcat (&p->paramHeader, partString);
             }
         else if (j == P_REVMAT)
             {
@@ -18472,7 +18534,7 @@ int SetModelParams (void)
                 for (i=0; i<numCurrentDivisions; i++)
                     if (isPartTouched[i] == YES)
                         modelSettings[i].omega = p;
-            
+
                 /* find the parameter x prior type */
                 if (!strcmp(mp->m3omegapr, "Exponential")      && !strcmp(mp->codonCatFreqPr, "Fixed"))
                     p->paramId = OMEGA_EF;
@@ -18492,7 +18554,7 @@ int SetModelParams (void)
                 SafeStrcat (&p->paramHeader, partString);
                 SafeStrcat (&p->paramHeader, "\tomega(3)");
                 SafeStrcat (&p->paramHeader, partString);
-                    
+
                 SafeStrcat (&p->paramHeader, "\tpi(1)");
                 SafeStrcat (&p->paramHeader, partString);
                 SafeStrcat (&p->paramHeader, "\tpi(2)");
@@ -18577,7 +18639,7 @@ int SetModelParams (void)
                 for (i=0; i<numCurrentDivisions; i++)
                     if (isPartTouched[i] == YES)
                         modelSettings[i].omega = p;
-            
+
                 /* find the parameter x prior type */
                 if      (!strcmp(mp->ny98omega1pr, "Beta")  && !strcmp(mp->ny98omega3pr, "Uniform")     && !strcmp(mp->codonCatFreqPr, "Dirichlet"))
                     p->paramId = OMEGA_BUD;
@@ -18603,7 +18665,7 @@ int SetModelParams (void)
                     p->paramId = OMEGA_FFD;
                 else if (!strcmp(mp->ny98omega1pr, "Fixed") && !strcmp(mp->ny98omega3pr, "Fixed")       && !strcmp(mp->codonCatFreqPr, "Fixed"))
                     p->paramId = OMEGA_FFF;
-                
+
                 if (p->paramId != OMEGA_FFF)
                     p->printParam = YES;
                 SafeStrcat (&p->paramHeader, "omega(-)");
@@ -18612,7 +18674,7 @@ int SetModelParams (void)
                 SafeStrcat (&p->paramHeader, partString);
                 SafeStrcat (&p->paramHeader, "\tomega(+)");
                 SafeStrcat (&p->paramHeader, partString);
-                    
+
                 SafeStrcat (&p->paramHeader, "\tpi(-)");
                 SafeStrcat (&p->paramHeader, partString);
                 SafeStrcat (&p->paramHeader, "\tpi(N)");
@@ -18641,7 +18703,7 @@ int SetModelParams (void)
                 }
             p->paramTypeName = "Positive selection (omega) model";
             SafeStrcat(&p->name, "Omega");
-            SafeStrcat(&p->name, partString);           
+            SafeStrcat(&p->name, partString);
             }
         else if (j == P_PI)
             {
@@ -18689,7 +18751,7 @@ int SetModelParams (void)
                 p->nValues = 1;     /* set to 0 below for the SYMPI_EQUAL model */
                 if (!strcmp(mp->symPiPr,"Uniform"))
                     {
-                    if (m->numModelStates > 2) 
+                    if (m->numModelStates > 2)
                         p->paramId = SYMPI_UNI_MS;
                     else
                         p->paramId = SYMPI_UNI;
@@ -18710,7 +18772,7 @@ int SetModelParams (void)
                         }
                     else
                         {
-                        if (m->numModelStates > 2) 
+                        if (m->numModelStates > 2)
                             p->paramId = SYMPI_FIX_MS;
                         else
                             p->paramId = SYMPI_FIX;
@@ -18743,7 +18805,7 @@ int SetModelParams (void)
                     {
                     p->paramId = PI_EQUAL;
                     }
-                    
+
                 if (m->dataType == PROTEIN)
                     {
                     if (!strcmp(mp->aaModelPr, "Fixed"))
@@ -18760,7 +18822,7 @@ int SetModelParams (void)
                     else
                         p->paramId = PI_FIXED;
                     }
-                    
+
                 if (p->paramId == PI_DIR)
                     p->printParam = YES;
                 if (m->dataType == DNA || m->dataType == RNA)
@@ -18882,10 +18944,10 @@ int SetModelParams (void)
                 SafeSprintf(&tempStr, &tempStrSize, "mixturerates%s[%d]", partString, i+1);
                 SafeStrcat(&p->paramHeader, tempStr);
                 }
-            
+
             /* find the parameter x prior type */
             p->paramId = MIXTURE_RATES;
-            
+
             /* always print */
             p->printParam = YES;
             }
@@ -18926,7 +18988,7 @@ int SetModelParams (void)
                 p->paramId = SHAPE_EXP;
             else
                 p->paramId = SHAPE_FIX;
-                
+
             if (p->paramId != SHAPE_FIX)
                 p->printParam = YES;
             }
@@ -18951,7 +19013,7 @@ int SetModelParams (void)
                 p->paramId = PINVAR_UNI;
             else
                 p->paramId = PINVAR_FIX;
-                
+
             if (p->paramId != PINVAR_FIX)
                 p->printParam = YES;
             SafeStrcat (&p->paramHeader, "pinvar");
@@ -19008,7 +19070,7 @@ int SetModelParams (void)
                 p->paramId = SWITCH_EXP;
             else
                 p->paramId = SWITCH_FIX;
-                
+
             if (p->paramId != SWITCH_FIX)
                 p->printParam = YES;
 
@@ -19122,7 +19184,7 @@ int SetModelParams (void)
             p->paramTypeName = "Topology";
             SafeStrcat(&p->name, "Tau");
             SafeStrcat(&p->name, partString);
-                    
+
             /* check that the model is not parsimony for all of the relevant partitions */
             areAllPartsParsimony = YES;
             for (i=0; i<p->nRelParts; i++)
@@ -19149,7 +19211,7 @@ int SetModelParams (void)
                         }
                     }
                 }
-            
+
             /* now find the parameter x prior type */
             if (areAllPartsParsimony == YES)
                 {
@@ -19325,7 +19387,7 @@ int SetModelParams (void)
             p->paramTypeName = "Species tree";
             SafeStrcat(&p->name, "Spt");
             SafeStrcat(&p->name, partString);
-                    
+
             /* check that the model is not parsimony for all of the relevant partitions */
             areAllPartsParsimony = YES; /* FIXME: Not used (from clang static analyzer) */
             for (i=0; i<p->nRelParts; i++)
@@ -19333,7 +19395,7 @@ int SetModelParams (void)
                 if (modelSettings[p->relParts[i]].parsModelId == NO)
                     areAllPartsParsimony = NO; /* FIXME: Not used (from clang static analyzer) */
                 }
-            
+
             /* find the parameter x prior type */
             p->paramId = SPECIESTREE_UNIFORM;
 
@@ -19369,7 +19431,7 @@ int SetModelParams (void)
 
             if (p->paramId != SPECRATE_FIX)
                 p->printParam = YES;
-                
+
             if (p->nValues == 1)
                 {
                 SafeStrcat (&p->paramHeader, "net_speciation");
@@ -19409,7 +19471,7 @@ int SetModelParams (void)
 
             if (p->paramId != EXTRATE_FIX)
                 p->printParam = YES;
-                
+
             if (p->nValues == 1)
                 {
                 SafeStrcat (&p->paramHeader, "relative_extinction");
@@ -19433,20 +19495,20 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].fossilizationRates = p;
-            
+
             p->paramTypeName = "Fossilization rate";
             SafeStrcat(&p->name, "Relative_fossilization");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             if (!strcmp(mp->fossilizationPr,"Beta"))
                 p->paramId = FOSLRATE_BETA;
             else
                 p->paramId = FOSLRATE_FIX;
-            
+
             if (p->paramId != FOSLRATE_FIX)
                 p->printParam = YES;
-            
+
             if (p->nValues == 1)
                 {
                 SafeStrcat (&p->paramHeader, "relative_fossilization");
@@ -19620,13 +19682,13 @@ int SetModelParams (void)
             p->paramTypeName = "Rate of rate-multiplying compound Poisson process";
             SafeStrcat(&p->name, "Lambda_cpp");
             SafeStrcat(&p->name, partString);
-                    
+
             /* find the parameter x prior type */
             if (!strcmp(mp->cppRatePr,"Exponential"))
                 p->paramId = CPPRATE_EXP;
             else
                 p->paramId = CPPRATE_FIX;
-            
+
             if (p->paramId != CPPRATE_FIX)
                 p->printParam = YES;
             SafeStrcat (&p->paramHeader, "cppRate");
@@ -19647,11 +19709,11 @@ int SetModelParams (void)
             p->paramTypeName = "Standard deviation (log) of CPP rate multipliers";
             SafeStrcat(&p->name, "Sigma_cpp");
             SafeStrcat(&p->name, partString);
-                    
+
             /* find the parameter x prior type */
             if (!strcmp(mp->cppMultDevPr,"Fixed"))
                 p->paramId = CPPMULTDEV_FIX;
-            
+
             if (p->paramId != CPPMULTDEV_FIX)
                 p->printParam = YES;
             SafeStrcat (&p->paramHeader, "sigma_cpp");
@@ -19672,13 +19734,13 @@ int SetModelParams (void)
             p->paramTypeName = "Events of rate-multiplying compound Poisson process";
             SafeStrcat(&p->name, "CppEvents");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             p->paramId = CPPEVENTS;
-            
+
             /* should we print values to .p file? */
             p->printParam = NO;
-            
+
             SafeStrcat (&p->paramHeader, "cppEvents");
             SafeStrcat (&p->paramHeader, partString);
             }
@@ -19697,7 +19759,7 @@ int SetModelParams (void)
             p->paramTypeName = "Variance of lognormal distribution of branch rates";
             SafeStrcat(&p->name, "TK02var");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             if (!strcmp(mp->tk02varPr,"Uniform"))
                 p->paramId = TK02VAR_UNI;
@@ -19705,7 +19767,7 @@ int SetModelParams (void)
                 p->paramId = TK02VAR_EXP;
             else
                 p->paramId = TK02VAR_FIX;
-            
+
             if (p->paramId != TK02VAR_FIX)
                 p->printParam = YES;
             SafeStrcat (&p->paramHeader, "tk02var");
@@ -19722,14 +19784,14 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].tk02BranchRates = p;
-            
+
             p->paramTypeName = "Branch rates of TK02 relaxed clock";
             SafeStrcat(&p->name, "TK02Brlens");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             p->paramId = TK02BRANCHRATES;
-            
+
             /* should we print values to .p file? */
             p->printParam = NO;
 
@@ -19751,7 +19813,7 @@ int SetModelParams (void)
             p->paramTypeName = "Variance increase of igr model branch lenths";
             SafeStrcat(&p->name, "Igrvar");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             if (!strcmp(mp->igrvarPr,"Uniform"))
                 p->paramId = IGRVAR_UNI;
@@ -19759,7 +19821,7 @@ int SetModelParams (void)
                 p->paramId = IGRVAR_EXP;
             else
                 p->paramId = IGRVAR_FIX;
-            
+
             if (p->paramId != IGRVAR_FIX)
                 p->printParam = YES;
             SafeStrcat (&p->paramHeader, "igrvar");
@@ -19776,14 +19838,14 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].igrBranchRates = p;
-            
+
             p->paramTypeName = "Branch lengths of IGR relaxed clock";
             SafeStrcat(&p->name, "IgrBrlens");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             p->paramId = IGRBRANCHRATES;
-            
+
             /* should we print values to .p file? */
             p->printParam = NO;
 
@@ -19801,11 +19863,11 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].mixedvar = p;
-            
+
             p->paramTypeName = "Variance shared for mixed relaxed clock moodel";
             SafeStrcat(&p->name, "Mixedvar");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             if (!strcmp(mp->mixedvarPr,"Uniform"))
                 p->paramId = MIXEDVAR_UNI;
@@ -19813,7 +19875,7 @@ int SetModelParams (void)
                 p->paramId = MIXEDVAR_EXP;
             else
                 p->paramId = MIXEDVAR_FIX;
-            
+
             if (p->paramId != MIXEDVAR_FIX)
                 p->printParam = YES;
             SafeStrcat (&p->paramHeader, "mixedvar");
@@ -19831,17 +19893,17 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].mixedBrchRates = p;
-            
+
             p->paramTypeName = "Branch rates of mixed relaxed clock";
             SafeStrcat(&p->name, "MixedBrlens");
             SafeStrcat(&p->name, partString);
-            
+
             /* find the parameter x prior type */
             p->paramId = MIXEDBRCHRATES;
-            
+
             /* how to print model indicator (0 or 1) to .p file? */
             p->printParam = NO;
-            
+
             SafeStrcat (&p->paramHeader, "mixed_brlens");
             SafeStrcat (&p->paramHeader, partString);
             }
@@ -19856,14 +19918,14 @@ int SetModelParams (void)
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].clockRate = p;
-    
+
             p->paramTypeName = "Base rate of clock";
             SafeStrcat(&p->name, "Clockrate");
             SafeStrcat(&p->name, partString);
 
             /* parameter does affect likelihoods */
             p->affectsLikelihood = YES;
-            
+
             /* find the parameter x prior type */
             if (!strcmp(mp->clockRatePr,"Normal"))
                 {
@@ -19900,7 +19962,7 @@ int SetModelParams (void)
                 p->priorParams  = &mp->clockRateFix;
                 p->LnPriorProb  = &LnPriorProbFix;
                 }
-                
+
             SafeStrcat (&p->paramHeader, "clockrate");
             SafeStrcat (&p->paramHeader, partString);
             if (p->paramId != CLOCKRATE_FIX)
@@ -19925,7 +19987,7 @@ int SetMoves (void)
 {
     int         i, j, k, moveIndex;
     Param       *param;
-    
+
     /* free up previous moves if any */
     if (memAllocs[ALLOC_MOVES] == YES)
         {
@@ -19938,7 +20000,7 @@ int SetMoves (void)
 
     /* set up applicable moves                                   */
     /* each combination of moveType and param is a separate move */
-    
+
     /* first count applicable moves */
     numApplicableMoves = 0;
     for (k=0; k<numParams; k++)
@@ -19976,7 +20038,7 @@ int SetMoves (void)
         {
         param = &params[k];
         for (i=0; i<NUM_MOVE_TYPES; i++)
-            {   
+            {
             if (moveTypes[i].level > userLevel)
                 continue;
             if (moveTypes[i].isApplicable(param) == NO)
@@ -20058,7 +20120,7 @@ int SetPopSizeParam (Param *param, int chn, int state, PolyTree *pt)
 
     FreePolyTreePartitions(pt);
     FreeTreePartitions(speciesTree);
-    
+
     return (NO_ERROR);
 }
 
@@ -20129,7 +20191,7 @@ int SetRelaxedClockParam (Param *param, int chn, int state, PolyTree *pt)
     t = GetTree (param, chn, state);
     AllocatePolyTreePartitions (pt);
     AllocateTreePartitions (t);
-    
+
     for (i=pt->nNodes-1; i>=0; i--)
         {
         pp = pt->allDownPass[i];
@@ -20262,15 +20324,15 @@ int SetUpAnalysis (RandLong *seed)
     /* Set up link table */
     if (SetUpLinkTable () == ERROR)
         return (ERROR);
-    
+
     /* Check that the settings for doublet or codon models are correct. */
     if (CheckExpandedModels() == ERROR)
         return (ERROR);
 
     /* Set up model info */
-    if (SetModelInfo() == ERROR) 
+    if (SetModelInfo() == ERROR)
         return (ERROR);
-    
+
     /* Calculate number of (uncompressed) characters for each division */
     if (GetNumDivisionChars() == ERROR)
         return (ERROR);
@@ -20286,20 +20348,20 @@ int SetUpAnalysis (RandLong *seed)
     /* Set up parameters for the chain. */
     if (SetModelParams () == ERROR)
         return (ERROR);
-    
+
     /* Allocate normal params */
     if (AllocateNormalParams () == ERROR)
         return (ERROR);
-    
+
     /* Allocate tree params */
     if (AllocateTreeParams () == ERROR)
         return (ERROR);
-    
+
     /* Set default number of trees for sumt to appropriate number */
     sumtParams.numTrees = numTrees;
 
     /* Fill in normal parameters */
-    if (FillNormalParams (seed, 0, numGlobalChains) == ERROR) 
+    if (FillNormalParams (seed, 0, numGlobalChains) == ERROR)
         return (ERROR);
 
     /* Process standard characters (calculates bsIndex, tiIndex, and more). */
@@ -20309,13 +20371,13 @@ int SetUpAnalysis (RandLong *seed)
     /* Fill in trees */
     if (FillTreeParams (seed, 0, numGlobalChains) == ERROR)
         return (ERROR);
-    
+
     /* Set the applicable moves that could be used by the chain. */
     if (SetMoves () == ERROR)
         return (ERROR);
-    
+
     setUpAnalysisSuccess=YES;
-    
+
     return (NO_ERROR);
 }
 
@@ -20337,7 +20399,7 @@ int SetUpLinkTable (void)
     for (j=0; j<NUM_LINKED; j++)
         for (i=0; i<numCurrentDivisions; i++)
             activeParams[j][i] = 0;
-    
+
     if (numCurrentDivisions > 1)
         {
         paramCount = 0;
@@ -20345,7 +20407,7 @@ int SetUpLinkTable (void)
             {
             isFirst = YES;
             for (i=0; i<numCurrentDivisions; i++)
-                modelId[i] = 0;     
+                modelId[i] = 0;
             for (i=0; i<numCurrentDivisions-1; i++) /* loop over partitions */
                 {
                 for (k=i+1; k<numCurrentDivisions; k++)
@@ -20408,7 +20470,7 @@ int SetUpLinkTable (void)
                 activeParams[j][0] = -1;
             }
         }
-        
+
     /* Check that the same report format is specified for all partitions with the same rate multiplier */
     for (i=0; i<numCurrentDivisions; i++)
         check[i] = NO;
@@ -20436,7 +20498,7 @@ int SetUpLinkTable (void)
             MrBayesPrint ("%s      MrBayes will use the format for the first partition, which is %s.\n", spacer, modelParams[i].ratemultFormat);
             }
         }
-       
+
     /* probably a good idea to clean up link table here */
     paramCount = 0;
     for (j=0; j<NUM_LINKED; j++)
@@ -20474,7 +20536,7 @@ int SetUpLinkTable (void)
 ------------------------------------------------------------------------*/
 void SetUpMoveTypes (void)
 {
-    /* Register the move type here when new move functions are added 
+    /* Register the move type here when new move functions are added
        Remember to check that the number of move types does not exceed NUM_MOVE_TYPES
        defined in bayes.h.         */
     int         i;
@@ -20503,7 +20565,7 @@ void SetUpMoveTypes (void)
     /* Moves are in alphabetic order after parameter name, which matches the name of a move function if
        there is a separate move function for the parameter. See proposal.h for declaration of move functions.
        Since 2010-10-04, some parameters use generalized move functions and do not have their own. */
-    
+
     i = 0;
 
     /* Move_Aamodel */
@@ -20517,7 +20579,7 @@ void SetUpMoveTypes (void)
     mt->numTuningParams = 0;
     mt->parsimonyBased = NO;
     mt->level = STANDARD_USER;
-    
+
     /* Move_Adgamma */
     mt = &moveTypes[i++];
     mt->name = "Sliding window";
@@ -20564,7 +20626,7 @@ void SetUpMoveTypes (void)
     mt->name = "Random brlen hit with multiplier";
     mt->shortName = "Multiplier";
     mt->tuningName[0] = "Multiplier tuning parameter";
-    mt->shortTuningName[0] = "lambda";  
+    mt->shortTuningName[0] = "lambda";
     mt->applicableTo[0] = BRLENS_UNI;
     mt->applicableTo[1] = BRLENS_EXP;
     mt->applicableTo[2] = BRLENS_GamDir;
@@ -20695,7 +20757,7 @@ void SetUpMoveTypes (void)
     mt->parsimonyBased = NO;
     mt->level = STANDARD_USER;
     mt->isApplicable = &IsApplicable_ThreeTaxaOrMore;
-    
+
     /* Move_ExtSPR */
     mt = &moveTypes[i++];
     mt->name = "Extending SPR";
@@ -21005,7 +21067,7 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneDirichlet;
     mt->targetRate = 0.25;
-    
+
     /* Move_MixtureRates_Slider */
     mt = &moveTypes[i++];
     mt->name = "Sliding window";
@@ -21024,7 +21086,7 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneSlider;
     mt->targetRate = 0.25;
-    
+
     /* Move_NNI */
     mt = &moveTypes[i++];
     mt->name = "NNI move for parsimony trees";
@@ -21413,7 +21475,7 @@ void SetUpMoveTypes (void)
     mt->parsimonyBased = YES;
     mt->level = STANDARD_USER;
     mt->isApplicable = &IsApplicable_ThreeTaxaOrMore;
-    
+
     /* Move_ParsSPR asym */
     mt = &moveTypes[i++];
     mt->name = "Parsimony-biased SPR";
@@ -21733,7 +21795,7 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneMultiplier;
     mt->targetRate = 0.25;
-    
+
     /* Move_Revmat_Dir */
     mt = &moveTypes[i++];
     mt->name = "Dirichlet proposal";
@@ -21790,7 +21852,7 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneDirichlet;
     mt->targetRate = 0.25;
-    
+
     /* Move_Revmat_SplitMerge1 */
     mt = &moveTypes[i++];
     mt->name = "Split-merge move 1";
@@ -22034,7 +22096,7 @@ void SetUpMoveTypes (void)
     mt->name = "Whole treelength hit with multiplier";
     mt->shortName = "TLMultiplier";
     mt->tuningName[0] = "Multiplier tuning parameter";
-    mt->shortTuningName[0] = "lambda";  
+    mt->shortTuningName[0] = "lambda";
     mt->applicableTo[0] = BRLENS_UNI;
     mt->applicableTo[1] = BRLENS_EXP;
     mt->applicableTo[2] = BRLENS_GamDir;
@@ -22223,7 +22285,7 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneMultiplier;
     mt->targetRate = 0.25;
-    
+
     /* Move_MixedBranchRate */
     mt = &moveTypes[i++];
     mt->name = "Multiplier";
@@ -22264,9 +22326,9 @@ void SetUpMoveTypes (void)
     mt->maximum[1] = 1000.0;
     mt->parsimonyBased = NO;
     mt->level = STANDARD_USER;
-    
+
     numMoveTypes = i;
-    
+
     assert( numMoveTypes < NUM_MOVE_TYPES);
 }
 
@@ -22285,7 +22347,7 @@ int ShowModel (void)
             MrBayesPrint ("%s      Settings for partition %d --\n", spacer, i+1);
         else
             MrBayesPrint ("%s      Data not partitioned --\n", spacer);
-        
+
         if (modelParams[i].dataType == DNA)
             {
             MrBayesPrint ("%s         Datatype  = DNA\n", spacer);
@@ -22315,7 +22377,7 @@ int ShowModel (void)
             {
             MrBayesPrint ("%s         Datatype  = Continuous\n", spacer);
             }
-            
+
         if (modelSettings[i].dataType == CONTINUOUS)
             {
             /* begin description of continuous models */
@@ -22337,9 +22399,9 @@ int ShowModel (void)
                 /* dna characters in this partition */
                 if (modelSettings[i].dataType == DNA || modelSettings[i].dataType == RNA)
                     {
-                    /* general form of the rate matrix */ 
+                    /* general form of the rate matrix */
                     MrBayesPrint ("%s         Nucmodel  = %s\n", spacer, modelParams[i].nucModel);
-                
+
                     /* constraints on rates of substitution */
                     MrBayesPrint ("%s         Nst       = %s\n", spacer, modelParams[i].nst);
                     if (!strcmp(modelParams[i].nst, "2"))
@@ -22391,7 +22453,7 @@ int ShowModel (void)
                                 modelParams[i].revMatFix[3], modelParams[i].revMatFix[4], modelParams[i].revMatFix[5]);
                             }
                         }
-                    
+
                     if (!strcmp(modelParams[i].nucModel,"Codon"))
                         {
                         /* what is the distribution on the nonsyn./syn. rate ratio */
@@ -22459,7 +22521,7 @@ int ShowModel (void)
                             MrBayesPrint ("%s                     for positive selection (class 2) has an offset \n", spacer);
                             MrBayesPrint ("%s                     Gamma(alpha2,beta2) on the interval (1,Infinity).\n", spacer);
                             }
-                            
+
                         /* genetic code that is used (if nucmodel=codon) */
                         MrBayesPrint ("%s         Code      = %s\n", spacer, modelParams[i].geneticCode);
                         }
@@ -22546,7 +22608,7 @@ int ShowModel (void)
                     /* what type of characters are sampled? */
                     MrBayesPrint ("%s         Coding    = %s\n", spacer, modelParams[i].codingString);
                     }
-                    
+
                 /* is there rate variation in a single site across the tree? */
                 if (((modelSettings[i].dataType == DNA || modelSettings[i].dataType == RNA) && !strcmp(modelParams[i].nucModel, "4by4")) || modelSettings[i].dataType == PROTEIN)
                     {
@@ -22756,10 +22818,10 @@ int ShowModel (void)
                                 MrBayesPrint ("%s         Rates     = %s ", spacer, modelParams[i].ratesModel);
                             MrBayesPrint ("(+ Propinv induced by covarion model)\n");
                             }
-                        
+
                         if ((modelParams[i].dataType == RESTRICTION || modelParams[i].dataType == STANDARD) && !strcmp(modelParams[i].ratesModel, "Adgamma"))
                             {
-                            
+
                             }
                         else
                             {
@@ -22826,12 +22888,12 @@ int ShowModel (void)
 
         if (i != numCurrentDivisions - 1)
             MrBayesPrint ("\n");
-        
+
         }
 
     MrBayesPrint ("\n");
     ShowParameters (NO, NO, NO);
-    
+
     return (NO_ERROR);
 }
 
@@ -22850,7 +22912,7 @@ int ShowMoves (int used)
     for (i=0; i<numApplicableMoves; i++)
         {
         mv = moves[i];
-        
+
         for (k=0; k<numGlobalChains; k++)
             {
             if (mv->relProposalProb[k] > 0.000001)
@@ -22864,10 +22926,10 @@ int ShowMoves (int used)
             continue;
 
         numPrintedMoves++;
-        
+
         /* print move number and name */
         MrBayesPrint ("%s   %4d -- Move        = %s\n", spacer, numPrintedMoves, mv->name);
-        
+
         /* print move type */
         MrBayesPrint ("%s           Type        = %s\n", spacer, mv->moveType->name);
 
@@ -22890,7 +22952,7 @@ int ShowMoves (int used)
             else
                 MrBayesPrint ("%s                         %s (%s)\n", spacer, mv->moveType->shortTuningName[k], mv->moveType->tuningName[k]);
             }
-        
+
         /* loop over tuning parameters */
         for (k=0; k<mv->moveType->numTuningParams; k++)
             {
@@ -22910,7 +22972,7 @@ int ShowMoves (int used)
                 if (areRunsSame == NO)
                     break;
                 }
-        
+
             /* now print values */
             for (run=0; run<chainParams.numRuns; run++)
                 {
@@ -22934,7 +22996,7 @@ int ShowMoves (int used)
                     chainIndex = run*chainParams.numChains + chain;
                     if (areChainsSame == YES && chain >= 1)
                         break;
-                    
+
                     if (run == 0 && chain == 0)
                         MrBayesPrint ("%s%22s = %1.3lf", spacer, mv->moveType->shortTuningName[k], mv->tuningParam[chainIndex][k]);
                     else
@@ -22956,7 +23018,7 @@ int ShowMoves (int used)
         if (mv->moveType->targetRate > 0.0 && mv->moveType->targetRate < 1.0)
             {
 
-            /* first find out if the targets are different in different runs */         
+            /* first find out if the targets are different in different runs */
             areRunsSame = YES;
             for (run=1; run<chainParams.numRuns; run++)
                 {
@@ -22972,7 +23034,7 @@ int ShowMoves (int used)
                 if (areRunsSame == NO)
                     break;
                 }
-        
+
             /* now print values */
             for (run=0; run<chainParams.numRuns; run++)
                 {
@@ -22996,7 +23058,7 @@ int ShowMoves (int used)
                     chainIndex = run*chainParams.numChains + chain;
                     if (areChainsSame == YES && chain >= 1)
                         break;
-                    
+
                     if (run == 0 && chain == 0)
                         MrBayesPrint ("%s           Targetrate  = %1.3lf", spacer, mv->targetRate[chainIndex]);
                     else
@@ -23014,10 +23076,10 @@ int ShowMoves (int used)
                 }
             }
 
-        
+
         /* finally print the relative proposal probability */
-        
-        /* first find out if the probabilities are different in different runs */           
+
+        /* first find out if the probabilities are different in different runs */
         areRunsSame = YES;
         for (run=1; run<chainParams.numRuns; run++)
             {
@@ -23033,7 +23095,7 @@ int ShowMoves (int used)
             if (areRunsSame == NO)
                 break;
             }
-    
+
         /* now print values */
         for (run=0; run<chainParams.numRuns; run++)
             {
@@ -23057,7 +23119,7 @@ int ShowMoves (int used)
                 chainIndex = run*chainParams.numChains + chain;
                 if (areChainsSame == YES && chain >= 1)
                     break;
-                
+
                 if (run == 0 && chain == 0)
                     MrBayesPrint ("%s           Rel. prob.  = %1.1lf", spacer, mv->relProposalProb[chainIndex]);
                 else
@@ -23075,7 +23137,7 @@ int ShowMoves (int used)
             }
         MrBayesPrint ("\n");
         }   /* next move */
-        
+
     if (numPrintedMoves == 0)
         {
         if (used == YES)
@@ -23107,10 +23169,10 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
     ModelInfo       *ms;
     MrBFlt          *value, *refValue, *subValue;
     MCMCMove        *mv;
-    
+
     MrBayesPrint ("%s   Active parameters: \n\n", spacer);
     if (numCurrentDivisions > 1)
-        { 
+        {
         MrBayesPrint ("%s                          Partition(s)\n", spacer);
         MrBayesPrint ("%s      Parameters        ", spacer);
         for (i=0; i<numCurrentDivisions; i++)
@@ -23138,7 +23200,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             }
         if (shouldPrint == NO)
             continue;
-        
+
         if (j == P_TRATIO)
             {
             MrBayesPrint ("%s      Tratio            ", spacer);
@@ -23210,7 +23272,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
         else if (j == P_GROWTH)
             {
             MrBayesPrint ("%s      Growthrate        ", spacer);
-            } 
+            }
         else if (j == P_AAMODEL)
             {
             MrBayesPrint ("%s      Aamodel           ", spacer);
@@ -23272,7 +23334,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             MrBayesPrint ("%s      ERROR: Someone forgot to name parameter type %d", spacer, j);
             return (ERROR);
             }
-        
+
         for (i=0; i<numCurrentDivisions; i++)
             {
             if (activeParams[j][i] == -1)
@@ -23283,7 +23345,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
         MrBayesPrint ("\n");
         }
     if (numCurrentDivisions > 1)
-        { 
+        {
         MrBayesPrint ("%s      ------------------", spacer);
         for (i=0; i<numCurrentDivisions; i++)
             MrBayesPrint ("---");
@@ -23293,20 +23355,20 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
         {
         MrBayesPrint ("%s      ---------------------\n", spacer);
         }
-    
+
     MrBayesPrint ("\n");
-    
+
     if (numCurrentDivisions > 1)
         MrBayesPrint ("%s      Parameters can be linked or unlinked across partitions using 'link' and 'unlink'\n\n", spacer);
-    
+
     for (i=0; i<numParams; i++)
         {
         p = &params[i];
         j = p->paramType;
-        
+
         mp = &modelParams[p->relParts[0]];
         ms = &modelSettings[p->relParts[0]];
-        
+
         /* print parameter number and name */
         MrBayesPrint ("%s   %4d --  Parameter  = %s\n", spacer, i+1, p->name);
         MrBayesPrint ("%s            Type       = %s\n", spacer, p->paramTypeName);
@@ -23324,17 +23386,17 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                 {
                 if (!strcmp(mp->nst,"Mixed"))
                     {
-                    MrBayesPrint ("%s            Prior      = All GTR submodels have equal probability\n", spacer); 
+                    MrBayesPrint ("%s            Prior      = All GTR submodels have equal probability\n", spacer);
                     MrBayesPrint ("%s                         All revmat rates have a Symmetric Dirichlet(%1.2lf) prior\n", spacer, mp->revMatSymDir);
                     }
                 else if (!strcmp(mp->revMatPr,"Dirichlet"))
                     {
-                    MrBayesPrint ("%s            Prior      = Dirichlet(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer, 
+                    MrBayesPrint ("%s            Prior      = Dirichlet(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer,
                     mp->revMatDir[0], mp->revMatDir[1], mp->revMatDir[2],
                     mp->revMatDir[3], mp->revMatDir[4], mp->revMatDir[5]);
                     }
                 else
-                    MrBayesPrint ("%s            Prior      = Fixed(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer, 
+                    MrBayesPrint ("%s            Prior      = Fixed(%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf,%1.2lf)\n", spacer,
                     mp->revMatFix[0], mp->revMatFix[1], mp->revMatFix[2],
                     mp->revMatFix[3], mp->revMatFix[4], mp->revMatFix[5]);
                 }
@@ -23732,7 +23794,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                 MrBayesPrint ("%s            Prior      = Normal(%1.2lf,%1.2lf)\n", spacer, mp->growthNorm[0], mp->growthNorm[1]);
             else
                 MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->growthFix);
-            } 
+            }
         else if (j == P_AAMODEL)
             {
             if (!strcmp(mp->aaModelPr,"Mixed"))
@@ -23858,7 +23920,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             {
             MrBayesPrint ("%s            Prior      = Uniform on topologies and branch lengths\n", spacer);
             }
-                
+
         /* print partitions */
         if (numCurrentDivisions > 1)
             {
@@ -23866,12 +23928,12 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                 MrBayesPrint ("%s            Partition  = %d\n", spacer, p->relParts[0]+1);
             else if (p->nRelParts == 2)
                 {
-                MrBayesPrint ("%s            Partitions = %d and %d\n", spacer, p->relParts[0]+1, p->relParts[1]+1);                    
+                MrBayesPrint ("%s            Partitions = %d and %d\n", spacer, p->relParts[0]+1, p->relParts[1]+1);
                 }
             else if (p->nRelParts == numCurrentDivisions)
                 {
-                MrBayesPrint ("%s            Partitions = All\n", spacer);                  
-                }           
+                MrBayesPrint ("%s            Partitions = All\n", spacer);
+                }
             else /* if (p->nRelParts > 2) */
                 {
                 MrBayesPrint ("%s            Partitions = ", spacer);
@@ -23883,7 +23945,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                         MrBayesPrint ("%d\n", p->relParts[j]+1);
                     else
                         MrBayesPrint ("%d, ", p->relParts[j]+1);
-                    }               
+                    }
                 }
             }
 
@@ -23957,7 +24019,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                 {
                 if (run > 0 && areRunsSame == YES)
                     continue;
-                
+
                 /* check if chains are same */
                 areChainsSame = YES;
                 for (chain=1; chain<chainParams.numChains; chain++)
@@ -24037,7 +24099,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                     }
                 }
             }
-            
+
         /* show available moves */
         if (showAllAvailable == YES && (p->printParam == YES || p->paramType == P_TOPOLOGY || p->paramType == P_BRLENS))
             {
@@ -24087,7 +24149,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
 
         /* show startvals */
         if (showStartVals == YES && (p->printParam == YES || p->paramType == P_TOPOLOGY || p->paramType == P_BRLENS || p->paramType == P_SPECIESTREE || p->paramType == P_POPSIZE))
-            {                   
+            {
             if (p->paramType == P_TOPOLOGY || p->paramType == P_BRLENS || p->paramType == P_SPECIESTREE)
                 {
                 /* check if they are the same */
@@ -24134,7 +24196,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                             }
                         }
                     }
-                
+
                 /* print trees */
                 for (run=0; run<chainParams.numRuns; run++)
                     {
@@ -24154,7 +24216,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                             MrBayesPrint ("  [run %d, chain %d]", run+1, chain+1);
                         MrBayesPrint ("\n");
                         }
-                    }               
+                    }
                 }   /* end topology and brlens parameters */
 
             else if (p->paramType == P_OMEGA && p->paramId != OMEGA_DIR && p->paramId != OMEGA_FIX &&
@@ -24198,7 +24260,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                                     areRunsSame = NO;
                                     break;
                                     }
-                                }                           
+                                }
                             }
                         else
                             {
@@ -24217,7 +24279,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                     if (areRunsSame == NO)
                         break;
                     }
-                
+
                 /* now print values */
                 for (run=0; run<chainParams.numRuns; run++)
                     {
@@ -24225,7 +24287,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                         {
                         value = GetParamVals (p, run*chainParams.numRuns+chain, 0);
                         subValue = GetParamSubVals (p, run*chainParams.numRuns+chain, 0);
-                        nValues = p->nValues;                       
+                        nValues = p->nValues;
                         if (run == 0 && chain == 0)
                             MrBayesPrint ("%s            Startvals  = (%1.3lf", spacer, value[0]);
                         else
@@ -24244,7 +24306,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                             for (k=0; k<2; k++)
                                 {
                                 MrBayesPrint (",%1.3lf", subValue[k + mp->numM10BetaCats+mp->numM10GammaCats]);
-                                }                   
+                                }
                             }
                         else
                             {
@@ -24252,7 +24314,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                                 {
                                 MrBayesPrint (",%1.3lf", subValue[k]);
                                 }
-                            }       
+                            }
                         MrBayesPrint (")");
                         if (chainParams.numChains > 1 && areRunsSame == YES)
                             MrBayesPrint ("  [chain %d]\n", chain+1);
@@ -24299,10 +24361,10 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                                 {
                                 areRunsSame = NO;
                                 break;
-                                }                           
+                                }
                             }
                         if (areRunsSame == NO)
-                            break;                          
+                            break;
                         }
                     if (areRunsSame == NO)
                         break;
@@ -24334,7 +24396,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                                 {
                                 areChainsSame = NO;
                                 break;
-                                }                           
+                                }
                             }
                         }
                     for (chain=0; chain<chainParams.numChains; chain++)
@@ -24357,7 +24419,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                             MrBayesPrint ("%s            Startvals  = (%1.3lf", spacer, value[0]);
                         else
                             MrBayesPrint ("%s                         (%1.3lf", spacer, value[0]);
-                        
+
                         for (k=1; k<nValues; k++)
                             {
                             if (k%10==0)
@@ -24366,7 +24428,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                                 MrBayesPrint (",%1.3lf", value[k]);
                             }
                         MrBayesPrint (")");
-                        
+
                         if (areChainsSame == YES && areRunsSame == NO)
                             MrBayesPrint ("  [run %d]", run+1);
                         else if (areChainsSame == NO && areRunsSame == YES)
@@ -24374,7 +24436,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                         else if (areChainsSame == NO && areRunsSame == NO)
                             MrBayesPrint ("  [run %d, chain %d]", run+1, chain+1);
                         MrBayesPrint ("\n");
-                        }   
+                        }
                     }
                 }
             }   /* end print start values */
@@ -24396,12 +24458,12 @@ int Unlink (void)
 |
 |   UpdateClockRate:    Update clockRate of the given chain. Above all it will enforce fixed clockrate prior if it is set.
 |                       Error will be returned if fixed clockrate prior may not be respected.
-|   @param clockRate    is the new clockRate to setup. Clock rate value could be set as positive, 0.0 or negative value. 
+|   @param clockRate    is the new clockRate to setup. Clock rate value could be set as positive, 0.0 or negative value.
 |                       The function does the fallowing depending on one of this three values:
-|                        positive    - check that this 'positive' value is suitable rate. At the end re-enforce (update) the 'positive' value as clock rate on all trees. 
-|                        0.0         - check if current rate is suitable, if not update it with minimal suitable value. At the end re-enforce (update) the resulting clock rate on all trees. 
-|                        negative    - check if current rate is suitable, if not update it with minimal suitable value. At the end re-enforce (update) the resulting clock rate ONLY if clock rate was changed 
-|   @return             ERROR if clockRate can not be set up, NO_ERROR otherwise. 
+|                        positive    - check that this 'positive' value is suitable rate. At the end re-enforce (update) the 'positive' value as clock rate on all trees.
+|                        0.0         - check if current rate is suitable, if not update it with minimal suitable value. At the end re-enforce (update) the resulting clock rate on all trees.
+|                        negative    - check if current rate is suitable, if not update it with minimal suitable value. At the end re-enforce (update) the resulting clock rate ONLY if clock rate was changed
+|   @return             ERROR if clockRate can not be set up, NO_ERROR otherwise.
 |
 --------------------------------------------------*/
 int UpdateClockRate (MrBFlt clockRate, int chain)
@@ -24492,7 +24554,7 @@ int UpdateClockRate (MrBFlt clockRate, int chain)
                     return (ERROR);
                     }
                 }
-            else if (clockRate == 0.0) 
+            else if (clockRate == 0.0)
                 {
                 if ((*clockRatep < minClockRate && AreDoublesEqual (*clockRatep, minClockRate, 0.0001) == NO) ||
                     (*clockRatep > maxClockRate && AreDoublesEqual (*clockRatep, maxClockRate, 0.0001) == NO))
@@ -24514,7 +24576,7 @@ int UpdateClockRate (MrBFlt clockRate, int chain)
                 }
             }
 
-        
+
         if (updateTrees == YES)
             {
             for (i=0; i<numTrees; i++)
@@ -24616,13 +24678,13 @@ int UpdateCppEvolLengths (Param *param, TreeNode *p, int chain)
     int         i, *nEvents;
     TreeNode    *q;
     MrBFlt      baseRate = 1.0, **pos, **rateMult, *evolLength;
-    
+
     i = 2*chain + state[chain];
     nEvents = param->nEvents[i];
     pos = param->position[i];
     rateMult = param->rateMult[i];
     evolLength = GetParamSubVals (param, chain, state[chain]);
-    
+
     q = p->anc;
     while (q->anc != NULL)
         {
@@ -24630,10 +24692,10 @@ int UpdateCppEvolLengths (Param *param, TreeNode *p, int chain)
             baseRate *= rateMult[q->index][i];
         q = q->anc;
         }
-    
+
     if (UpdateCppEvolLength (nEvents, pos, rateMult, evolLength, p, baseRate)==ERROR)
         return (ERROR);
-    
+
     return(NO_ERROR);
 }
 
@@ -24644,7 +24706,7 @@ int UpdateTK02EvolLengths (Param *param, Tree *t, int chain)
     int         i;
     MrBFlt      *tk02Rate, *brlens;
     TreeNode    *p;
-    
+
     tk02Rate = GetParamVals (param, chain, state[chain]);
     brlens = GetParamSubVals (param, chain, state[chain]);
     for (i=0; i<t->nNodes-2; i++)
@@ -24652,7 +24714,7 @@ int UpdateTK02EvolLengths (Param *param, Tree *t, int chain)
         p = t->allDownPass[i];
         brlens[p->index] = p->length * (tk02Rate[p->index] + tk02Rate[p->anc->index]) / 2.0;
         }
-    
+
     return (NO_ERROR);
 }
 
@@ -24663,7 +24725,7 @@ int UpdateIgrBrachLengths (Param *param, Tree *t, int chain)
     int         i;
     MrBFlt      *igrRate, *brlens;
     TreeNode    *p;
-    
+
     igrRate = GetParamVals (param, chain, state[chain]);
     brlens = GetParamSubVals (param, chain, state[chain]);
     for (i=0; i<t->nNodes-2; i++)
@@ -24674,4 +24736,3 @@ int UpdateIgrBrachLengths (Param *param, Tree *t, int chain)
 
     return (NO_ERROR);
 }
-

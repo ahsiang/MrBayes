@@ -559,6 +559,7 @@ int InitializeMrBayes (void)
     defaultModel.tRatioFix = 1.0;
     defaultModel.tRatioDir[0] = 1.0;
     defaultModel.tRatioDir[1] = 1.0;
+    strcpy(defaultModel.correlationModel, "No");        /* use correlation model? (yes/no)                 */
     strcpy(defaultModel.rhoPr, "Exponential");          /* prior for inverse correlation factor         */
     defaultModel.rhoFix = 0.05;
     defaultModel.rhoExp[0] = 20;

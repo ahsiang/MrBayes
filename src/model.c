@@ -3705,7 +3705,7 @@ int DoLsetParm (char *parmName, char *tkn)
                     }
                 else
                     {
-                    MrBayesPrint ("%s   Invalid Rates argument\n", spacer);
+                    MrBayesPrint ("%s   Invalid Covarion argument\n", spacer);
                     return (ERROR);
                     }
                 expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
@@ -3713,7 +3713,39 @@ int DoLsetParm (char *parmName, char *tkn)
             else
                 return (ERROR);
             }
-        /* set Coding (missingType) ***********************************************************/
+        /* set Corrmodel (correlationModel) *******************************************************/
+        else if (!strcmp(parmName, "Corrmodel"))
+            {
+            if (expecting == Expecting(EQUALSIGN))
+                expecting = Expecting(ALPHA);
+            else if (expecting == Expecting(ALPHA))
+                {
+                if (IsArgValid(tkn, tempStr) == NO_ERROR)
+                    {
+                    nApplied = NumActiveParts ();
+                    for (i=0; i<numCurrentDivisions; i++)
+                        {
+                        if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
+                            {
+                            strcpy(modelParams[i].correlationModel, tempStr);
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s   Setting Corrmodel to %s\n", spacer, modelParams[i].correlationModel);
+                            else
+                                MrBayesPrint ("%s   Setting Corrmodel to %s for partition %d\n", spacer, modelParams[i].correlationModel, i+1);
+                            }
+                        }
+                    }
+                else
+                    {
+                    MrBayesPrint ("%s   Invalid Corrmodel argument\n", spacer);
+                    return (ERROR);
+                    }
+                expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
+                }
+            else
+                return (ERROR);
+            }
+        /* set Coding (coding) ***********************************************************/
         else if (!strcmp(parmName, "Coding"))
             {
             if (expecting == Expecting(EQUALSIGN))
@@ -6507,6 +6539,183 @@ int DoPrsetParm (char *parmName, char *tkn)
             else if (expecting == Expecting(COMMA))
                 {
                 expecting  = Expecting(NUMBER);
+                }
+            else if (expecting == Expecting(RIGHTPAR))
+                {
+                expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
+                }
+            else
+                return (ERROR);
+            }
+        /* set Rhopr (rhoPr) **************************************************************/
+        else if (!strcmp(parmName, "Rhopr"))
+            {
+            if (expecting == Expecting(EQUALSIGN))
+                expecting = Expecting(ALPHA);
+            else if (expecting == Expecting(ALPHA))
+                {
+                if (IsArgValid(tkn, tempStr) == NO_ERROR)
+                    {
+                    nApplied = NumActiveParts ();
+                    flag = 0;
+                    for (i=0; i<numCurrentDivisions; i++)
+                        {
+                        if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
+                            {
+                            strcpy(modelParams[i].rhoPr, tempStr);
+                            flag = 1;
+                            }
+                        }
+                    if (flag == 0)
+                        {
+                        MrBayesPrint ("%s   Warning: %s can be set only for partition containing data of type STANDARD.\
+                            Currently there is no active partition with such data.\n", spacer, parmName);
+                        return (ERROR);
+                        }
+                    }
+                else
+                    {
+                    MrBayesPrint ("%s   Invalid Rhopr argument\n", spacer);
+                    return (ERROR);
+                    }
+                expecting  = Expecting(LEFTPAR);
+                for (i=0; i<numCurrentDivisions; i++)
+                    numVars[i] = 0;
+                }
+            else if (expecting == Expecting(LEFTPAR))
+                {
+                expecting  = Expecting(NUMBER);
+                }
+            else if (expecting == Expecting(NUMBER))
+                {
+                nApplied = NumActiveParts ();
+                for (i=0; i<numCurrentDivisions; i++)
+                    {
+                    if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
+                        {
+                        if (!strcmp(modelParams[i].rhoPr,"Exponential"))
+                            {
+                            sscanf (tkn, "%lf", &tempD);
+                            if (modelParams[i].rhoExp > 0.0)
+                                {
+                                MrBayesPrint ("%s   Exponential distribution rate parameter must be positive\n", spacer);
+                                return (ERROR);
+                                }
+                            modelParams[i].rhoExp = tempD;
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s   Setting Rhopr to Exponential(%1.2lf)\n", spacer, modelParams[i].rhoExp);
+                            else
+                                MrBayesPrint ("%s   Setting Rhopr to Exponential(%1.2lf) for partition %d\n", spacer, modelParams[i].rhoExp, i+1);
+                            expecting  = Expecting(RIGHTPAR);
+                            }
+                        else if (!strcmp(modelParams[i].rhoPr,"Fixed"))
+                            {
+                            sscanf (tkn, "%lf", &tempD);
+                            if (modelParams[i].rhoFix > MAX_RHO_PARAM)
+                                {
+                                MrBayesPrint ("%s   Rho parameter cannot be greater than %1.2lf\n", spacer, MAX_RHO_PARAM);
+                                return (ERROR);
+                                }
+                            if (modelParams[i].rhoFix < MIN_RHO_PARAM)
+                                {
+                                MrBayesPrint ("%s   Rho parameter cannot be less than %1.2lf\n", spacer, MIN_RHO_PARAM);
+                                return (ERROR);
+                                }
+                            modelParams[i].rhoFix = tempD;
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s   Setting Rhopr to Fixed(%1.2lf)\n", spacer, modelParams[i].rhoFix);
+                            else
+                                MrBayesPrint ("%s   Setting Rhopr to Fixed(%1.2lf) for partition %d\n", spacer, modelParams[i].rhoFix, i+1);
+                            expecting  = Expecting(RIGHTPAR);
+                            }
+                        }
+                    }
+                }
+            else if (expecting == Expecting(RIGHTPAR))
+                {
+                expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
+                }
+            else
+                return (ERROR);
+            }
+        /* set Alphadirpr (alphaDirPr) **************************************************************/
+        else if (!strcmp(parmName, "Alphadirpr"))
+            {
+            if (expecting == Expecting(EQUALSIGN))
+                expecting = Expecting(ALPHA);
+            else if (expecting == Expecting(ALPHA))
+                {
+                if (IsArgValid(tkn, tempStr) == NO_ERROR)
+                    {
+                    nApplied = NumActiveParts ();
+                    flag = 0;
+                    for (i=0; i<numCurrentDivisions; i++)
+                        {
+                        if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
+                            {
+                            strcpy(modelParams[i].alphaDirPr, tempStr);
+                            flag = 1;
+                            }
+                        }
+                    if (flag == 0)
+                        {
+                        MrBayesPrint ("%s   Warning: %s can be set only for partition containing data of type STANDARD.\
+                            Currently there is no active partition with such data.\n", spacer, parmName);
+                        return (ERROR);
+                        }
+                    }
+                else
+                    {
+                    MrBayesPrint ("%s   Invalid Alphadirpr argument\n", spacer);
+                    return (ERROR);
+                    }
+                expecting  = Expecting(LEFTPAR);
+                for (i=0; i<numCurrentDivisions; i++)
+                    numVars[i] = 0;
+                }
+            else if (expecting == Expecting(LEFTPAR))
+                {
+                expecting  = Expecting(NUMBER);
+                }
+            else if (expecting == Expecting(NUMBER))
+                {
+                nApplied = NumActiveParts ();
+                for (i=0; i<numCurrentDivisions; i++)
+                    {
+                    if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
+                        {
+                        if (!strcmp(modelParams[i].alphaDirPr,"Exponential"))
+                            {
+                            sscanf (tkn, "%lf", &tempD);
+                            if (modelParams[i].alphaDirExp > 0.0)
+                                {
+                                MrBayesPrint ("%s   Exponential distribution rate parameter must be positive\n", spacer);
+                                return (ERROR);
+                                }
+                            modelParams[i].alphaDirExp = tempD;
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s   Setting Alphadirpr to Exponential(%1.2lf)\n", spacer, modelParams[i].alphaDirExp);
+                            else
+                                MrBayesPrint ("%s   Setting Alphadirpr to Exponential(%1.2lf) for partition %d\n", spacer, modelParams[i].alphaDirExp, i+1);
+                            expecting  = Expecting(RIGHTPAR);
+                            }
+                        else if (!strcmp(modelParams[i].alphaDirPr,"Fixed"))
+                            {
+                            sscanf (tkn, "%lf", &tempD);
+                            if (modelParams[i].alphaDirFix < MIN_ALPHADIR_PARAM)
+                                {
+                                MrBayesPrint ("%s   Alpha_dir parameter cannot be less than %1.2lf\n", spacer, MIN_ALPHADIR_PARAM);
+                                return (ERROR);
+                                }
+                            modelParams[i].alphaDirFix = tempD;
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s   Setting Alphadirpr to Fixed(%1.2lf)\n", spacer, modelParams[i].alphaDirFix);
+                            else
+                                MrBayesPrint ("%s   Setting Alphadirpr to Fixed(%1.2lf) for partition %d\n", spacer, modelParams[i].alphaDirFix, i+1);
+                            expecting  = Expecting(RIGHTPAR);
+                            }
+                        }
+                    }
                 }
             else if (expecting == Expecting(RIGHTPAR))
                 {
@@ -10906,6 +11115,22 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 else if (p->paramId == TRATIO_FIX)
                     value[0] = mp->tRatioFix;
                 }
+            else if (p->paramType == P_RHO)
+                {
+                /* Fill in rho ******************************************************************************************/
+                if (p->paramId == RHO_EXP)
+                    value[0] = mp->rhoExp;
+                else if (p->paramId == RHO_FIX)
+                    value[0] = mp->rhoFix;
+                }
+            else if (p->paramType == P_ALPHADIR)
+                {
+                /* Fill in alphadir *************************************************************************************/
+                if (p->paramId == ALPHADIR_EXP)
+                    value[0] = mp->alphaDirExp;
+                else if (p->paramId == ALPHADIR_FIX)
+                    value[0] = mp->alphaDirFix;
+                }
             else if (p->paramType == P_REVMAT)
                 {
                 /* Fill in revMat ***************************************************************************************/
@@ -15097,6 +15322,86 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
         }
+    else if (whichParam == P_RHO)
+        {
+        /* Check the correlation model rho parameter for partitions 1 and 2. */
+
+        /* Check if the model is parsimony for either partition */
+        if (!strcmp(modelParams[part1].parsModel, "Yes"))
+            *isApplic1 = NO; /* part1 has a parsimony model and tratio does not apply */
+        if (!strcmp(modelParams[part2].parsModel, "Yes"))
+            *isApplic2 = NO; /* part2 has a parsimony model and tratio does not apply */
+
+        /* Check that the data are standard for both partitions 1 and 2 */
+        if (modelParams[part1].dataType != STANDARD)
+            *isApplic1 = NO; /* part1 is not standard data so rho does not apply */
+        if (modelParams[part2].dataType != STANDARD)
+            *isApplic2 = NO; /* part2 is not standard data so rho does not apply */
+
+        /* Check that both partitions have the correlation model set */
+        if (strcmp(modelParams[part1].correlationModel, "Yes") != 0)
+            *isApplic1 = NO; /* part1 is not under the correlation model so rho does not apply */
+        if (strcmp(modelParams[part2].correlationModel, "Yes") != 0)
+            *isApplic2 = NO; /* part2 is not under the correlation model so rho does not apply */
+
+        /* Check if the prior is the same for both. */
+        if (!strcmp(modelParams[part1].rhoPr,"Exponential") && !strcmp(modelParams[part2].rhoPr,"Exponential"))
+            {
+            if (AreDoublesEqual (modelParams[part1].rhoExp, modelParams[part2].rhoExp, (MrBFlt) 0.00001) == NO)
+                isSame = NO;
+            }
+        else if (!strcmp(modelParams[part1].rhoPr,"Fixed") && !strcmp(modelParams[part2].rhoPr,"Fixed"))
+            {
+            if (AreDoublesEqual (modelParams[part1].rhoFix, modelParams[part2].rhoFix, (MrBFlt) 0.00001) == NO)
+                isSame = NO;
+            }
+        else
+            isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
+
+        /* Check to see if rho is inapplicable for either partition. */
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO; /* if rho is inapplicable for either partition, then the parameter cannot be the same */
+        }
+    else if (whichParam == P_ALPHADIR)
+        {
+        /* Check the DPMM alphadir parameter for partitions 1 and 2. */
+
+        /* Check if the model is parsimony for either partition */
+        if (!strcmp(modelParams[part1].parsModel, "Yes"))
+            *isApplic1 = NO; /* part1 has a parsimony model and tratio does not apply */
+        if (!strcmp(modelParams[part2].parsModel, "Yes"))
+            *isApplic2 = NO; /* part2 has a parsimony model and tratio does not apply */
+
+        /* Check that the data are standard for both partitions 1 and 2 */
+        if (modelParams[part1].dataType != STANDARD)
+            *isApplic1 = NO; /* part1 is not standard data so rho does not apply */
+        if (modelParams[part2].dataType != STANDARD)
+            *isApplic2 = NO; /* part2 is not standard data so rho does not apply */
+
+        /* Check that both partitions have the correlation model set */
+        if (strcmp(modelParams[part1].correlationModel, "Yes") != 0)
+            *isApplic1 = NO; /* part1 is not under the correlation model so rho does not apply */
+        if (strcmp(modelParams[part2].correlationModel, "Yes") != 0)
+            *isApplic2 = NO; /* part2 is not under the correlation model so rho does not apply */
+
+        /* Check if the prior is the same for both. */
+        if (!strcmp(modelParams[part1].alphaDirPr,"Exponential") && !strcmp(modelParams[part2].alphaDirPr,"Exponential"))
+            {
+            if (AreDoublesEqual (modelParams[part1].alphaDirExp, modelParams[part2].alphaDirExp, (MrBFlt) 0.00001) == NO)
+                isSame = NO;
+            }
+        else if (!strcmp(modelParams[part1].alphaDirPr,"Fixed") && !strcmp(modelParams[part2].alphaDirPr,"Fixed"))
+            {
+            if (AreDoublesEqual (modelParams[part1].alphaDirFix, modelParams[part2].alphaDirFix, (MrBFlt) 0.00001) == NO)
+                isSame = NO;
+            }
+        else
+            isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
+
+        /* Check to see if rho is inapplicable for either partition. */
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO; /* if alphadir is inapplicable for either partition, then the parameter cannot be the same */
+        }
     else
         {
         MrBayesPrint ("%s   Could not find parameter in IsModelSame\n", spacer);
@@ -18370,8 +18675,8 @@ int SetModelParams (void)
             p->paramType = P_RHO;
             p->nValues = 1;
             p->nSubValues = 0;
-            p->min = 0.0;
-            p->max = 1.0;
+            p->min = MIN_RHO_PARAM;
+            p->max = MAX_RHO_PARAM;
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].rho = p;
@@ -18401,7 +18706,7 @@ int SetModelParams (void)
             p->paramType = P_ALPHADIR;
             p->nValues = 1;
             p->nSubValues = 0;
-            p->min = 0.0;
+            p->min = MIN_ALPHADIR_PARAM;
             p->max = POS_INFINITY;
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
@@ -22603,16 +22908,22 @@ int ShowModel (void)
                         }
                     }
                 /* restriction site or morphological characters in this partition */
-                else if (modelSettings[i].dataType == RESTRICTION || modelSettings[i].dataType == STANDARD)
+                else if (modelSettings[i].dataType == RESTRICTION)
                     {
                     /* what type of characters are sampled? */
                     MrBayesPrint ("%s         Coding    = %s\n", spacer, modelParams[i].codingString);
+                    }
+                else if (modelSettings[i].dataType == STANDARD)
+                    {
+                    /* what type of characters are sampled? */
+                    MrBayesPrint ("%s         Coding    = %s\n", spacer, modelParams[i].codingString);
+                    MrBayesPrint ("%s         Corrmodel = %s\n", spacer, modelParams[i].correlationModel);
                     }
 
                 /* is there rate variation in a single site across the tree? */
                 if (((modelSettings[i].dataType == DNA || modelSettings[i].dataType == RNA) && !strcmp(modelParams[i].nucModel, "4by4")) || modelSettings[i].dataType == PROTEIN)
                     {
-                    /* do rates change on tree accoding to covarion model? */
+                    /* do rates change on tree according to covarion model? */
                     MrBayesPrint ("%s         Covarion  = %s\n", spacer, modelParams[i].covarionModel);
                     if (!strcmp(modelParams[i].covarionModel, "Yes"))
                         {
@@ -22663,7 +22974,23 @@ int ShowModel (void)
                 if (modelParams[i].dataType != CONTINUOUS)
                     {
                     if (modelParams[i].dataType == STANDARD)
-                        MrBayesPrint ("%s         # States  = Variable, up to 10\n", spacer);
+                        {
+                          if (strcmp(modelParams[i].correlationModel,"Yes"))
+                              {
+                              MrBayesPrint ("%s         # States  = Correlated binary characters\n", spacer);
+                              if (!strcmp(modelParams[i].rhoPr,"Fixed"))
+                                  MrBayesPrint ("%s                     Rho is fixed to %1.2lf\n", spacer, modelParams[i].rhoFix);
+                              else /* if (!strcmp(modelParams[i].rhoPr,"Exponential")) */
+                                  MrBayesPrint ("%s                     Rho has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].rhoExp);
+                              if (!strcmp(modelParams[i].alphaDirPr,"Fixed"))
+                                  MrBayesPrint ("%s                     Alphadir is fixed to %1.2lf\n", spacer, modelParams[i].alphaDirFix);
+                              else /* if (!strcmp(modelParams[i].alphaDirPr,"Exponential")) */
+                                  MrBayesPrint ("%s                     Alphadir has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].alphaDirExp);
+                              }
+                        }
+                          else
+                              MrBayesPrint ("%s         # States  = Variable, up to 10\n", spacer);
+                        }
                     else if (modelSettings[i].numStates != modelSettings[i].numModelStates)
                         MrBayesPrint ("%s         # States  = %d (in the model)\n", spacer, modelSettings[i].numModelStates);
                     else
@@ -23209,6 +23536,14 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             {
             MrBayesPrint ("%s      Revmat            ", spacer);
             }
+        else if (j == P_RHO)
+            {
+            MrBayesPrint ("%s      Rho               ", spacer);
+            }
+        else if (j == P_ALPHADIR)
+            {
+            MrBayesPrint ("%s      Alphadir          ", spacer);
+            }
         else if (j == P_OMEGA)
             {
             MrBayesPrint ("%s      Omega             ", spacer);
@@ -23407,6 +23742,20 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                 else
                     MrBayesPrint ("%s            Prior      = Fixed(user-specified)\n", spacer);
                 }
+            }
+        else if (j == P_RHO)
+            {
+            if (!strcmp(mp->rhoPr,"Exponential"))
+                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->rhoExp[0], modelParams[i].rhoExp[1]);
+            else
+                MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->rhoFix);
+            }
+        else if (j == P_ALPHADIR)
+            {
+            if (!strcmp(mp->alphaDirPr,"Exponential"))
+                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->alphaDirExp[0], modelParams[i].alphaDirExp[1]);
+            else
+                MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->alphaDirFix);
             }
         else if (j == P_OMEGA)
             {

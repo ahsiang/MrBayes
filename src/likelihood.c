@@ -1998,6 +1998,64 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 }
 
 
+/*----------------------------------------------------------------
+|
+|   CondLikeDown_StdCorr: correlation model
+|       with or without rate variation
+|
+-----------------------------------------------------------------*/
+int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
+{
+    int             a, c, h, i, j, k, nStates, nCats, tmp;
+    CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR, likeL, likeR;
+    ModelInfo       *m;
+
+    m = &modelSettings[division];
+    nStates = 3;
+
+    /* Flip conditional likelihood space */
+    FlipCondLikeSpace (m, chain, p->index);
+
+    /* find conditional likelihood pointers */
+    clL = m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
+
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+
+    /* Conditional likelihood space is assumed to be arranged in numGammaCats blocks of data. Each block contains all data for one gamma category.
+    Each gamma cat block consist of numChars conditional likelihood vectors, each of these vectors has three elements corresponding to a group of characters in the data matrix
+    sitting at the same table in the DPP correlation model. */
+
+    /* calculate ancestral probabilities> TODO update numChars to number of tables */
+    for (c=0; c<m->numChars; c++)
+        {
+        tiPL = pL;
+        tiPR = pR;
+        for (k=0; k<m->numRateCats; k++)
+            {
+            for (c=0; c<m->numChars; c++)
+                {
+                *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
+                          *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
+                *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
+                          *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
+                *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
+                          *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
+                clL += 3;
+                clR += 3;
+                }
+            tiPL += 9;
+            tiPR += 9;
+            }
+        }
+
+    return NO_ERROR;
+}
+
+
 #if !defined (SSE_ENABLED) || 1
 /*----------------------------------------------------------------
 |
@@ -4945,6 +5003,22 @@ int     CondLikeUp_Std (TreeNode *p, int division, int chain)
     return NO_ERROR;
 }
 
+/*----------------------------------------------------------------
+|
+|   CondLikeUp_StdCorr: pull likelihoods up and calculate scaled
+|       finals for an interior node
+|
+-----------------------------------------------------------------*/
+int     CondLikeUp_StdCorr (TreeNode *p, int division, int chain)
+{
+    int             a, c, i, j, k, t, nStates, nCats, coppySize,tmp;
+    CLFlt           *clFA, *clFP, *clDP, *pA, *tiP, condLikeUp[10], sum;
+    ModelInfo       *m;
+
+    MrBayesPrint("%s   ERROR: Inference of ancestral states with correlation model not supported yet.\n");
+    return ERROR;
+}
+
 
 /*----------------------------------------------------------------
 |
@@ -7651,6 +7725,108 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 
 /*------------------------------------------------------------------
 |
+|   Likelihood_StdCorr: variable states model with or without rate
+|       variation
+|
+-------------------------------------------------------------------*/
+int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
+{
+    int             b, c, j, k, nBetaCats, nRateCats, nStates, numReps;
+    MrBFlt          catLike, catFreq, rateFreq, like, bs[3],
+                    pUnobserved, pObserved;
+    CLFlt           *clPtr, **clP, *lnScaler, *nSitesOfPat;
+    ModelInfo       *m;
+
+    m = &modelSettings[division];
+
+    /* TO DO: get actual number of tables in the current state of the model */
+    numReps = m->numChars * 3; /* 3 is the number of states in the rate matrix */
+
+    /* find conditional likelihood pointers */
+    clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
+    clP   = m->clP;
+    for (k=0; k<m->numRateCats; k++)
+        {
+        clP[k] = clPtr;
+        clPtr += numReps;
+        }
+
+    /* get inverse correlation factor */
+    rho = GetParamSubVals (m->rho);
+
+    /* find base frequencies */
+    bs[0] = bs[2] = 1 / (2 + rho);
+    bs[1] = 1 - 2 * bs[0];
+
+    /* set number of states */
+    nStates = 3;
+
+    /* find rate category number and frequencies */
+    nRateCats = m->numRateCats;
+    rateFreq = 1.0 / nRateCats;
+
+    /* find site scaler */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+
+    *lnL = 0.0; /* reset lnL */
+
+    pUnobserved = 0.0;
+    catFreq = rateFreq;
+    /* numDummyChars should be 1 */
+    like = 0.0;
+    for (k=0; k<nRateCats; k++)
+        {
+        catLike = 0.0;
+        for (j=0; j<nStates; j++)
+            catLike += clP[k][j] * bs[j];
+        like += catLike * catFreq;
+        clP[k] += nStates;
+        }
+    pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
+
+    pObserved =  1.0 - pUnobserved; /* total probability for all patterns in L */
+    if (pObserved < LIKE_EPSILON)
+        pObserved = LIKE_EPSILON;
+
+    /* TO DO: Use actual number of tables instead of numChars */
+    for (c=m->numDummyChars; c<m->numChars; c++) /* numDummyChars = 1 */
+        {
+        like = 0.0;
+
+        for (k=0; k<nRateCats; k++)
+            {
+            catLike = 0.0;
+            for (j=0; j<nStates; j++)
+                catLike += clP[k][j] * bs[j];
+            like += catLike * catFreq;
+            clP[k] += nStates;
+            }
+        /* check against LIKE_EPSILON (values close to zero are problematic) */
+        if (like < LIKE_EPSILON)
+            {
+#   ifdef DEBUG_LIKELIHOOD
+            MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+            (*lnL) = MRBFLT_NEG_MAX;
+            abortMove = YES;
+            return ERROR;
+            }
+        else
+            {
+            (*lnL) += (lnScaler[c] + log(like));
+            }
+        }
+
+    /* correct for absent characters */
+    (*lnL) -=  log(pObserved) * (m->numUncompressedChars);
+
+    return NO_ERROR;
+}
+
+
+
+/*------------------------------------------------------------------
+|
 |   Likelihood_Pars: likelihood under the Tuffley and Steel (1997)
 |       model for characters with constant number of states. The idea
 |       is described in:
@@ -9498,6 +9674,7 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
                     a = pis[0]
                     b = pis[1]
                     u = exp(-b * t);
+                    u_inv = 1 / u;
                     x = exp(-2 * a * t);
                     y = 2 * a + b;
                     z = exp(-y * t);

@@ -313,6 +313,9 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define MAX_Q_RATE              100.0f
 #define MIN_SHAPE_PARAM         0.00001f
 #define MAX_SHAPE_PARAM         100.0f
+#define MIN_RHO_PARAM           0.00000001f  // 1E-8f
+#define MAX_RHO_PARAM           1.0f
+#define MIN_ALPHADIR_PARAM      0.00000001f  // 1E-8f
 #define MAX_SITE_RATE           10.0f
 #define MAX_RATE_CATS           20
 #define MAX_RATE_CATS_SQUARED   400
@@ -997,6 +1000,7 @@ typedef struct model
     char        tRatioPr[100];     /* prior for ti/tv rate ratio                   */
     MrBFlt      tRatioFix;
     MrBFlt      tRatioDir[2];
+    char        correlationModel[5];/* use correlation model? (yes/no)                 */
     char        rhoPr[100];        /* prior for inverse correlation factor         */
     MrBFlt      rhoFix;
     MrBFlt      rhoDir;

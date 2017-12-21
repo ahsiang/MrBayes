@@ -9436,13 +9436,8 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
 
     /* compute pis */
     MrBFlt pis[3];
-    pis[0] = pis[2] = 1.0 / (2.0 + rho);
-    pis[1] = 1.0 - 2.0*pis[0];
-
-    bigPi_j[0] =  (pis[0] + pis[2]);
-    bigPi_j[1] =  (pis[1] + pis[3]);
-    bigPi_j[2] =  (pis[0] + pis[2]);
-    bigPi_j[3] =  (pis[1] + pis[3]);
+    pis[0] = pis[2] = 1.0 / (2.0 + rho);  /* alpha */
+    pis[1] = 1.0 - 2.0*pis[0];            /* beta */
 
     /* find length */
     if (m->cppEvents != NULL)
@@ -9475,9 +9470,9 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
         if (t < TIME_MIN)
             {
             /* Fill in identity matrix */
-            for (i=0; i<4; i++)
+            for (i=0; i<3; i++)
                 {
-                for (j=0; j<4; j++)
+                for (j=0; j<3; j++)
                     {
                     if (i == j)
                         tiP[index++] = 1.0;
@@ -9489,29 +9484,42 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
         else if (t > TIME_MAX)
             {
             /* Fill in stationary matrix */
-            for (i=0; i<4; i++)
-                for (j=0; j<4; j++)
+            for (i=0; i<3; i++)
+                for (j=0; j<3; j++)
                     tiP[index++] = (CLFlt) pis[j];
             }
         else
             {
-            /* calculate probabilities - need analytical solution */
-            /*for (i=0; i<4; i++)
+            /* calculate probabilities */
+            for (i=0; i<3; i++)
                 {
-                for (j=0; j<4; j++)
+                for (j=0; j<3; j++)
                     {
-                    bigPij = bigPi_j[j];
-                    pij =  pis[j];
-                    u =  1.0/bigPij -  1.0;
-                    x =  exp(-beta * t);
-                    z = (bigPij - pij) / bigPij;
+                    a = pis[0]
+                    b = pis[1]
+                    u = exp(-b * t);
+                    x = exp(-2 * a * t);
+                    y = 2 * a + b;
+                    z = exp(-y * t);
 
                     if (i == j)
-                        tiP[index++] = (CLFlt) (pij + pij * u * x + z * x);
+                        {
+                        if (i != 1)
+                            tiP[index++] = (CLFlt) (((u * b * (1 + x)) + (2 * a * (1 + pow(u,-1.0)))) / (2 * y));
+                        else
+                            tiP[index++] = (CLFlt) ((b + 2 * a * z) / y);
+                        }
                     else
-                        tiP[index++] = (CLFlt) (pij + pij * u * x - (pij/bigPij) * x);
+                        {
+                        if (j == 1)
+                            tiP[index++] = (CLFlt) ((b - b * z) / y);
+                        else if (i == 1)
+                            tiP[index++] = (CLFlt) ((a - a * z) / y);
+                        else
+                            tiP[index++] = (CLFlt) (((u * b * (-1 + x)) + (2 * a * (-1 + pow(u,-1.0)))) / (2 * y));
+                        }
                     }
-                }*/
+                }
             }
         }
 

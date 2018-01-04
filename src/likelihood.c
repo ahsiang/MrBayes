@@ -2025,31 +2025,61 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
 
+    /* Find appropriate rows in latentMatrix */
+    if ( p->left->left == NULL )
+        leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
+    else
+        leftStates = NULL;
+    if (p->right->left == NULL)
+        rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * m->numChars;
+    else
+        rightStates = NULL;
+
     /* Conditional likelihood space is assumed to be arranged in numGammaCats blocks of data. Each block contains all data for one gamma category.
     Each gamma cat block consist of numChars conditional likelihood vectors, each of these vectors has three elements corresponding to a group of characters in the data matrix
     sitting at the same table in the DPP correlation model. */
 
-    /* calculate ancestral probabilities> TODO update numChars to number of tables */
-    for (c=0; c<m->numChars; c++)
+    /* calculate ancestral probabilities if both left and right are internal nodes */
+/* TODO: control statements for whether both are internal nodes, left is tip right is tip, etc. */
+
+    tiPL = pL;
+    tiPR = pR;
+    for (k=0; k<m->numRateCats; k++)
         {
-        tiPL = pL;
-        tiPR = pR;
-        for (k=0; k<m->numRateCats; k++)
+        for (c=0; c<m->numChars; c++)
             {
-            for (c=0; c<m->numChars; c++)
-                {
-                *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
-                          *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
-                *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
-                          *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
-                *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
-                          *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
-                clL += 3;
-                clR += 3;
-                }
-            tiPL += 9;
-            tiPR += 9;
+            *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
+                      *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
+            *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
+                      *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
+            *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
+                      *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
+            clL += 3;
+            clR += 3;
             }
+        tiPL += 9;
+        tiPR += 9;
+        }
+
+    /* calculate ancestral probabilities if left is a tip and right is not */
+    for (k=0; k<m->numRateCats; k++)
+        {
+        for (c=0; c<m->numChars; c++)
+            {
+            tiPL = pL + leftStates[c];
+            *(clP++) = (*tiPL)
+                      *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
+            tiPL += 3;
+            *(clP++) = (*tiPL)
+                      *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
+            tiPL += 3;
+            *(clP++) = (*tiPL)
+                      *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
+            clL += 3;
+            clR += 3;
+            }
+        pL += 9;
+        pR += 9;
         }
 
     return NO_ERROR;
@@ -7726,7 +7756,7 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 /*------------------------------------------------------------------
 |
 |   Likelihood_StdCorr: variable states model with or without rate
-|       variation
+|       variation but with character correlation
 |
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
@@ -7738,6 +7768,9 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     ModelInfo       *m;
 
     m = &modelSettings[division];
+
+    /* Get number of site patterns */
+    nSitesOfPat = GetParamVals(m->allocationVector, chain, state[chain]);
 
     /* TO DO: get actual number of tables in the current state of the model */
     numReps = m->numChars * 3; /* 3 is the number of states in the rate matrix */
@@ -7788,7 +7821,6 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     if (pObserved < LIKE_EPSILON)
         pObserved = LIKE_EPSILON;
 
-    /* TO DO: Use actual number of tables instead of numChars */
     for (c=m->numDummyChars; c<m->numChars; c++) /* numDummyChars = 1 */
         {
         like = 0.0;
@@ -7813,7 +7845,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         else
             {
-            (*lnL) += (lnScaler[c] + log(like));
+            (*lnL) += (lnScaler[c] + log(like) * nSitesOfPat[c]);
             }
         }
 

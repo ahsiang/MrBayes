@@ -9617,8 +9617,8 @@ int TiProbs_Fels (TreeNode *p, int division, int chain)
 int TiProbs_Corr (TreeNode *p, int division, int chain)
 {
     int         i, j, k, index;
-    MrBFlt      t, u, x, z, beta, bigPi_j[4], pij, bigPij,
-                *catRate, baseRate, theRate, *pis, length;
+    MrBFlt      t, a, b, u, u_inv, x, y, z, *rho, *catRate,
+                baseRate, theRate, *pis[3], length;
     CLFlt       *tiP;
     ModelInfo   *m;
 
@@ -9643,7 +9643,6 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
         catRate = &theRate;
 
     /* compute pis */
-    MrBFlt pis[3];
     pis[0] = pis[2] = 1.0 / (2.0 + rho);  /* alpha */
     pis[1] = 1.0 - 2.0*pis[0];            /* beta */
 
@@ -9703,29 +9702,26 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
                 {
                 for (j=0; j<3; j++)
                     {
-                    a = pis[0]
-                    b = pis[1]
+                    a = pis[0];
+                    b = pis[1];
                     u = exp(-b * t);
                     u_inv = 1 / u;
                     x = exp(-2 * a * t);
                     y = 2 * a + b;
                     z = exp(-y * t);
 
-                    if (i == j)
+                    if ((i == 0 && j == 0) || (i == 2 && j == 2))
+                        tiP[index++] = (CLFlt) (((u * b * (1 + x)) + (2 * a * (1 + u_inv))) / (2 * y));
+                    else if ((i == 0 && j == 1) || (i == 2 && j == 1))
+                        tiP[index++] = (CLFlt) ((b - b * z) / y);
+                    else if ((i == 0 && j == 2) || (i == 2 && j == 0))
+                        tiP[index++] = (CLFlt) (((u * b * (-1 + x)) + (2 * a * (-1 + u_inv))) / (2 * y));
+                    else if (i == 1)
                         {
-                        if (i != 1)
-                            tiP[index++] = (CLFlt) (((u * b * (1 + x)) + (2 * a * (1 + pow(u,-1.0)))) / (2 * y));
-                        else
-                            tiP[index++] = (CLFlt) ((b + 2 * a * z) / y);
-                        }
-                    else
-                        {
-                        if (j == 1)
-                            tiP[index++] = (CLFlt) ((b - b * z) / y);
-                        else if (i == 1)
+                        if (j == 0 || j == 2)
                             tiP[index++] = (CLFlt) ((a - a * z) / y);
                         else
-                            tiP[index++] = (CLFlt) (((u * b * (-1 + x)) + (2 * a * (-1 + pow(u,-1.0)))) / (2 * y));
+                            tiP[index++] = (CLFlt) ((b + 2 * a * z) / y);
                         }
                     }
                 }

@@ -386,6 +386,214 @@ int Move_Adgamma (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio,
 }
 
 
+int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
+{
+    /* change alphadir parameter using multiplier */
+
+    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector;
+    ModelParams *mp;
+    ModelInfo   *m;
+
+    /* get tuning parameter */
+    tuning = mvp[0];
+
+    /* get model params and model settings */
+    mp = &modelParams[param->relParts[0]];
+    m  = &modelSettings[param->relParts[0]];
+
+    /* get rate parameter of prior */
+    lambda = mp->alphaDirExp;
+
+    /* get minimum value for alphadir */
+    minA = MIN_ALPHADIR_PARAM;
+
+    /* get old value of alphadir */
+    oldA = *GetParamVals(param, chain, state[chain]);
+
+    /* change value for alphadir */
+    ran = RandomNumber(seed);
+    factor = exp(tuning * (ran - 0.5));
+    newA = oldA * factor;
+
+    /* check validity */
+    if (newA < minA)
+        newA = minA;
+
+    /* get proposal ratio */
+    *lnProposalRatio = log(newA / oldA);
+
+    /* get prior ratio */
+    *lnPriorRatio = lambda * (oldA - newA);
+
+    /* copy new alphadir value back */
+    *GetParamVals(param, chain, state[chain]) = newA;
+
+    /* compute probability of allocation vector given old and new alphadir values */
+    allocationVector = GetParamVals(m->allocationVector, chain, state[chain]);
+    *lnPriorRatio += lnProbAllocation(allocationVector, m->numChars, newA);
+    *lnPriorRatio -= lnProbAllocation(allocationVector, m->numChars, oldA);
+
+    /* probabilities on the tree (called likelihoods) are not affected */
+
+    return (NO_ERROR);
+}
+
+
+int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
+{
+    /* change allocation vector */
+
+    int         i, isAPriorExp, isValidA, *oldAllocationVector, *newAllocationVector;
+    MrBFlt      oldA, newA, minA, maxA, alphaExp=0.0, ran, factor, tuning;
+    ModelParams *mp;
+    ModelInfo   *m;
+
+    /* get tuning parameter */
+    tuning = mvp[0];
+
+    /* get model params and model settings */
+    mp = &modelParams[param->relParts[0]];
+    m  = &modelSettings[param->relParts[0]];
+
+    /* get alphadir */
+    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
+
+    /* get rate parameter of prior */
+    lambda = mp->alphaDirExp;
+
+    /* get minimum value for alphadir */
+    minA = MIN_ALPHADIR_PARAM;
+
+    /* get new and old allocation vector */
+    oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
+    newAllocationVector = GetParamIntVals(param, chain, state[chain]);
+
+    /* propose new allocation vector */
+    /* TODO */
+    /* 1) Pick random character */
+    randCharIndex = (int) (RandomNumber(seed) * m->numChars);
+
+
+    oldTableIndex = newAllocationVector[randCharIndex];
+
+    /* Get number of tables - don't need this */
+    numTables = 1;
+    for (i=1;i<m->numChars;++i)
+    {
+      if (oldAllocationVector[i] > numTables)
+      {
+        numTables = oldAllocationVector[i];
+      }
+    }
+
+    /* 2) Decide if character should be seated at new table and then reseat it accordingly */
+    /* Note that there are smarter ways of doing this... */
+    probNewTable = alphaDir / (alphaDir + m->numChars - 1);
+    if (RandomNumber(seed) < probNewTable)
+    {
+      newAllocationVector[randCharIndex] = numTables + 1;
+      /* For now, we won't change the latent pattern */
+      /* Change numSitesOfPat vector to reflect the change in allocation */
+      nSitesOfPat = GetParamVals(param, chain, state[chain]);
+      /* Make sure new table has weight 1 for the first character that is the new character */
+      nSitesOfPat[randCharIndex] = 1.0;
+      /* Make sure old table has weight 1 for the first character after removal of this character */
+      for (i=1;i<m->numChars;++i)
+      {
+        if (newAllocationVector[i] == oldTableIndex)
+          break;
+      }
+      nSitesOfPat[i] = 1.0;
+    }
+    else
+    {
+        charIndexRandomBuddy = (int) (RandomNumber(seed) * m->numChars - 1);
+        if (charIndexRandomBuddy == randCharIndex)
+          charIndexRandomBuddy = m->numChars - 1;
+        newTableIndex = newAllocationVector[charIndexRandomBuddy];
+
+        /* Change numSitesOfPat and latent matrix to reflect change in allocation */
+        /* First get these parameters */
+        nSitesOfPat = GetParamVals(param, chain, state[chain]);
+        latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
+
+        /* Set weight to 0.0 for all characters at the new table before adding the newcomer,
+        in case our character will be the first one at this table */
+        for (i=1;i<m->numChars;++i)
+        {
+          if (newAllocationVector[i] == oldTableIndex)
+            break;
+        }
+        oldGroupLeader = i;
+        nSitesOfPat[oldGroupLeader] = 0.0;
+        numTaxa = m->numTaxa;
+
+        /* Seat character at new table */
+        newAllocationVector[randCharIndex] = newTableIndex;
+        nSitesOfPat[randCharIndex] = 0.0;
+
+        /* Make sure latent pattern is correct for the new table */
+        index1 = oldGroupLeader;
+        index2 = randCharIndex;
+        for(i=1;i<m->numTaxa;++i)
+        {
+          latentMatrix[index2] = latentMatrix[index1];
+          index1 += m->numChars;
+          index2 += m->numChars;
+        }
+
+      /* make sure first character at new table has weight 1.0 */
+        for (i=1;i<m->numChars;++i)
+        {
+          if (newAllocationVector[i] == newTableIndex)
+            break;
+        }
+        nSitesOfPat[i] = 1.0;
+        /* if there are characters left at the old table, make sure the first one has weight 1.0 */
+        for (i=1;i<m->numChars;++i)
+        {
+          if (newAllocationVector[i] == oldTableIndex)
+            break;
+        }
+        if (i < m->numChars)
+          nSitesOfPat[i] = 1.0;
+    }
+
+    /* Re-index allocation vector to follow growth function */
+    barrierIndex = -1;
+    for (i=1;i<m->numChars;++i)
+    {
+      currIndex = newAllocationVector[i]
+      if (currIndex > barrierIndex)
+      {
+        if (currIndex > barrierIndex + 1)
+        {
+          for (j=i;j<m->numChars;++j)
+          {
+            if (newAllocationVector[j] == currIndex)
+              newAllocationVector[j] = barrierIndex + 1;
+            else
+              newAllocationVector[j]++;
+          }
+          barrierIndex++;
+        }
+      }
+    }
+
+    /* TODO: Proposal ratio and prior ratio (opposites) */
+    /* get proposal ratio */
+    *lnProposalRatio = ;
+
+    /* get prior ratio */
+    *lnPriorRatio += lnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnPriorRatio -= lnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+
+    /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
+
+    return (NO_ERROR);
+}
+
+
 int Move_Beta (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* change symmetric Dirichlet variance using multiplier */
@@ -14054,213 +14262,6 @@ int Move_RateShape_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRa
 }
 
 
-int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
-{
-    /* change alphadir parameter using multiplier */
-
-    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector;
-    ModelParams *mp;
-    ModelInfo   *m;
-
-    /* get tuning parameter */
-    tuning = mvp[0];
-
-    /* get model params and model settings */
-    mp = &modelParams[param->relParts[0]];
-    m  = &modelSettings[param->relParts[0]];
-
-    /* get rate parameter of prior */
-    lambda = mp->alphaDirExp;
-
-    /* get minimum value for alphadir */
-    minA = MIN_ALPHADIR_PARAM;
-
-    /* get old value of alphadir */
-    oldA = *GetParamVals(param, chain, state[chain]);
-
-    /* change value for alphadir */
-    ran = RandomNumber(seed);
-    factor = exp(tuning * (ran - 0.5));
-    newA = oldA * factor;
-
-    /* check validity */
-    if (newA < minA)
-        newA = minA;
-
-    /* get proposal ratio */
-    *lnProposalRatio = log(newA / oldA);
-
-    /* get prior ratio */
-    *lnPriorRatio = lambda * (oldA - newA);
-
-    /* copy new alphadir value back */
-    *GetParamVals(param, chain, state[chain]) = newA;
-
-    /* compute probability of allocation vector given old and new alphadir values */
-    allocationVector = GetParamVals(m->allocationVector, chain, state[chain]);
-    *lnPriorRatio += lnProbAllocation(allocationVector, m->numChars, newA);
-    *lnPriorRatio -= lnProbAllocation(allocationVector, m->numChars, oldA);
-
-    /* probabilities on the tree (called likelihoods) are not affected */
-
-    return (NO_ERROR);
-}
-
-
-int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
-{
-    /* change allocation vector */
-
-    int         i, isAPriorExp, isValidA, *oldAllocationVector, *newAllocationVector;
-    MrBFlt      oldA, newA, minA, maxA, alphaExp=0.0, ran, factor, tuning;
-    ModelParams *mp;
-    ModelInfo   *m;
-
-    /* get tuning parameter */
-    tuning = mvp[0];
-
-    /* get model params and model settings */
-    mp = &modelParams[param->relParts[0]];
-    m  = &modelSettings[param->relParts[0]];
-
-    /* get alphadir */
-    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
-
-    /* get rate parameter of prior */
-    lambda = mp->alphaDirExp;
-
-    /* get minimum value for alphadir */
-    minA = MIN_ALPHADIR_PARAM;
-
-    /* get new and old allocation vector */
-    oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
-    newAllocationVector = GetParamIntVals(param, chain, state[chain]);
-
-    /* propose new allocation vector */
-    /* TODO */
-    /* 1) Pick random character */
-    randCharIndex = (int) (RandomNumber(seed) * m->numChars);
-
-
-    oldTableIndex = newAllocationVector[randCharIndex];
-
-    /* Get number of tables - don't need this */
-    numTables = 1;
-    for (i=1;i<m->numChars;++i)
-    {
-      if (oldAllocationVector[i] > numTables)
-      {
-        numTables = oldAllocationVector[i];
-      }
-    }
-
-    /* 2) Decide if character should be seated at new table and then reseat it accordingly */
-    /* Note that there are smarter ways of doing this... */
-    probNewTable = alphaDir / (alphaDir + m->numChars - 1);
-    if (RandomNumber(seed) < probNewTable)
-    {
-      newAllocationVector[randCharIndex] = numTables + 1;
-      /* For now, we won't change the latent pattern */
-      /* Change numSitesOfPat vector to reflect the change in allocation */
-      nSitesOfPat = GetParamVals(param, chain, state[chain]);
-      /* Make sure new table has weight 1 for the first character that is the new character */
-      nSitesOfPat[randCharIndex] = 1.0;
-      /* Make sure old table has weight 1 for the first character after removal of this character */
-      for (i=1;i<m->numChars;++i)
-      {
-        if (newAllocationVector[i] == oldTableIndex)
-          break;
-      }
-      nSitesOfPat[i] = 1.0;
-    }
-    else
-    {
-        charIndexRandomBuddy = (int) (RandomNumber(seed) * m->numChars - 1);
-        if (charIndexRandomBuddy == randCharIndex)
-          charIndexRandomBuddy = m->numChars - 1;
-        newTableIndex = newAllocationVector[charIndexRandomBuddy];
-
-        /* Change numSitesOfPat and latent matrix to reflect change in allocation */
-        /* First get these parameters */
-        nSitesOfPat = GetParamVals(param, chain, state[chain]);
-        latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-
-        /* Set weight to 0.0 for all characters at the new table before adding the newcomer,
-        in case our character will be the first one at this table */
-        for (i=1;i<m->numChars;++i)
-        {
-          if (newAllocationVector[i] == oldTableIndex)
-            break;
-        }
-        oldGroupLeader = i;
-        nSitesOfPat[oldGroupLeader] = 0.0;
-        numTaxa = m->numTaxa;
-
-        /* Seat character at new table */
-        newAllocationVector[randCharIndex] = newTableIndex;
-        nSitesOfPat[randCharIndex] = 0.0;
-
-        /* Make sure latent pattern is correct for the new table */
-        index1 = oldGroupLeader;
-        index2 = randCharIndex;
-        for(i=1;i<m->numTaxa;++i)
-        {
-          latentMatrix[index2] = latentMatrix[index1];
-          index1 += m->numChars;
-          index2 += m->numChars;
-        }
-
-      /* make sure first character at new table has weight 1.0 */
-        for (i=1;i<m->numChars;++i)
-        {
-          if (newAllocationVector[i] == newTableIndex)
-            break;
-        }
-        nSitesOfPat[i] = 1.0;
-        /* if there are characters left at the old table, make sure the first one has weight 1.0 */
-        for (i=1;i<m->numChars;++i)
-        {
-          if (newAllocationVector[i] == oldTableIndex)
-            break;
-        }
-        if (i < m->numChars)
-          nSitesOfPat[i] = 1.0;
-    }
-
-    /* Re-index allocation vector to follow growth function */
-    barrierIndex = -1;
-    for (i=1;i<m->numChars;++i)
-    {
-      currIndex = newAllocationVector[i]
-      if (currIndex > barrierIndex)
-      {
-        if (currIndex > barrierIndex + 1)
-        {
-          for (j=i;j<m->numChars;++j)
-          {
-            if (newAllocationVector[j] == currIndex)
-              newAllocationVector[j] = barrierIndex + 1;
-            else
-              newAllocationVector[j]++;
-          }
-          barrierIndex++;
-        }
-      }
-    }
-
-    /* get proposal ratio */
-    *lnProposalRatio = ;
-
-    /* get prior ratio */
-    *lnPriorRatio += lnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-    *lnPriorRatio -= lnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-
-    /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
-
-
-    return (NO_ERROR);
-}
-
 /*----------------------------------------------------------------
 |
 |   Move_Revmat_Dir: Change rate matrix using Dirichlet proposal
@@ -15242,6 +15243,84 @@ int Move_Revmat_SplitMerge2 (Param *param, int chain, RandLong *seed, MrBFlt *ln
 }
 
 
+int Move_Rho_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
+{
+    /* change rho using Dirichlet proposal */
+
+    int         i;
+    MrBFlt      oldRho, conc, lambda, oldProp[2], newProp[2], dirParm[2], sum, x, y;
+    ModelParams *mp;
+
+    /* get model params */
+    mp = &modelParams[param->relParts[0]];
+
+    /* get concentration parameter */
+    conc = mvp[0];
+
+    /* get old value of rho */
+    oldRho = *GetParamVals(param, chain, state[chain]);
+
+    /* get lambda parameter of prior */
+    lambda = mp->rhoExp;
+
+    /* calculate old simplex proportions */
+    oldProp[0] = oldRho;
+    oldProp[1] = 1.0 - oldProp[0];
+
+    /* multiply old rho props with some large number to get new values close to the old ones */
+    dirParm[0] = oldProp[0] * conc;
+    dirParm[1] = oldProp[1] * conc;
+
+    /* get new values */
+    DirichletRandomVariable (dirParm, newProp, 2, seed);
+
+    /* check validity of new values */
+    if (newProp[0] < MIN_RHO_PARAM)
+        {
+        newProp[0] = MIN_RHO_PARAM;
+        newProp[1] = 1.0 - MIN_RHO_PARAM;
+        }
+    else if (newProp[1] < MIN_RHO_PARAM)
+        {
+        newProp[1] = MIN_RHO_PARAM;
+        newProp[0] = 1.0 - MIN_RHO_PARAM;
+        }
+
+    /* calculate and copy new rho value back */
+    *GetParamVals(param, chain, state[chain]) = newProp[0];
+
+    /* get proposal ratio */
+    sum = 0.0;
+    for (i=0; i<2; i++)
+        sum += newProp[i] * conc;
+    x = LnGamma(sum);
+    for (i=0; i<2; i++)
+        x -= LnGamma(newProp[i] * conc);
+    for (i=0; i<2; i++)
+        x += (newProp[i] * conc - 1.0) * log(oldProp[i]);
+    sum = 0.0;
+    for (i=0; i<2; i++)
+        sum += oldProp[i] * conc;
+    y = LnGamma(sum);
+    for (i=0; i<2; i++)
+        y -= LnGamma(oldProp[i] * conc);
+    for (i=0; i<2; i++)
+        y += (oldProp[i]*conc-1.0) * log(newProp[i]);
+    (*lnProposalRatio) = x - y;
+
+    /* get prior ratio */
+    (*lnPriorRatio) = lambda * (oldProp[0] - newProp[0]);
+
+    /* Set update flags for all partitions that share this rho. Note that the conditional
+       likelihood (actually a prior probability for this model) update flags have been set
+       before we even call this function. */
+    for (i=0; i<param->nRelParts; i++)
+        TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
+
+    return (NO_ERROR);
+}
+
+
 int Move_Speciation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* change speciation rate using sliding window */
@@ -16071,83 +16150,6 @@ int Move_Tratio_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
        the cijk flag. */
     for (i=0; i<param->nRelParts; i++)
         modelSettings[param->relParts[i]].upDateCijk = YES;
-
-    return (NO_ERROR);
-}
-
-
-int Move_Rho_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
-{
-    /* change rho using Dirichlet proposal */
-
-    int         i;
-    MrBFlt      oldRho, conc, lambda, oldProp[2], newProp[2], dirParm[2], sum, x, y;
-    ModelParams *mp;
-
-    /* get model params */
-    mp = &modelParams[param->relParts[0]];
-
-    /* get concentration parameter */
-    conc = mvp[0];
-
-    /* get old value of rho */
-    oldRho = *GetParamVals(param, chain, state[chain]);
-
-    /* get lambda parameter of prior */
-    lambda = mp->rhoExp;
-
-    /* calculate old simplex proportions */
-    oldProp[0] = oldRho;
-    oldProp[1] = 1.0 - oldProp[0];
-
-    /* multiply old rho props with some large number to get new values close to the old ones */
-    dirParm[0] = oldProp[0] * conc;
-    dirParm[1] = oldProp[1] * conc;
-
-    /* get new values */
-    DirichletRandomVariable (dirParm, newProp, 2, seed);
-
-    if (newProp[0] < MIN_RHO_PARAM)
-        {
-        newProp[0] = MIN_RHO_PARAM;
-        newProp[1] = 1.0-MIN_RHO_PARAM;
-        }
-    else if (newProp[1] < MIN_RHO_PARAM)
-        {
-        newProp[1] = MIN_RHO_PARAM;
-        newProp[0] = 1.0-MIN_RHO_PARAM;
-        }
-
-    /* calculate and copy new rho value back */
-    *GetParamVals(param, chain, state[chain]) = newProp[0];
-
-    /* get proposal ratio */
-    sum = 0.0;
-    for (i=0; i<2; i++)
-        sum += newProp[i]*conc;
-    x = LnGamma(sum);
-    for (i=0; i<2; i++)
-        x -= LnGamma(newProp[i]*conc);
-    for (i=0; i<2; i++)
-        x += (newProp[i]*conc-1.0)*log(oldProp[i]);
-    sum = 0.0;
-    for (i=0; i<2; i++)
-        sum += oldProp[i]*conc;
-    y = LnGamma(sum);
-    for (i=0; i<2; i++)
-        y -= LnGamma(oldProp[i]*conc);
-    for (i=0; i<2; i++)
-        y += (oldProp[i]*conc-1.0)*log(newProp[i]);
-    (*lnProposalRatio) = x - y;
-
-    /* get prior ratio */
-    (*lnPriorRatio) = lambda*(oldProp[0]-newProp[0]);
-
-    /* Set update flags for all partitions that share this rho. Note that the conditional
-       likelihood (actually a prior probability for this model) update flags have been set
-       before we even call this function. */
-    for (i=0; i<param->nRelParts; i++)
-        TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
 
     return (NO_ERROR);
 }

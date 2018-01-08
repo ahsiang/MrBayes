@@ -441,89 +441,92 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
 int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
-    /* change allocation vector */
+    /* Change allocation vector */
 
-    int         i, isAPriorExp, isValidA, *oldAllocationVector, *newAllocationVector;
+    int         i, isAPriorExp, isValidA, *oldAllocationVector,
+                *newAllocationVector, numTables;
     MrBFlt      oldA, newA, minA, maxA, alphaExp=0.0, ran, factor, tuning;
     ModelParams *mp;
     ModelInfo   *m;
 
-    /* get tuning parameter */
+    /* Get tuning parameter */
     tuning = mvp[0];
 
-    /* get model params and model settings */
+    /* Get model params and model settings */
     mp = &modelParams[param->relParts[0]];
     m  = &modelSettings[param->relParts[0]];
 
-    /* get alphadir */
+    /* Get alphadir */
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
 
-    /* get rate parameter of prior */
+    /* Get rate parameter of alphadir prior */
     lambda = mp->alphaDirExp;
 
-    /* get minimum value for alphadir */
+    /* Get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;
 
-    /* get new and old allocation vector */
+    /* Get new and old allocation vectors */
     oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
     newAllocationVector = GetParamIntVals(param, chain, state[chain]);
 
-    /* propose new allocation vector */
-    /* TODO */
-    /* 1) Pick random character */
+    /* Propose new allocation vector */
+    /* Pick random character from old allocation vector */
     randCharIndex = (int) (RandomNumber(seed) * m->numChars);
 
-
+    /* Get index of table that randomly selected character is seated at */
     oldTableIndex = newAllocationVector[randCharIndex];
 
-    /* Get number of tables - don't need this */
+    /* Get number of tables */
     numTables = 1;
-    for (i=1;i<m->numChars;++i)
-    {
-      if (oldAllocationVector[i] > numTables)
-      {
-        numTables = oldAllocationVector[i];
-      }
-    }
+    for (i=1; i<m->numChars; i++)
+        {
+        if (oldAllocationVector[i] > numTables)
+            {
+            numTables = oldAllocationVector[i];
+            }
+        }
 
-    /* 2) Decide if character should be seated at new table and then reseat it accordingly */
+    /* Decide if character should be seated at new table and then reseat it accordingly */
     /* Note that there are smarter ways of doing this... */
     probNewTable = alphaDir / (alphaDir + m->numChars - 1);
-    if (RandomNumber(seed) < probNewTable)
-    {
-      newAllocationVector[randCharIndex] = numTables + 1;
-      /* For now, we won't change the latent pattern */
-      /* Change numSitesOfPat vector to reflect the change in allocation */
-      nSitesOfPat = GetParamVals(param, chain, state[chain]);
-      /* Make sure new table has weight 1 for the first character that is the new character */
-      nSitesOfPat[randCharIndex] = 1.0;
-      /* Make sure old table has weight 1 for the first character after removal of this character */
-      for (i=1;i<m->numChars;++i)
-      {
-        if (newAllocationVector[i] == oldTableIndex)
-          break;
-      }
-      nSitesOfPat[i] = 1.0;
-    }
-    else
-    {
+    if (RandomNumber(seed) < probNewTable) /* Seated at new table case */
+        {
+        newAllocationVector[randCharIndex] = numTables + 1;
+        /* For now, we won't change the latent pattern */
+        /* Change nSitesOfPat vector to reflect the change in allocation */
+        nSitesOfPat = GetParamVals(param, chain, state[chain]);
+        /* Make sure new table has weight 1 for the first character that is the new character */
+        nSitesOfPat[randCharIndex] = 1.0;
+        /* Make sure old table has weight 1 for the first character after removal of this character */
+        for (i=1; i<m->numChars; i++)
+            {
+            if (newAllocationVector[i] == oldTableIndex)
+                break;
+            }
+        nSitesOfPat[i] = 1.0;
+        }
+    else /* Seated at existing table case */
+        {
+        /* Pick random character to sit next to */
         charIndexRandomBuddy = (int) (RandomNumber(seed) * m->numChars - 1);
+        /* In case original character is chosen, choose the last character */
         if (charIndexRandomBuddy == randCharIndex)
-          charIndexRandomBuddy = m->numChars - 1;
+            charIndexRandomBuddy = m->numChars - 1;
+        /* Get index of table that newly selected buddy is seated at */
         newTableIndex = newAllocationVector[charIndexRandomBuddy];
 
-        /* Change numSitesOfPat and latent matrix to reflect change in allocation */
+        /* Change nSitesOfPat and latent matrix to reflect change in allocation vector */
         /* First get these parameters */
         nSitesOfPat = GetParamVals(param, chain, state[chain]);
         latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
         /* Set weight to 0.0 for all characters at the new table before adding the newcomer,
         in case our character will be the first one at this table */
-        for (i=1;i<m->numChars;++i)
-        {
-          if (newAllocationVector[i] == oldTableIndex)
-            break;
-        }
+        for (i=1; i<m->numChars; i++)
+            {
+            if (newAllocationVector[i] == oldTableIndex)
+                break;
+            }
         oldGroupLeader = i;
         nSitesOfPat[oldGroupLeader] = 0.0;
         numTaxa = m->numTaxa;
@@ -535,50 +538,50 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         /* Make sure latent pattern is correct for the new table */
         index1 = oldGroupLeader;
         index2 = randCharIndex;
-        for(i=1;i<m->numTaxa;++i)
-        {
-          latentMatrix[index2] = latentMatrix[index1];
-          index1 += m->numChars;
-          index2 += m->numChars;
-        }
+        for(i=1; i<m->numTaxa; i++)
+            {
+            latentMatrix[index2] = latentMatrix[index1];
+            index1 += m->numChars;
+            index2 += m->numChars;
+            }
 
-      /* make sure first character at new table has weight 1.0 */
-        for (i=1;i<m->numChars;++i)
-        {
-          if (newAllocationVector[i] == newTableIndex)
-            break;
-        }
+        /* Make sure first character at new table has weight 1.0 */
+        for (i=1; i<m->numChars; i++)
+            {
+            if (newAllocationVector[i] == newTableIndex)
+                break;
+            }
         nSitesOfPat[i] = 1.0;
-        /* if there are characters left at the old table, make sure the first one has weight 1.0 */
-        for (i=1;i<m->numChars;++i)
-        {
-          if (newAllocationVector[i] == oldTableIndex)
-            break;
-        }
+        /* If there are characters left at the old table, make sure the first one has weight 1.0 */
+        for (i=1; i<m->numChars; i++)
+            {
+            if (newAllocationVector[i] == oldTableIndex)
+                break;
+            }
         if (i < m->numChars)
-          nSitesOfPat[i] = 1.0;
-    }
+            nSitesOfPat[i] = 1.0;
+        }
 
     /* Re-index allocation vector to follow growth function */
     barrierIndex = -1;
-    for (i=1;i<m->numChars;++i)
-    {
-      currIndex = newAllocationVector[i]
-      if (currIndex > barrierIndex)
-      {
-        if (currIndex > barrierIndex + 1)
+    for (i=1; i<m->numChars; i++)
         {
-          for (j=i;j<m->numChars;++j)
-          {
-            if (newAllocationVector[j] == currIndex)
-              newAllocationVector[j] = barrierIndex + 1;
-            else
-              newAllocationVector[j]++;
-          }
-          barrierIndex++;
+        currIndex = newAllocationVector[i]
+        if (currIndex > barrierIndex)
+            {
+            if (currIndex > barrierIndex + 1)
+                {
+                for (j=i;j<m->numChars;++j)
+                    {
+                    if (newAllocationVector[j] == currIndex)
+                        newAllocationVector[j] = barrierIndex + 1;
+                    else
+                        newAllocationVector[j]++;
+                    }
+                barrierIndex++;
+                }
+            }
         }
-      }
-    }
 
     /* TODO: Proposal ratio and prior ratio (opposites) */
     /* get proposal ratio */

@@ -443,9 +443,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* Change allocation vector */
 
-    int         i, isAPriorExp, isValidA, *oldAllocationVector,
-                *newAllocationVector, numTables;
-    MrBFlt      oldA, newA, minA, maxA, alphaExp=0.0, ran, factor, tuning;
+    int         i, j, isAPriorExp, isValidA, *oldAllocationVector, *newAllocationVector,
+                randCharIndex, oldTableIndex, numTables, *nSitesOfPat, barrierIndex;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, ran, factor, tuning, probNewTable;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -478,7 +478,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Get number of tables */
     numTables = 1;
-    for (i=1; i<m->numChars; i++)
+    for (i=0; i<m->numChars; i++)
         {
         if (oldAllocationVector[i] > numTables)
             {
@@ -498,7 +498,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         /* Make sure new table has weight 1 for the first character that is the new character */
         nSitesOfPat[randCharIndex] = 1.0;
         /* Make sure old table has weight 1 for the first character after removal of this character */
-        for (i=1; i<m->numChars; i++)
+        for (i=0; i<m->numChars; i++)
             {
             if (newAllocationVector[i] == oldTableIndex)
                 break;
@@ -522,7 +522,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
         /* Set weight to 0.0 for all characters at the new table before adding the newcomer,
         in case our character will be the first one at this table */
-        for (i=1; i<m->numChars; i++)
+        for (i=0; i<m->numChars; i++)
             {
             if (newAllocationVector[i] == oldTableIndex)
                 break;
@@ -538,7 +538,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         /* Make sure latent pattern is correct for the new table */
         index1 = oldGroupLeader;
         index2 = randCharIndex;
-        for(i=1; i<m->numTaxa; i++)
+        for(i=0; i<m->numTaxa; i++)
             {
             latentMatrix[index2] = latentMatrix[index1];
             index1 += m->numChars;
@@ -546,14 +546,14 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
 
         /* Make sure first character at new table has weight 1.0 */
-        for (i=1; i<m->numChars; i++)
+        for (i=0; i<m->numChars; i++)
             {
             if (newAllocationVector[i] == newTableIndex)
                 break;
             }
         nSitesOfPat[i] = 1.0;
         /* If there are characters left at the old table, make sure the first one has weight 1.0 */
-        for (i=1; i<m->numChars; i++)
+        for (i=0; i<m->numChars; i++)
             {
             if (newAllocationVector[i] == oldTableIndex)
                 break;
@@ -562,26 +562,28 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             nSitesOfPat[i] = 1.0;
         }
 
-    /* Re-index allocation vector to follow growth function */
+    /* Rescale allocation vector to follow growth function */
     barrierIndex = -1;
-    for (i=1; i<m->numChars; i++)
+    for (i=0; i<m->numChars; i++)
         {
-        currIndex = newAllocationVector[i]
-        if (currIndex > barrierIndex)
+        currIndex = newAllocationVector[i];
+        if (currIndex == barrierIndex + 1)
+            barrierIndex = currIndex;
+        else
             {
             if (currIndex > barrierIndex + 1)
                 {
-                for (j=i;j<m->numChars;++j)
+                for (j=i; j<m->numChars; j++)
                     {
                     if (newAllocationVector[j] == currIndex)
                         newAllocationVector[j] = barrierIndex + 1;
                     else
-                        newAllocationVector[j]++;
+                        if (newAllocationVector[j] > barrierIndex)
+                            newAllocationVector[j]++;
                     }
-                barrierIndex++;
                 }
+            break
             }
-        }
 
     /* TODO: Proposal ratio and prior ratio (opposites) */
     /* get proposal ratio */

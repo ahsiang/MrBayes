@@ -1000,13 +1000,13 @@ typedef struct model
     char        tRatioPr[100];     /* prior for ti/tv rate ratio                   */
     MrBFlt      tRatioFix;
     MrBFlt      tRatioDir[2];
-    char        correlationModel[5];/* use correlation model? (yes/no)                 */
+    char        correlationModel[5];/* use correlation model? (yes/no)             */
     char        rhoPr[100];        /* prior for inverse correlation factor         */
     MrBFlt      rhoFix;
-    MrBFlt      rhoDir;
-    char        alphaDirPr[100];     /* prior for DPMM scaling parameter           */
+    MrBFlt      rhoExp;
+    char        alphaDirPr[100];     /* prior for DPMM concentration parameter     */
     MrBFlt      alphaDirFix;
-    MrBFlt      alphaDirDir;
+    MrBFlt      alphaDirExp;
     char        revMatPr[100];     /* prior for GTR model                          */
     MrBFlt      revMatFix[6];
     MrBFlt      revMatDir[6];
@@ -1239,6 +1239,8 @@ typedef struct modelinfo
     Param       *tRatio;                    /* ptr to tRatio used in model              */
     Param       *rho;                       /* ptr to rho used in model (inverse correlation factor) */
     Param       *alphaDir;                  /* ptr to alphaDir used in model (DPMM scaling parameter) */
+    Param       *latentMatrix;              /* ptr to latentMatrix used in model (correlation process patterns) */
+    Param       *allocationVector;          /* ptr to allocationVector used in model (DPMM table allocation) */
     Param       *revMat;                    /* ptr to revMat used in model              */
     Param       *omega;                     /* ptr to omega used in model               */
     Param       *stateFreq;                 /* ptr to statFreq used in model            */

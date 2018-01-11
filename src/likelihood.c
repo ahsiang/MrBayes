@@ -2006,8 +2006,8 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             a, c, h, i, j, k, nStates, nCats, tmp;
-    CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR, likeL, likeR;
+    int             c, k, nStates, *leftStates, *rightStates;
+    CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     ModelInfo       *m;
 
     m = &modelSettings[division];
@@ -5041,10 +5041,6 @@ int     CondLikeUp_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int     CondLikeUp_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             a, c, i, j, k, t, nStates, nCats, coppySize,tmp;
-    CLFlt           *clFA, *clFP, *clDP, *pA, *tiP, condLikeUp[10], sum;
-    ModelInfo       *m;
-
     MrBayesPrint("%s   ERROR: Inference of ancestral states with correlation model not supported yet.\n");
     return ERROR;
 }
@@ -7761,15 +7757,16 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
 {
-    int             b, c, j, k, nBetaCats, nRateCats, nStates, numReps;
-    MrBFlt          catLike, catFreq, rateFreq, like, bs[3],
-                    pUnobserved, pObserved;
-    CLFlt           *clPtr, **clP, *lnScaler, *nSitesOfPat;
+    int             c, j, k, nRateCats, nStates, numReps;
+    MrBFlt          catLike, catFreq, rateFreq, like, bs[3], rho,
+                    pUnobserved, pObserved, *nSitesOfPat;
+    CLFlt           *clPtr, **clP, *lnScaler;
     ModelInfo       *m;
 
     m = &modelSettings[division];
 
     /* Get number of site patterns */
+    /* TODO: warning: incompatible pointer types assigning to 'CLFlt *' (aka 'float *') from 'MrBFlt *' (aka 'double *') */
     nSitesOfPat = GetParamVals(m->allocationVector, chain, state[chain]);
 
     /* TO DO: get actual number of tables in the current state of the model */
@@ -7785,7 +7782,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         }
 
     /* get inverse correlation factor */
-    rho = GetParamSubVals (m->rho);
+    rho = *GetParamSubVals(m->rho, chain, state[chain]);
 
     /* find base frequencies */
     bs[0] = bs[2] = 1 / (2 + rho);
@@ -7815,6 +7812,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         like += catLike * catFreq;
         clP[k] += nStates;
         }
+    /* TODO: warning: variable 'c' is uninitialized when used here */
     pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
 
     pObserved =  1.0 - pUnobserved; /* total probability for all patterns in L */
@@ -9628,7 +9626,7 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
     tiP = m->tiProbs[m->tiProbsIndex[chain][p->index]];
 
     /* get inverse correlation factor */
-    rho = GetParamSubVals (m->rho);
+    rho = GetParamSubVals(m->rho, chain, state[chain]);
 
     /* get base rate */
     baseRate = GetRate (division, chain);
@@ -9636,15 +9634,16 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
     /* get category rates */
     theRate = 1.0;
     if (m->shape != NULL)
-        catRate = GetParamSubVals (m->shape, chain, state[chain]);
+        catRate = GetParamSubVals(m->shape, chain, state[chain]);
     else if (m->mixtureRates != NULL)
-        catRate = GetParamSubVals (m->mixtureRates, chain, state[chain]);
+        catRate = GetParamSubVals(m->mixtureRates, chain, state[chain]);
     else
         catRate = &theRate;
 
     /* compute pis */
-    pis[0] = pis[2] = 1.0 / (2.0 + rho);  /* alpha */
-    pis[1] = 1.0 - 2.0*pis[0];            /* beta */
+    /* TODO: error: invalid operands to binary expression ('double' and 'MrBFlt *' (aka 'double *')) */
+    *pis[0] = *pis[2] = 1.0 / (2.0 + *rho);  /* alpha */
+    *pis[1] = 1.0 - (2.0 * *pis[0]);            /* beta */
 
     /* find length */
     if (m->cppEvents != NULL)
@@ -9693,7 +9692,8 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
             /* Fill in stationary matrix */
             for (i=0; i<3; i++)
                 for (j=0; j<3; j++)
-                    tiP[index++] = (CLFlt) pis[j];
+                    /* TODO: error: pointer cannot be cast to type 'CLFlt' (aka 'float') */
+                    tiP[index++] = *pis[j];
             }
         else
             {
@@ -9702,8 +9702,8 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
                 {
                 for (j=0; j<3; j++)
                     {
-                    a = pis[0];
-                    b = pis[1];
+                    a = *pis[0];
+                    b = *pis[1];
                     u = exp(-b * t);
                     u_inv = 1 / u;
                     x = exp(-2 * a * t);

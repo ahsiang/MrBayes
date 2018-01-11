@@ -11256,10 +11256,11 @@ int GetUserHelp (char *helpTkn)
         MrBayesPrint ("                    you set rhopr as exponential(5), then rho will be estimated  \n");
         MrBayesPrint ("                    against a prior probability distribution where the expected  \n");
         MrBayesPrint ("                    value of rho will be 0.20 (= 1/5).                           \n");
-        MrBayesPrint ("   Alphadirpr    -- This parameter is used to set the prior on the scaling       \n");
+        MrBayesPrint ("   Alphadirpr    -- This parameter is used to set the prior on the concentration \n");
         MrBayesPrint ("                    parameter for the Dirichlet process mixture model used to    \n");
         MrBayesPrint ("                    cluster standard characters under the correlation model.     \n");
-        MrBayesPrint ("                    Higher values of alphadir     \n");
+        MrBayesPrint ("                    Higher values of alphadir correspond to higher probabilities \n");
+        MrBayesPrint ("                    of initializing new clusters.                                \n");
         MrBayesPrint ("                                                                                 \n");
 
 
@@ -11622,6 +11623,18 @@ int GetUserHelp (char *helpTkn)
             MrBayesPrint ("   Generatepr       Fixed/Variable=Dirichlet     %s", mp->generatePr);
             if (!strcmp(mp->generatePr, "Dirichlet"))
                 MrBayesPrint ("(...,%1.1lf,...)\n", mp->generatePrDir);
+            else
+                MrBayesPrint ("\n");
+
+            MrBayesPrint ("   Rhopr            Fixed/Exponential            %s", mp->rhoPr);
+            if (!strcmp(mp->rhoPr, "Exponential"))
+                MrBayesPrint ("(%1.2lf)\n", mp->rhoExp);
+            else
+                MrBayesPrint ("\n");
+
+            MrBayesPrint ("   Alphadirpr       Fixed/Exponential            %s", mp->alphaDirPr);
+            if (!strcmp(mp->alphaDirPr, "Exponential"))
+                MrBayesPrint ("(%1.2lf)\n", mp->alphaDirExp);
             else
                 MrBayesPrint ("\n");
 

@@ -22987,7 +22987,6 @@ int ShowModel (void)
                               else /* if (!strcmp(modelParams[i].alphaDirPr,"Exponential")) */
                                   MrBayesPrint ("%s                     Alphadir has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].alphaDirExp);
                               }
-                        }
                           else
                               MrBayesPrint ("%s         # States  = Variable, up to 10\n", spacer);
                         }
@@ -23746,14 +23745,14 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
         else if (j == P_RHO)
             {
             if (!strcmp(mp->rhoPr,"Exponential"))
-                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->rhoExp[0], modelParams[i].rhoExp[1]);
+                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->rhoExp, modelParams[i].rhoExp);
             else
                 MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->rhoFix);
             }
         else if (j == P_ALPHADIR)
             {
             if (!strcmp(mp->alphaDirPr,"Exponential"))
-                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->alphaDirExp[0], modelParams[i].alphaDirExp[1]);
+                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->alphaDirExp, modelParams[i].alphaDirExp);
             else
                 MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->alphaDirFix);
             }

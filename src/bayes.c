@@ -562,10 +562,10 @@ int InitializeMrBayes (void)
     strcpy(defaultModel.correlationModel, "No");        /* use correlation model? (yes/no)                 */
     strcpy(defaultModel.rhoPr, "Exponential");          /* prior for inverse correlation factor         */
     defaultModel.rhoFix = 0.05;
-    defaultModel.rhoExp[0] = 20;
+    defaultModel.rhoExp = 20;
     strcpy(defaultModel.alphaDirPr, "Exponential");     /* prior for DPMM scaling factor                */
     defaultModel.alphaDirFix = 0.05;
-    defaultModel.alphaDirExp[0] = 20;
+    defaultModel.alphaDirExp = 20;
     strcpy(defaultModel.revMatPr, "Dirichlet");         /* prior for GTR model (nucleotides)            */
     for (i=0; i<6; i++)
         {

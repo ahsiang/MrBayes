@@ -390,8 +390,7 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* change alphadir parameter using multiplier */
 
-    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector,
-                lnPriorRatio, lnProposalRatio;
+    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -441,14 +440,12 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
 
 /* TODO: Move this to appropriate location after consulting with Fredrik */
-int lnProbAllocation (int *allocationVector, int *numChars, MrBFlt *alphaDir)
+int lnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 {
     /* Calculate probability of a given allocation vector for a particular alphadir value */
 
-    int         i, j, newestTableIndex, *allocationVector, numSeatedAtTable;
-    MrBFlt      alphaDir, totalProb;
-    ModelParams *mp;
-    ModelInfo   *m;
+    int         i, j, newestTableIndex, numSeatedAtTable;
+    MrBFlt      totalProb;
 
     /* Initialize counter to keep track of highest current table number */
     newestTableIndex = 0;
@@ -471,12 +468,12 @@ int lnProbAllocation (int *allocationVector, int *numChars, MrBFlt *alphaDir)
                     numSeatedAtTable++;
                     }
                 }
-            totalProb *= numSeatedAtTable / (alphaDir + i); /* no -1 because of 0-indexing */
+            totalProb = totalProb * ((MrBFlt) numSeatedAtTable / (alphaDir + i)); /* no -1 because of 0-indexing */
             }
         /* Case where current character is seated at a new table */
         else
             {
-            totalProb *= alphaDir / (alphaDir + i);
+            totalProb = totalProb * (alphaDir / (alphaDir + i));
             newestTableIndex = allocationVector[i];
             }
         }
@@ -486,16 +483,15 @@ int lnProbAllocation (int *allocationVector, int *numChars, MrBFlt *alphaDir)
 
 
 
-int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
+int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp, int numTaxa)
 {
     /* Change allocation vector */
 
-    int         i, j, isAPriorExp, isValidA, *oldAllocationVector, *newAllocationVector,
-                randCharIndex, oldTableIndex, numTables, *nSitesOfPat, barrierIndex,
-                charIndexRandomBuddy, newTableIndex, *latentMatrix, oldGroupLeader,
-                numTaxa, index1, index2, currIndex;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, ran, factor, tuning, probNewTable,
-                lnProposalRatio, lnPriorRatio;
+    int         i, j, *oldAllocationVector, *newAllocationVector, randCharIndex,
+                oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
+                newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, tuning, probNewTable,
+                *nSitesOfPat;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -531,9 +527,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     for (i=0; i<m->numChars; i++)
         {
         if (oldAllocationVector[i] > numTables)
-            {
             numTables = oldAllocationVector[i];
-            }
         }
 
     /* Decide if character should be seated at new table and then reseat it accordingly */
@@ -579,7 +573,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         oldGroupLeader = i;
         nSitesOfPat[oldGroupLeader] = 0.0;
-        numTaxa = m->numTaxa;
 
         /* Seat character at new table */
         newAllocationVector[randCharIndex] = newTableIndex;
@@ -588,7 +581,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         /* Make sure latent pattern is correct for the new table */
         index1 = oldGroupLeader;
         index2 = randCharIndex;
-        for(i=0; i<m->numTaxa; i++)
+        for(i=0; i<numTaxa; i++)
             {
             latentMatrix[index2] = latentMatrix[index1];
             index1 += m->numChars;
@@ -632,8 +625,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
                             newAllocationVector[j]++;
                     }
                 }
-            break
+            break;
             }
+        }
 
     /* TODO: Proposal ratio and prior ratio (opposites) */
     /* get proposal ratio */

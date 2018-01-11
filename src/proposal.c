@@ -390,7 +390,8 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* change alphadir parameter using multiplier */
 
-    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector;
+    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector,
+                lnPriorRatio, lnProposalRatio;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -439,13 +440,62 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 }
 
 
+/* TODO: Move this to appropriate location after consulting with Fredrik */
+int lnProbAllocation (int *allocationVector, int *numChars, MrBFlt *alphaDir)
+{
+    /* Calculate probability of a given allocation vector for a particular alphadir value */
+
+    int         i, j, newestTableIndex, *allocationVector, numSeatedAtTable;
+    MrBFlt      alphaDir, totalProb;
+    ModelParams *mp;
+    ModelInfo   *m;
+
+    /* Initialize counter to keep track of highest current table number */
+    newestTableIndex = 0;
+
+    /* Probability of sitting at first table is always 1 */
+    totalProb = 1;
+
+    /* Loop through the rest of the tables */
+    for (i=1; i<numChars; i++)
+        {
+        /* Case where current character is seated at an existing table */
+        if (allocationVector[i] <= newestTableIndex)
+            {
+            /* Determine number of characters already seated at current table */
+            numSeatedAtTable = 0;
+            for (j=0; j<i; j++)
+                {
+                if (allocationVector[j] == allocationVector[i])
+                    {
+                    numSeatedAtTable++;
+                    }
+                }
+            totalProb *= numSeatedAtTable / (alphaDir + i); /* no -1 because of 0-indexing */
+            }
+        /* Case where current character is seated at a new table */
+        else
+            {
+            totalProb *= alphaDir / (alphaDir + i);
+            newestTableIndex = allocationVector[i];
+            }
+        }
+
+    return (totalProb);
+}
+
+
+
 int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* Change allocation vector */
 
     int         i, j, isAPriorExp, isValidA, *oldAllocationVector, *newAllocationVector,
-                randCharIndex, oldTableIndex, numTables, *nSitesOfPat, barrierIndex;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, ran, factor, tuning, probNewTable;
+                randCharIndex, oldTableIndex, numTables, *nSitesOfPat, barrierIndex,
+                charIndexRandomBuddy, newTableIndex, *latentMatrix, oldGroupLeader,
+                numTaxa, index1, index2, currIndex;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, ran, factor, tuning, probNewTable,
+                lnProposalRatio, lnPriorRatio;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -587,7 +637,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* TODO: Proposal ratio and prior ratio (opposites) */
     /* get proposal ratio */
-    *lnProposalRatio = ;
+    *lnProposalRatio = 0; /* placeholder */
 
     /* get prior ratio */
     *lnPriorRatio += lnProbAllocation(newAllocationVector, m->numChars, alphaDir);

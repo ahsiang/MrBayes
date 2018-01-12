@@ -2026,7 +2026,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
 
     /* Find appropriate rows in latentMatrix */
-    if ( p->left->left == NULL )
+    if (p->left->left == NULL)
         leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
     else
         leftStates = NULL;
@@ -2040,46 +2040,95 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     sitting at the same table in the DPP correlation model. */
 
     /* calculate ancestral probabilities if both left and right are internal nodes */
-/* TODO: control statements for whether both are internal nodes, left is tip right is tip, etc. */
-
     tiPL = pL;
     tiPR = pR;
-    for (k=0; k<m->numRateCats; k++)
-        {
-        for (c=0; c<m->numChars; c++)
-            {
-            *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
-                      *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
-            *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
-                      *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
-            *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
-                      *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
-            clL += 3;
-            clR += 3;
-            }
-        tiPL += 9;
-        tiPR += 9;
-        }
 
-    /* calculate ancestral probabilities if left is a tip and right is not */
-    for (k=0; k<m->numRateCats; k++)
+    if (p->left->left == NULL)
         {
-        for (c=0; c<m->numChars; c++)
+        if (p->right->left == NULL)
+        /* Calculate ancestral probabilities if both left and right are tips */
+            for (k=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    tiPL = pL + leftStates[c];
+                    tiPR = pR + rightStates[c];
+                    *(clP++) = (*tiPR) * (*tiPL);
+                    tiPL += 3;
+                    *(clP++) = (*tiPR) * (*tiPL);
+                    tiPL += 3;
+                    *(clP++) = (*tiPR) * (*tiPL);
+                    clL += 3;
+                    clR += 3;
+                    }
+                pL += 9;
+                pR += 9;
+                }
+        else
+            /* Calculate ancestral probabilities if left is a tip and right is not */
+            for (k=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    tiPL = pL + leftStates[c];
+                    *(clP++) = (*tiPL)
+                              *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
+                    tiPL += 3;
+                    *(clP++) = (*tiPL)
+                              *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
+                    tiPL += 3;
+                    *(clP++) = (*tiPL)
+                              *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
+                    clL += 3;
+                    clR += 3;
+                    }
+                pL += 9;
+                pR += 9;
+                }
+        }
+    else
+        {
+        if (p->right->left == NULL)
             {
-            tiPL = pL + leftStates[c];
-            *(clP++) = (*tiPL)
-                      *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
-            tiPL += 3;
-            *(clP++) = (*tiPL)
-                      *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
-            tiPL += 3;
-            *(clP++) = (*tiPL)
-                      *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
-            clL += 3;
-            clR += 3;
+            /* Calculate ancestral probabilities if right is a tip and left is not */
+            for (k=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    tiPR = pR + rightStates[c];
+                    *(clP++) = (*tiPR)
+                              *(tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2]);
+                    tiPL += 3;
+                    *(clP++) = (*tiPR)
+                              *(tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2]);
+                    tiPL += 3;
+                    *(clP++) = (*tiPR)
+                              *(tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2]);
+                    clL += 3;
+                    clR += 3;
+                    }
+                pL += 9;
+                pR += 9;
+                }
             }
-        pL += 9;
-        pR += 9;
+        else
+            /* Calculate ancestral probabilities if both right and left are internal nodes */
+            for (k=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
+                              *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
+                    *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
+                              *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
+                    *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
+                              *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
+                    clL += 3;
+                    clR += 3;
+                    }
+                tiPL += 9;
+                tiPR += 9;
+                }
         }
 
     return NO_ERROR;
@@ -4598,6 +4647,84 @@ int CondLikeRoot_NY98_SSE (TreeNode *p, int division, int chain)
 |
 -----------------------------------------------------------------*/
 int CondLikeRoot_Std (TreeNode *p, int division, int chain)
+{
+    int             a, c, h, i, j, k, nStates=0, nCats=0, tmp;
+    CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA,
+                    likeL, likeR, likeA;
+    ModelInfo       *m;
+
+    m = &modelSettings[division];
+
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+
+    /* find conditional likelihood pointers */
+    clL = m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    clA = m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
+
+    /* find transition probabilities (or calculate instead) */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
+
+    /* calculate ancestral probabilities */
+    for (k=h=0; k<m->numRateCats; k++)
+        {
+        /* calculate ancestral probabilities */
+        for (c=0; c<m->numChars; c++)
+            {
+            nStates = m->nStates[c];
+
+            /* the following lines ensure that nCats is 1 unless */
+            /* the character is binary and beta categories are used  */
+            if (nStates == 2)
+                nCats = m->numBetaCats;
+            else
+                nCats = 1;
+
+            tmp = k*nStates*nStates; /* tmp contains offset to skip gamma cats that already processed*/
+            tiPL = pL + m->tiIndex[c] + tmp;
+            tiPR = pR + m->tiIndex[c] + tmp;
+            tiPA = pA + m->tiIndex[c] + tmp;
+            tmp = (m->numRateCats-1)*2*2; /* tmp contains size of block of tpi matrices across all rate cats (minus one) for single beta category. Further used only if character is binary to jump to next beta category */
+
+            for (j=0; j<nCats;j++)
+                {
+                for (a=0; a<nStates; a++)
+                    {
+                    likeL = likeR = likeA = 0.0;
+                    for (i=0; i<nStates; i++)
+                        {
+                        likeL += *(tiPL++) * clL[i];
+                        likeR += *(tiPR++) * clR[i];
+                        likeA += *(tiPA++) * clA[i];
+                        }
+                    clP[h++] = likeL * likeR * likeA;
+                    }
+                clL += nStates;
+                clR += nStates;
+                clA += nStates;
+
+                tiPL += tmp;
+                tiPR += tmp;
+                tiPA += tmp;
+                }
+            }
+        }
+
+    return NO_ERROR;
+}
+
+
+/*----------------------------------------------------------------
+|
+|   CondLikeRoot_StdCorr: correlation model
+|       with or without rate variation
+|
+-----------------------------------------------------------------*/
+int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
 {
     int             a, c, h, i, j, k, nStates=0, nCats=0, tmp;
     CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA,

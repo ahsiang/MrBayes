@@ -629,9 +629,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         }
 
-    /* TODO: Proposal ratio and prior ratio (opposites) */
     /* get proposal ratio */
-    *lnProposalRatio = 0; /* placeholder */
+    *lnProposalRatio += lnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio -= lnProbAllocation(newAllocationVector, m->numChars, alphaDir);
 
     /* get prior ratio */
     *lnPriorRatio += lnProbAllocation(newAllocationVector, m->numChars, alphaDir);

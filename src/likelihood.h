@@ -140,6 +140,7 @@ int       Likelihood_Res (TreeNode *p, int division, int chain, MrBFlt *lnL, int
 int       Likelihood_Res_SSE (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
 #endif
 int       Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
+int       LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir);
 int       TiProbs_Fels (TreeNode *p, int division, int chain);
 int       TiProbs_Gen (TreeNode *p, int division, int chain);
 int       TiProbs_GenCov (TreeNode *p, int division, int chain);

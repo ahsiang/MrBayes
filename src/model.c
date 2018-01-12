@@ -20904,6 +20904,25 @@ void SetUpMoveTypes (void)
     mt->Autotune = &AutotuneSlider;
     mt->targetRate = 0.25;
 
+    /* Move_Allocation */
+    mt = &moveTypes[i++];
+    mt->name = "Sliding window";
+    mt->shortName = "Slider";
+    mt->tuningName[0] = "Sliding window size";
+    mt->shortTuningName[0] = "delta";
+    mt->applicableTo[0] = CORREL_UNI;
+    mt->nApplicable = 1;
+    mt->moveFxn = &Move_Adgamma;
+    mt->relProposalProb = 1.0;
+    mt->numTuningParams = 1;
+    mt->tuningParam[0] = 0.5;  /* window size */
+    mt->minimum[0] = 0.001;
+    mt->maximum[0] = 1.999;
+    mt->parsimonyBased = NO;
+    mt->level = STANDARD_USER;
+    mt->Autotune = &AutotuneSlider;
+    mt->targetRate = 0.25;
+
     /* Move_Beta */
     mt = &moveTypes[i++];
     mt->name = "Multiplier";

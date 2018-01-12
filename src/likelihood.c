@@ -7970,7 +7970,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         else
             {
-            (*lnL) += (lnScaler[c] + log(like) * nSitesOfPat[c]);
+            (*lnL) += (lnScaler[c] + log(2.0 * like) * nSitesOfPat[c]);
             }
         }
 
@@ -8384,6 +8384,48 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
         }
     TIME(m->Likelihood (tree->root->left, d, chain, lnL, (chainId[chain] % chainParams.numChains)),CPULilklihood);
     return;
+}
+
+
+int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
+{
+    /* Calculate probability of a given allocation vector for a particular alphadir value */
+
+    int         i, j, newestTableIndex, numSeatedAtTable;
+    MrBFlt      totalProb;
+
+    /* Initialize counter to keep track of highest current table number */
+    newestTableIndex = 0;
+
+    /* Probability of sitting at first table is always 1 */
+    totalProb = 1;
+
+    /* Loop through the rest of the tables */
+    for (i=1; i<numChars; i++)
+        {
+        /* Case where current character is seated at an existing table */
+        if (allocationVector[i] <= newestTableIndex)
+            {
+            /* Determine number of characters already seated at current table */
+            numSeatedAtTable = 0;
+            for (j=0; j<i; j++)
+                {
+                if (allocationVector[j] == allocationVector[i])
+                    {
+                    numSeatedAtTable++;
+                    }
+                }
+            totalProb = totalProb * ((MrBFlt) numSeatedAtTable / (alphaDir + i)); /* no -1 because of 0-indexing */
+            }
+        /* Case where current character is seated at a new table */
+        else
+            {
+            totalProb = totalProb * (alphaDir / (alphaDir + i));
+            newestTableIndex = allocationVector[i];
+            }
+        }
+
+    return (totalProb);
 }
 
 

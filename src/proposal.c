@@ -42,6 +42,7 @@
 #include "model.h"
 #include "proposal.h"
 #include "utils.h"
+#include "likelihood.h"
 
 /* debugging compiler statements */
 #undef  DEBUG_LOCAL
@@ -430,57 +431,13 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* compute probability of allocation vector given old and new alphadir values */
     allocationVector = GetParamVals(m->allocationVector, chain, state[chain]);
-    *lnPriorRatio += lnProbAllocation(allocationVector, m->numChars, newA);
-    *lnPriorRatio -= lnProbAllocation(allocationVector, m->numChars, oldA);
+    *lnPriorRatio += LnProbAllocation(allocationVector, m->numChars, newA);
+    *lnPriorRatio -= LnProbAllocation(allocationVector, m->numChars, oldA);
 
     /* probabilities on the tree (called likelihoods) are not affected */
 
     return (NO_ERROR);
 }
-
-
-/* TODO: Move this to appropriate location after consulting with Fredrik */
-int lnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
-{
-    /* Calculate probability of a given allocation vector for a particular alphadir value */
-
-    int         i, j, newestTableIndex, numSeatedAtTable;
-    MrBFlt      totalProb;
-
-    /* Initialize counter to keep track of highest current table number */
-    newestTableIndex = 0;
-
-    /* Probability of sitting at first table is always 1 */
-    totalProb = 1;
-
-    /* Loop through the rest of the tables */
-    for (i=1; i<numChars; i++)
-        {
-        /* Case where current character is seated at an existing table */
-        if (allocationVector[i] <= newestTableIndex)
-            {
-            /* Determine number of characters already seated at current table */
-            numSeatedAtTable = 0;
-            for (j=0; j<i; j++)
-                {
-                if (allocationVector[j] == allocationVector[i])
-                    {
-                    numSeatedAtTable++;
-                    }
-                }
-            totalProb = totalProb * ((MrBFlt) numSeatedAtTable / (alphaDir + i)); /* no -1 because of 0-indexing */
-            }
-        /* Case where current character is seated at a new table */
-        else
-            {
-            totalProb = totalProb * (alphaDir / (alphaDir + i));
-            newestTableIndex = allocationVector[i];
-            }
-        }
-
-    return (totalProb);
-}
-
 
 
 int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp, int numTaxa)
@@ -630,12 +587,12 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         }
 
     /* get proposal ratio */
-    *lnProposalRatio += lnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-    *lnProposalRatio -= lnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
 
     /* get prior ratio */
-    *lnPriorRatio += lnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-    *lnPriorRatio -= lnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
 
     /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
 

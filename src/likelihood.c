@@ -8429,6 +8429,47 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 }
 
 
+int LnProbLatent (int *latentMatrix, BitsLong *preprocMatrix, int *allocationVector, int numChars)
+{
+    /* Calculate probability of observed states given the latext matrix */
+
+    int         numProcesses
+    MrBFlt      totalProb;
+    ModelInfo   *m;
+    ModelParams *mp;
+
+    numChars = m->numChars;
+
+    /* Get number of independent processes (i.e., number of columns) in latent matrix */
+    numProcesses = int (sizeof(latentMatrix) / numChars);
+
+    /* Loop through processes, find appropriate columns of character matrix, and calculate probability */
+    for (i=0; i<numProcesses; i++)
+        {
+        for (j=0; j<numChars; j++) /* Loop through allocation vector */
+            {
+            if (allocationVector[j] == i)
+                
+            }
+        }
+
+
+
+
+    /* Find appropriate rows in latentMatrix */
+    if (p->left->left == NULL)
+        leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
+    else
+        leftStates = NULL;
+    if (p->right->left == NULL)
+        rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * m->numChars;
+    else
+        rightStates = NULL;
+
+
+}
+
+
 /*----------------------------------------------------------------
 |
 |   RemoveNodeScalers: Remove node scalers

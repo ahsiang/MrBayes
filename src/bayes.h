@@ -427,12 +427,13 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define ALLOC_BEST               88
 #define ALLOC_SPECIESPARTITIONS  89
 #define ALLOC_SS                 90
+#define ALLOC_PREPROCMATRIX      91
 
 #define LINKED                  0
 #define UNLINKED                1
 
 /*paramType*/
-#define NUM_LINKED              34
+#define NUM_LINKED              36
 #define P_TRATIO                0
 #define P_REVMAT                1
 #define P_OMEGA                 2
@@ -467,6 +468,8 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define P_MIXTURE_RATES         31
 #define P_RHO                   32
 #define P_ALPHADIR              33
+#define P_LATENTMATRIX          34
+#define P_ALLOCATIONVECTOR      35
 /* NOTE: If you add another parameter, change NUM_LINKED */
 
 // #define CPPm                 0       /* CPP rate multipliers */
@@ -866,6 +869,8 @@ typedef struct param
 #define RHO_FIX                         149
 #define ALPHADIR_EXP                    150
 #define ALPHADIR_FIX                    151
+#define LATENTMATRIX_                   152
+#define ALLOCATIONVECTOR_               153
 
 #if defined (BEAGLE_ENABLED)
 #define MB_BEAGLE_SCALE_ALWAYS          0

@@ -11080,6 +11080,73 @@ int DoShowParams (void)
 
 /*------------------------------------------------------------------------
 |
+|   CorrPreprocess: Preprocess data matrix for correlation model
+|
+-------------------------------------------------------------------------*/
+int CorrPreprocess (void)
+{
+    int         i,j,k
+    ModelInfo   *m;
+    ModelParams *mp;
+
+    #   if defined DEBUG_CORRPREPROCESS
+    if (PrintMatrix() == ERROR)
+        goto errorExit;
+    getchar();
+    #   endif
+
+    /* Allocate space for processed matrix */
+    if (memAllocs[ALLOC_PREPROCMATRIX] == YES)
+        {
+        free (preprocMatrix);
+        preprocMatrix = NULL;
+        memAllocs[ALLOC_PREPROCMATRIX] = NO;
+        }
+    preprocMatrix = (BitsLong *) SafeCalloc (m->numChar * m->numTaxa, sizeof(BitsLong));
+    if (!preprocMatrix)
+        {
+        MrBayesPrint ("%s   Problem allocating preprocMatrix (%d)\n", spacer, m->numChar * m->numTaxa * sizeof(BitsLong));
+        goto errorExit;
+        }
+    memAllocs[ALLOC_PREPROCMATRIX] = YES;
+
+    /* Allocate space for vector keeping track of original states of first taxon... */
+    firstTaxonStates = (CLFlt *) SafeCalloc (m->numChars, sizeof (CLFlt));
+
+    /* ...and copy over states */
+    for (i=0; i<m->numChar; i++)
+        firstTaxonStates[i] = matrix[pos(0,i,m->numChar)];
+
+    /* Copy original data over, flipping bits such that the first taxon has all state 0 */
+    for (j=0; j<m->numTaxa; j++)
+        for (k=0; k<m->numChar; k++)
+            {
+            if (firstTaxonState[k] == 1) /* Case where all bits need to be flipped */
+                preprocMatrix[pos(j,k,m->numChar)] = ~(matrix[pos(j,k,m->numChar)]);
+            else /* Case where no bits need to be flipped */
+                preprocMatrix[pos(j,k,m->numChar)] = matrix[pos(j,k,m->numChar)];
+            }
+
+    #   if defined (DEBUG_CORRPREPROCESS)
+    if (PrintPreprocMatrix() == ERROR) /* TODO: PrintPreprocMatrix function */
+        goto errorExit;
+    getchar();
+    #   endif
+
+    free (firstTaxonStates);
+
+    return NO_ERROR;
+
+    errorExit:
+        if (firstTaxonStates)
+            free (firstTaxonStates);
+
+        return ERROR;
+}
+
+
+/*------------------------------------------------------------------------
+|
 |   FillNormalParams: Allocate and fill in non-tree parameters
 |
 -------------------------------------------------------------------------*/
@@ -11126,6 +11193,22 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
             else if (p->paramType == P_ALPHADIR)
                 {
                 /* Fill in alphadir *************************************************************************************/
+                if (p->paramId == ALPHADIR_EXP)
+                    value[0] = mp->alphaDirExp;
+                else if (p->paramId == ALPHADIR_FIX)
+                    value[0] = mp->alphaDirFix;
+                }
+            else if (p->paramType == P_LATENTMATRIX)
+                {
+                /* Fill in latentmatrix *************************************************************************************/
+                if (p->paramId == ALPHADIR_EXP)
+                    value[0] = mp->alphaDirExp;
+                else if (p->paramId == ALPHADIR_FIX)
+                    value[0] = mp->alphaDirFix;
+                }
+            else if (p->paramType == P_ALLOCATIONVECTOR)
+                {
+                /* Fill in allocationvector *************************************************************************************/
                 if (p->paramId == ALPHADIR_EXP)
                     value[0] = mp->alphaDirExp;
                 else if (p->paramId == ALPHADIR_FIX)
@@ -15721,6 +15804,132 @@ int PrintCompMatrix (void)
                         break;
                     if (mp->dataType == CONTINUOUS)
                         MrBayesPrint ("%3d ", compMatrix[pos(i,j,compMatrixRowSize)]);
+                    else
+                        MrBayesPrint ("%c", whichChar((int)compMatrix[pos(i,j,compMatrixRowSize)]));
+                    }
+                MrBayesPrint("\n");
+                }
+            MrBayesPrint("\nNo. sites    ");
+            for (j=c; j<c+k; j++)
+                {
+                if (j >= m->compMatrixStop)
+                    break;
+                i = (int) numSitesOfPat[m->compCharStart + (0*numCompressedChars) + (j - m->compMatrixStart)/m->nCharsPerSite]; /* NOTE: We are printing the unadulterated site pat nums */
+                if (i>9)
+                    i = 'A' + i - 10;
+                else
+                    i = '0' + i;
+                if (mp->dataType == CONTINUOUS)
+                    MrBayesPrint("   %c ", i);
+                else
+                    {
+                    if ((j-m->compMatrixStart) % m->nCharsPerSite == 0)
+                        MrBayesPrint ("%c", i);
+                    else
+                        MrBayesPrint(" ");
+                    }
+                }
+            MrBayesPrint ("\nOrig. char   ");
+            for (j=c; j<c+k; j++)
+                {
+                if (j >= m->compMatrixStop)
+                    break;
+                i = origChar[j];
+                if (i>9)
+                    i = '0' + (i % 10);
+                else
+                    i = '0' +i;
+                if (mp->dataType == CONTINUOUS)
+                    MrBayesPrint("   %c ", i);
+                else
+                    MrBayesPrint ("%c", i);
+                }
+
+            if (mp->dataType == STANDARD && m->nStates != NULL)
+                {
+                MrBayesPrint ("\nNo. states   ");
+                for (j=c; j<c+k; j++)
+                    {
+                    if (j >= m->compMatrixStop)
+                        break;
+                    i = m->nStates[j-m->compCharStart];
+                    MrBayesPrint ("%d", i);
+                    }
+                MrBayesPrint ("\nCharType     ");
+                for (j=c; j<c+k; j++)
+                    {
+                    if (j >= m->compMatrixStop)
+                        break;
+                    i = m->cType[j-m->compMatrixStart];
+                    if (i == ORD)
+                        MrBayesPrint ("%c", 'O');
+                    else if (i == UNORD)
+                        MrBayesPrint ("%c", 'U');
+                    else
+                        MrBayesPrint ("%c", 'I');
+                    }
+                MrBayesPrint ("\ntiIndex      ");
+                for (j=c; j<c+k; j++)
+                    {
+                    if (j >= m->compMatrixStop)
+                        break;
+                    i = m->tiIndex[j-m->compCharStart];
+                    MrBayesPrint ("%d", i % 10);
+                    }
+                MrBayesPrint ("\nbsIndex      ");
+                for (j=c; j<c+k; j++)
+                    {
+                    if (j >= m->compMatrixStop)
+                        break;
+                    i = m->bsIndex[j-m->compCharStart];
+                    MrBayesPrint ("%d", i % 10);
+                    }
+                }
+            MrBayesPrint ("\n\n");
+            }
+        MrBayesPrint ("Press return to continue\n");
+        getchar();
+        }   /* next division */
+
+    return NO_ERROR;
+}
+
+
+/*-----------------------------------------------------------------------
+|
+|   PrintPreprocMatrix: Print preprocessed matrix for correlation model
+|
+------------------------------------------------------------------------*/
+int PrintPreprocMatrix (void)
+{
+    int             i, j, k, c, d;
+    ModelInfo       *m;
+    ModelParams     *mp;
+    char            tempName[100];
+    char            (*whichChar)(int);
+
+    if (!preprocMatrix)
+        return ERROR;
+
+    whichChar = &WhichStand;
+
+    for (d=0; d<numCurrentDivisions; d++)
+        {
+        m = &modelSettings[d];
+        mp = &modelParams[d];
+
+        MrBayesPrint ("\nPreprocessed matrix for division %d\n\n",d+1);
+
+        for (c=m->compMatrixStart; c<m->compMatrixStop; c+=k)
+            {
+            for (i=0; i<numLocalTaxa; i++)
+                {
+                strcpy (tempName, localTaxonNames[i]);
+                MrBayesPrint ("%-10.10s   ", tempName);
+                for (j=c; j<c+k; j++)
+                    {
+                    if (j >= m->compMatrixStop)
+                        break;
                     else
                         MrBayesPrint ("%c", whichChar((int)compMatrix[pos(i,j,compMatrixRowSize)]));
                     }

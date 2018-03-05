@@ -8387,10 +8387,14 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
 }
 
 
+/*-----------------------------------------------------------------
+|
+|   LnProbAllocation: Calculate probability of a given allocation
+|       vector for a particular alphadir value
+|
+-----------------------------------------------------------------*/
 int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 {
-    /* Calculate probability of a given allocation vector for a particular alphadir value */
-
     int         i, j, newestTableIndex, numSeatedAtTable;
     MrBFlt      totalProb;
 
@@ -8429,44 +8433,74 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 }
 
 
-int LnProbLatent (int *latentMatrix, BitsLong *preprocMatrix, int *allocationVector, int numChars)
+/*-----------------------------------------------------------------
+|
+|   LnProbLatentCluster: Calculate probability of observed states
+|       for a particular column of the latent matrix
+|
+-----------------------------------------------------------------*/
+int LnProbLatentCluster (int *latentColumn, int *allocationVector, int *allocationValue)
 {
-    /* Calculate probability of observed states given the latext matrix */
+    int         i, j, numTaxa, numChar, numIntmedStates, numCharsInCluster;
+    MrBFlt      columnProb;
+    ModelInfo   *m;
 
-    int         numProcesses
-    MrBFlt      totalProb;
+    numChar = m->numChar;
+    numTaxa = m->numTaxa;
+
+    /* Loop through column and count number of taxa in intermediate state */
+    for (i=0; i<numTaxa; i++)
+        {
+        if (latentColumn[i] == 1)
+            numIntmedStates++;
+        }
+
+    /* Get number of characters in cluster with given allocationValue */
+    for (j=0; j<numChar; j++)
+        {
+        if (allocationVector[j] == allocationValue)
+            numCharsInCluster++;
+        }
+
+    /* Calculate final probability */
+    columnProb = numIntmedStates * (1.0 / (1 << (numCharsInCluster - 1)));
+
+    return (columnProb);
+}
+
+
+/*-----------------------------------------------------------------
+|
+|   LnProbLatentMatrix: Calculate probability of observed states
+|       given the latext matrix
+|
+-----------------------------------------------------------------*/
+int LnProbLatentMatrix (int *latentMatrix, BitsLong *preprocMatrix, int *allocationVector)
+{
+    int         i, j, numChars, numProcesses, currColumn;
+    MrBFlt      currProb, totalProb;
     ModelInfo   *m;
     ModelParams *mp;
 
     numChars = m->numChars;
+    numTaxa = m->numTaxa;
+
+    totalProb = 1.0;
 
     /* Get number of independent processes (i.e., number of columns) in latent matrix */
     numProcesses = int (sizeof(latentMatrix) / numChars);
 
-    /* Loop through processes, find appropriate columns of character matrix, and calculate probability */
+    /* Loop through processes and calculate probability */
     for (i=0; i<numProcesses; i++)
         {
-        for (j=0; j<numChars; j++) /* Loop through allocation vector */
-            {
-            if (allocationVector[j] == i)
-                
-            }
+        /* Grab current column/cluster/process */
+        for (j=0; j<numTaxa; j++)
+            currColumn[j] = *latentMatrix[j][i];
+        currProb = LnProbLatentCluster(currColumn, *allocationVector, i)
+        totalProb = totalProb * currProb;
         }
 
-
-
-
-    /* Find appropriate rows in latentMatrix */
-    if (p->left->left == NULL)
-        leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
-    else
-        leftStates = NULL;
-    if (p->right->left == NULL)
-        rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * m->numChars;
-    else
-        rightStates = NULL;
-
-
+    return (NO_ERROR);
 }
 
 

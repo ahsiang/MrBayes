@@ -5976,6 +5976,195 @@ int Move_RelaxedClockModel (Param *param, int chain, RandLong *seed, MrBFlt *lnP
 }
 
 
+int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matrix)
+{
+    /* Change allocation vector */
+
+    int         i, j, *allocationVector, randCharIndex,
+                oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
+                newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex
+                numLatCols=0, numIntmedStates=0, idxIdx=0, idxIdx2 = 0;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, tuning, probNewTable,
+                *nSitesOfPat;
+    ModelParams *mp;
+    ModelInfo   *m;
+
+    /* Get numChars and numTaxa */
+    numChars = m->numChars;
+    numTaxa = m->numTaxa;
+
+    /* Get tuning parameter */
+    tuning = mvp[0];
+
+    /* Get model params and model settings */
+    mp = &modelParams[param->relParts[0]];
+    m  = &modelSettings[param->relParts[0]];
+
+    /* Get allocation vector */
+    allocationVector = *GetParamIntVals(m->allocationVector, chain, state[chain]);
+
+    /* Get new and old latent matrices */
+    oldLatentMatrix = GetParamIntVals(param, chain, state[chain] ^ 1);
+    newLatentMatrix = GetParamIntVals(param, chain, state[chain]);
+
+    /* Get number of columns in latent matrix */
+    for (i=0; i<numChars; i++)
+        {
+        if (allocationVector[i] > numLatCols)
+            numLatCols = allocationVector[i];
+        }
+
+    /* Count number of characters in each cluster */
+    /* Initialize allocationCount to keep track of counts, setting all elements to 0 */
+    allocationCount[numLatCols] = {0};
+
+    /* Loop through allocation vector to make counts */
+    for (j=0; j<numChars; j++)
+        allocationCount[allocationVector[i]]++;
+
+    /* Randomly select a cluster... */
+    randClustIndex = (int) (RandomNumber(seed) * numLatCols);
+    /* ...but keep the choice only if the number of characters in the chosen cluster > 1 */
+    while (allocationCount[randClustIndex] == 1)
+        randClustIndex = (int) (RandomNumber(seed) * numLatCols);
+
+    /* Get latent states from selected cluster */
+    int selectedClusterStates[numTaxa];
+
+    for (k=0; k<numTaxa; k++)
+        {
+        selectedClusterStates[k] = latentMatrix[k][randClustIndex];
+        /* Also count number of intermediate states present in selected cluster */
+        if (selectedClusterStates[k] == 1)
+            numIntmedStates++;
+        }
+
+    /* We only enter the loop if there actually are intermediate states in the selected cluster */
+    /* TODO: Otherwise, do we not make a move or do we choose another process? */
+    if (numIntmedStates > 0)
+        {
+        /* Randomly pick a character in the selected cluster that is in the intermediate (1) state */
+        /* First, find indices of intermediate states in the selected cluster */
+        int intmedIndices[numIntmedStates];
+        for (l=0; l<numTaxa; l++)
+            {
+            if (selectedCluster[l] == 1)
+                {
+                intmedIndices[idxIdx] = l;
+                idxIdx++;
+                }
+            }
+
+        /* Randomly select one of the intermediate states */
+        randIntmedIndex = (int) (RandomNumber(seed) * numIntmedStates);
+
+        /* Set the randomly selected state to an end state (0, without loss of generality) */
+        int newLatentStates[numTaxa];
+        newLatentStates[randIntmedIndex] = 0;
+        /* Need to resolve other latent states. All former 0's and 2's become 1's... */
+        for (m=0; m<numTaxa; m++)
+            {
+            if (selectedCluster[m] == 0 || selectedCluster[m] == 2)
+                newLatentStates[m] = 1;
+            /* For former 1's, the new state depends on the state that was selected
+            to become the new end state */
+            /* Get associated data for randomly selected row */
+            else
+                {
+                int selectedData[allocationCount[randClustIndex]];
+                for (n=0; n<numChar; n++)
+                    {
+                    if (allocationVector[n] == randClustIndex)
+                        {
+                        selectedData[idxIdx2] = *matrix[randIntmedIndex][n];
+                        idxIdx2++;
+                        }
+                    }
+                /* Do the same for all the other intermediate states */
+                for (o)
+                }
+
+
+
+            }
+        }
+
+    /*
+
+
+
+
+
+
+
+
+
+
+        /* Make sure latent pattern is correct for the new table */
+        index1 = oldGroupLeader;
+        index2 = randCharIndex;
+        for(i=0; i<numTaxa; i++)
+            {
+            latentMatrix[index2] = latentMatrix[index1];
+            index1 += m->numChars;
+            index2 += m->numChars;
+            }
+
+        /* Make sure first character at new table has weight 1.0 */
+        for (i=0; i<m->numChars; i++)
+            {
+            if (newAllocationVector[i] == newTableIndex)
+                break;
+            }
+        nSitesOfPat[i] = 1.0;
+        /* If there are characters left at the old table, make sure the first one has weight 1.0 */
+        for (i=0; i<m->numChars; i++)
+            {
+            if (newAllocationVector[i] == oldTableIndex)
+                break;
+            }
+        if (i < m->numChars)
+            nSitesOfPat[i] = 1.0;
+        }
+
+    /* Rescale allocation vector to follow growth function */
+    barrierIndex = -1;
+    for (i=0; i<m->numChars; i++)
+        {
+        currIndex = newAllocationVector[i];
+        if (currIndex == barrierIndex + 1)
+            barrierIndex = currIndex;
+        else
+            {
+            if (currIndex > barrierIndex + 1)
+                {
+                for (j=i; j<m->numChars; j++)
+                    {
+                    if (newAllocationVector[j] == currIndex)
+                        newAllocationVector[j] = barrierIndex + 1;
+                    else
+                        if (newAllocationVector[j] > barrierIndex)
+                            newAllocationVector[j]++;
+                    }
+                }
+            break;
+            }
+        }
+
+    /* get proposal ratio */
+    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+
+    /* get prior ratio */
+    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+
+    /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
+
+    return (NO_ERROR);
+
+}
+
 /*----------------------------------------------------------------
 |
 |   Move_Local: This proposal mechanism changes the topology and

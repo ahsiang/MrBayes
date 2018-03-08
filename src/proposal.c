@@ -5980,10 +5980,10 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 {
     /* Change allocation vector */
 
-    int         i, j, *allocationVector, randCharIndex,
+    int         i, j, k, l, m, n, o, p, q, *allocationVector, randCharIndex,
                 oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
                 newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex
-                numLatCols=0, numIntmedStates=0, idxIdx=0, idxIdx2=0, maxCount=1;
+                numLatCols=0, numIntmedStates=0, idxIdx=0, idxIdx2=0, idxIdx3=0, maxCount=1, numSame, numOpposite;
     MrBFlt      minA, alphaDir=0.0, lambda=0.0, tuning, probNewTable,
                 *nSitesOfPat;
 
@@ -6028,7 +6028,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 
         /* Get latent states from selected cluster */
         int selectedClusterStates[numTaxa];
-
         for (k=0; k<numTaxa; k++)
             {
             selectedClusterStates[k] = latentMatrix[k][randClustIndex];
@@ -6058,34 +6057,60 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 
             /* Set the randomly selected state to an end state (0, without loss of generality) */
             int newLatentStates[numTaxa];
-            newLatentStates[randIntmedIndex] = 0;
+            newLatentStates[intmedIndices[randIntmedIndex]] = 0;
             /* Need to resolve other latent states. All former 0's and 2's become 1's... */
             for (m=0; m<numTaxa; m++)
                 {
-                if (selectedCluster[m] == 0 || selectedCluster[m] == 2)
+                if (selectedClusterStates[m] == 0 || selectedClusterStates[m] == 2)
                     newLatentStates[m] = 1;
                 /* For former 1's, the new state depends on the state that was selected
                 to become the new end state */
                 /* Get associated data for the selected row */
                 else
                     {
-                    int selectedData[allocationCount[randClustIndex]];
+                    numCharsInCluster = allocationCount[randClustIndex];
+                    int selectedData[numCharsInCluster];
                     for (n=0; n<numChar; n++)
                         {
                         if (allocationVector[n] == randClustIndex)
                             {
-                            selectedData[idxIdx2] = *matrix[randIntmedIndex][n];
+                            selectedData[idxIdx2] = *matrix[intmedIndices[randIntmedIndex]][n];
                             idxIdx2++;
                             }
                         }
-                    /* Do the same for all the other intermediate states, changing latentColumn
-                    state assignment as necessary */
-                    for (o)
+                    /* Do the same for all the other intermediate states */
+                    for (o=0; o<numIntermedStates; o++)
+                        {
+                        if (!(intmedIndices[o] == randIntmedIndex))
+                            {
+                            int currIntmedState[numCharsInCluster];
+                            for (p=0; p<numChar; p++)
+                                {
+                                currIntmedState[idxIdx3] = *matrix[intmedIndices[o]][p];
+                                idxIdx3++;
+                                }
+                            /* Change latent column state assignment as necessary */
+                            /* First count number of states that are the same vs. opposite */
+                            numSame = 0;
+                            numOpposite = 0;
+                            for (q=0; q<numCharsInCluster; q++)
+                                {
+                                if (selectedData[q] == currIntmedState[q])
+                                    numSame++;
+                                else /* NOTE: This won't work for non-binary characters! */
+                                    numOpposite++;
+                                }
+                            if (numSame == numCharsInCluster)
+                                newLatentStates[m] = 0; /* Case where states are equal */
+                            else if (numOpposite == numCharsInCluster)
+                                newLatentStates[m] = 2; /* Case where states are opposites of one another */
+                            else
+                                newLatentStates[m] = 1; /* Otherwise just another intermediate state */
+                            }
+                        }
                     }
-
-
-
                 }
+            /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
             }
         }
 

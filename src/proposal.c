@@ -5980,7 +5980,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 {
     /* Change allocation vector */
 
-    int         i, j, k, l, m, n, o, p, q, *allocationVector, randCharIndex,
+    int         i, j, k, l, m, n, o, p, q, r, *allocationVector, randCharIndex,
                 oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
                 newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex
                 numLatCols=0, numIntmedStates=0, idxIdx=0, idxIdx2=0, idxIdx3=0, maxCount=1, numSame, numOpposite;
@@ -6110,16 +6110,21 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                         }
                     }
                 }
-            /* Set states of newLatentMatrix */
-
+            /* Recode states of selected column in newLatentMatrix */
+            for (r=0; r<numTaxa; r++)
+                {
+                newLatentMatrix[r][randClustIndex] = newLatentStates[r];
+                }
 
             /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) to get Hastings ratios */
             probOldLatentStates = LnProbLatentCluster(oldLatentStates,allocationVector,randClustIndex);
             probNewLatentStates = LnProbLatentCluster(newLatentStates,allocationVector,randClustIndex);
 
             /* Get proposal ratio */
+            *lnProposalRatio = probOldLatentStates - probNewLatentStates;
 
             /* Get prior ratio */
+            *lnPriorRatio = probNewLatentStates - probOldLatentStates;
             }
         }
 
@@ -6127,30 +6132,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
     and we do not make a move. */
 
     return (NO_ERROR);
-
-
-
-
-        /* Make sure latent pattern is correct for the new table */
-        index1 = oldGroupLeader;
-        index2 = randCharIndex;
-        for(i=0; i<numTaxa; i++)
-            {
-            latentMatrix[index2] = latentMatrix[index1];
-            index1 += m->numChars;
-            index2 += m->numChars;
-            }
-
-
-    /* get proposal ratio */
-    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-
-    /* get prior ratio */
-    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-
 }
+
 
 /*----------------------------------------------------------------
 |

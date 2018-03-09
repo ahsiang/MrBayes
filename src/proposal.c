@@ -6027,12 +6027,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
             randClustIndex = (int) (RandomNumber(seed) * numLatCols);
 
         /* Get latent states from selected cluster */
-        int selectedClusterStates[numTaxa];
+        int oldLatentStates[numTaxa];
         for (k=0; k<numTaxa; k++)
             {
-            selectedClusterStates[k] = latentMatrix[k][randClustIndex];
+            oldLatentStates[k] = latentMatrix[k][randClustIndex];
             /* Also count number of intermediate states present in selected cluster */
-            if (selectedClusterStates[k] == 1)
+            if (oldLatentStates[k] == 1)
                 numIntmedStates++;
             }
 
@@ -6061,7 +6061,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
             /* Need to resolve other latent states. All former 0's and 2's become 1's... */
             for (m=0; m<numTaxa; m++)
                 {
-                if (selectedClusterStates[m] == 0 || selectedClusterStates[m] == 2)
+                if (oldLatentStates[m] == 0 || oldLatentStates[m] == 2)
                     newLatentStates[m] = 1;
                 /* For former 1's, the new state depends on the state that was selected
                 to become the new end state */
@@ -6110,18 +6110,23 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                         }
                     }
                 }
-            /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
+            /* Set states of newLatentMatrix */
+
+
+            /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) to get Hastings ratios */
+            probOldLatentStates = LnProbLatentCluster(oldLatentStates,allocationVector,randClustIndex);
+            probNewLatentStates = LnProbLatentCluster(newLatentStates,allocationVector,randClustIndex);
+
+            /* Get proposal ratio */
+
+            /* Get prior ratio */
             }
         }
 
+    /* If there are no clusters with more than two characters, then all characters are independent,
+    and we do not make a move. */
 
-    /*
-
-
-
-
-
-
+    return (NO_ERROR);
 
 
 
@@ -6136,46 +6141,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
             index2 += m->numChars;
             }
 
-        /* Make sure first character at new table has weight 1.0 */
-        for (i=0; i<m->numChars; i++)
-            {
-            if (newAllocationVector[i] == newTableIndex)
-                break;
-            }
-        nSitesOfPat[i] = 1.0;
-        /* If there are characters left at the old table, make sure the first one has weight 1.0 */
-        for (i=0; i<m->numChars; i++)
-            {
-            if (newAllocationVector[i] == oldTableIndex)
-                break;
-            }
-        if (i < m->numChars)
-            nSitesOfPat[i] = 1.0;
-        }
-
-    /* Rescale allocation vector to follow growth function */
-    barrierIndex = -1;
-    for (i=0; i<m->numChars; i++)
-        {
-        currIndex = newAllocationVector[i];
-        if (currIndex == barrierIndex + 1)
-            barrierIndex = currIndex;
-        else
-            {
-            if (currIndex > barrierIndex + 1)
-                {
-                for (j=i; j<m->numChars; j++)
-                    {
-                    if (newAllocationVector[j] == currIndex)
-                        newAllocationVector[j] = barrierIndex + 1;
-                    else
-                        if (newAllocationVector[j] > barrierIndex)
-                            newAllocationVector[j]++;
-                    }
-                }
-            break;
-            }
-        }
 
     /* get proposal ratio */
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
@@ -6184,10 +6149,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
     /* get prior ratio */
     *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
     *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-
-    /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
-
-    return (NO_ERROR);
 
 }
 

@@ -5978,14 +5978,13 @@ int Move_RelaxedClockModel (Param *param, int chain, RandLong *seed, MrBFlt *lnP
 
 int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matrix)
 {
-    /* Change allocation vector */
+    /* Change latent matrix for correlation model */
 
-    int         i, j, k, l, m, n, o, p, q, r, *allocationVector, randCharIndex,
-                oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
-                newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex
-                numLatCols=0, numIntmedStates=0, idxIdx=0, idxIdx2=0, idxIdx3=0, maxCount=1, numSame, numOpposite;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, tuning, probNewTable,
-                *nSitesOfPat;
+    int         i, j, k, l, m, n, o, p, q, r, *allocationVector, randCharIndex, *latentMatrix,
+                numChars, numTaxa, *oldLatentMatrix, *newLatentMatrix, numLatCols=0, numIntmedStates=0,
+                *allocationCount, maxCount=1, randClustIndex, idxIdx=0, idxIdx2=0, idxIdx3=0,
+                randIntmedIndex, numCharsInCluster, currIntmedState, numSame, numOpposite;
+    MrBFlt      probOldLatentStates, probNewLatentStates;
 
     /* Get numChars and numTaxa */
     numChars = m->numChars;
@@ -6045,7 +6044,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
             int intmedIndices[numIntmedStates];
             for (l=0; l<numTaxa; l++)
                 {
-                if (selectedCluster[l] == 1)
+                if (oldLatentStates[l] == 1)
                     {
                     intmedIndices[idxIdx] = l;
                     idxIdx++;
@@ -6130,6 +6129,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 
     /* If there are no clusters with more than two characters, then all characters are independent,
     and we do not make a move. */
+    /* TODO: How to exit in this case? */
 
     return (NO_ERROR);
 }

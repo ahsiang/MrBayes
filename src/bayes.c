@@ -559,13 +559,20 @@ int InitializeMrBayes (void)
     defaultModel.tRatioFix = 1.0;
     defaultModel.tRatioDir[0] = 1.0;
     defaultModel.tRatioDir[1] = 1.0;
-    strcpy(defaultModel.correlationModel, "No");        /* use correlation model? (yes/no)                 */
+    strcpy(defaultModel.correlationModel, "No");        /* use correlation model? (yes/no)              */
     strcpy(defaultModel.rhoPr, "Exponential");          /* prior for inverse correlation factor         */
     defaultModel.rhoFix = 0.05;
     defaultModel.rhoExp = 20;
     strcpy(defaultModel.alphaDirPr, "Exponential");     /* prior for DPMM scaling factor                */
     defaultModel.alphaDirFix = 0.05;
     defaultModel.alphaDirExp = 20;
+    strcpy(defaultModel.allocationVectorPr, "uncorrelated");    /* uncorrelated/correlated              */
+    for (i=0; i<numChars; i++)
+        defaultModel.allocationVectorUncorr[i] = i
+    defaultModel.allocationVectorCorr = *numSitesOfPat;
+    strcpy(defaultModel.latentMatrixPr, "Independent"); /* prior for latent matrix                      */
+    defaultModel.latentMatrix =
+
     strcpy(defaultModel.revMatPr, "Dirichlet");         /* prior for GTR model (nucleotides)            */
     for (i=0; i<6; i++)
         {

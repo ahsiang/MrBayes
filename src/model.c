@@ -11201,7 +11201,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
             else if (p->paramType == P_LATENTMATRIX)
                 {
                 /* Fill in latentmatrix *************************************************************************************/
-                if (p->paramId == ALPHADIR_EXP)
+                if (p->paramId == LATENT_MATRIX)
                     value[0] = mp->alphaDirExp;
                 else if (p->paramId == ALPHADIR_FIX)
                     value[0] = mp->alphaDirFix;
@@ -11209,9 +11209,9 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
             else if (p->paramType == P_ALLOCATIONVECTOR)
                 {
                 /* Fill in allocationvector *************************************************************************************/
-                if (p->paramId == ALPHADIR_EXP)
+                if (p->paramId == ALLOCATIONVECTOR_IID)
                     value[0] = mp->alphaDirExp;
-                else if (p->paramId == ALPHADIR_FIX)
+                else if (p->paramId == ALLOCATIONVECTOR_COMPACT)
                     value[0] = mp->alphaDirFix;
                 }
             else if (p->paramType == P_REVMAT)
@@ -21119,7 +21119,8 @@ void SetUpMoveTypes (void)
     mt->shortName = "Slider";
     mt->tuningName[0] = "Sliding window size";
     mt->shortTuningName[0] = "delta";
-    mt->applicableTo[0] = CORREL_UNI;
+    mt->applicableTo[0] = ALLOCATIONVECTOR_IID;
+    mt->applicableTo[1] = ALLOCATIONVECTOR_COMPACT;
     mt->nApplicable = 1;
     mt->moveFxn = &Move_Adgamma;
     mt->relProposalProb = 1.0;
@@ -21539,6 +21540,17 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneMultiplier;
     mt->targetRate = 0.25;
+
+    /* Move_Latent */
+    mt = &moveTypes[i++];
+    mt->name = "Latent matrix move for correlation model";
+    mt->shortName = "Latent";
+    mt->applicableTo[0] = LATENT_MATRIX;
+    mt->nApplicable = 1;
+    mt->moveFxn = &Move_Adgamma;
+    mt->relProposalProb = 1.0;
+    mt->parsimonyBased = NO;
+    mt->level = STANDARD_USER;
 
     /* Move_Local */
     mt = &moveTypes[i++];

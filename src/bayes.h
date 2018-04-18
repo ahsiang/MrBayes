@@ -869,8 +869,9 @@ typedef struct param
 #define RHO_FIX                         149
 #define ALPHADIR_EXP                    150
 #define ALPHADIR_FIX                    151
-#define LATENTMATRIX_                   152
-#define ALLOCATIONVECTOR_               153
+#define LATENT_MATRIX                   152
+#define ALLOCATIONVECTOR_IID            153
+#define ALLOCATIONVECTOR_COMPACT        154
 
 #if defined (BEAGLE_ENABLED)
 #define MB_BEAGLE_SCALE_ALWAYS          0
@@ -1005,6 +1006,7 @@ typedef struct model
     char        tRatioPr[100];     /* prior for ti/tv rate ratio                   */
     MrBFlt      tRatioFix;
     MrBFlt      tRatioDir[2];
+
     char        correlationModel[5];/* use correlation model? (yes/no)             */
     char        rhoPr[100];        /* prior for inverse correlation factor         */
     MrBFlt      rhoFix;
@@ -1012,6 +1014,10 @@ typedef struct model
     char        alphaDirPr[100];     /* prior for DPMM concentration parameter     */
     MrBFlt      alphaDirFix;
     MrBFlt      alphaDirExp;
+    int         allocationVector[numChars];
+    int         latentMatrix[numTaxa][numChars];
+
+
     char        revMatPr[100];     /* prior for GTR model                          */
     MrBFlt      revMatFix[6];
     MrBFlt      revMatDir[6];

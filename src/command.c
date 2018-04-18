@@ -11638,6 +11638,15 @@ int GetUserHelp (char *helpTkn)
             else
                 MrBayesPrint ("\n");
 
+            /* TODO: What should be printed? */
+            MrBayesPrint ("   Allocationvectorpr       Uncorrelated/Correlated            %s", mp->allocationVectorPr);
+            if (!strcmp(mp->allocationVectorPr, "Uncorrelated"))
+                MrBayesPrint ("(...,%d,...)\n", mp->allocationVectorUncorr);
+            else if (!strcmp(mp->allocationVectorPr,"Correlated"))
+                MrBayesPrint ("");
+            else
+                MrBayesPrint ("\n");
+
             MrBayesPrint ("                                                                                 \n");
             MrBayesPrint ("   ------------------------------------------------------------------            \n");
             }

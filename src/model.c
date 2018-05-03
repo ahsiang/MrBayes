@@ -11152,7 +11152,7 @@ int CorrPreprocess (void)
 -------------------------------------------------------------------------*/
 int FillNormalParams (RandLong *seed, int fromChain, int toChain)
 {
-    int         i, j, k, chn, tempInt, *intValue;
+    int         i, j, k, l, chn, tempInt, *intValue, *matrix;
     MrBFlt      *bs, *value, *subValue, scaler;
     Tree        *tree;
     Param       *p;
@@ -11198,21 +11198,55 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 else if (p->paramId == ALPHADIR_FIX)
                     value[0] = mp->alphaDirFix;
                 }
-            else if (p->paramType == P_LATENTMATRIX)
-                {
-                /* Fill in latentmatrix *************************************************************************************/
-                if (p->paramId == LATENT_MATRIX)
-                    value[0] = mp->alphaDirExp;
-                else if (p->paramId == ALPHADIR_FIX)
-                    value[0] = mp->alphaDirFix;
-                }
             else if (p->paramType == P_ALLOCATIONVECTOR)
                 {
                 /* Fill in allocationvector *************************************************************************************/
-                if (p->paramId == ALLOCATIONVECTOR_IID)
-                    value[0] = mp->alphaDirExp;
-                else if (p->paramId == ALLOCATIONVECTOR_COMPACT)
-                    value[0] = mp->alphaDirFix;
+                if (p->paramId == ALLOCATIONVECTOR_UNCORR)
+                    {
+                    for (j=0; j<m->numChars; j++)
+                        intValue[j] = j;
+                    }
+                else if (p->paramId == ALLOCATIONVECTOR_CORR)
+                    {
+                    for (j=0; j<m->numChars; j++)
+                        intValue[j] = numSitesOfPat[j];
+                    }
+                }
+            else if (p->paramType == P_LATENTMATRIX)
+            /* TODO: Multi-state support missing, currently binary only */
+                {
+                /* Fill in latentmatrix *************************************************************************************/
+                if (p->paramId == LATENTMATRIX_UNCORR)
+                    {
+                    for (i=0; i<m->numChars; i++)
+                        {
+                        for (j=0; j<m->numTaxa; j++)
+                            {
+                            if (matrix[pos(i,j,numChar)] == 0)
+                                intValue[i][j] = 0;
+                            else if (matrix[pos(i,j,numChar)] == 1)
+                                intValue[i][j] = 2;
+                            }
+                        }
+                    }
+                else if (p->paramId == LATENTMATRIX_CORR)
+                    {
+                    int currTable = 0;
+                    for (i=0; i<m->numChars; i++)
+                        {
+                        if (numSitesOfPat[i] == currTable)
+                            {
+                            for (j=0; j<m->numTaxa; j++)
+                                {
+                                if (matrix[pos(j,i,numChar)] == 0)
+                                    intValue[j][currTable] = 0;
+                                else if (matrix[pos(j,i,numChar)] == 1)
+                                    intValue[j][currTable] = 2;
+                                }
+                            currTable++;
+                            }
+                        }
+                    }
                 }
             else if (p->paramType == P_REVMAT)
                 {

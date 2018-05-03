@@ -6170,15 +6170,16 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                 newLatentMatrix[n][clusterIntmedIndices[randClustIndex]] = newLatentStates[n];
                 }
 
-            /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) to likelihood ratio */
+            /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
             probOldLatentStates = LnProbLatentCluster(oldLatentStates,allocationVector,randClustIndex);
             probNewLatentStates = LnProbLatentCluster(newLatentStates,allocationVector,randClustIndex);
-
-            /* Get proposal ratio */
-            *lnProposalRatio = probOldLatentStates - probNewLatentStates;
-
             /* Get prior ratio */
             *lnPriorRatio = probNewLatentStates - probOldLatentStates;
+
+            /* Get proposal ratio */
+            probForwardMove = (1 / numColWithIntmed) * (1 / numIntmedStates);
+            probBackwardsMove = (1 / numColWithIntmed) * (1 / numNewIntmedStates);
+            *lnProposalRatio = probForwardMove - probBackwardsMove;
             }
         }
 
@@ -6188,14 +6189,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 
     return (NO_ERROR);
 }
-
-/* get proposal ratio */
-*lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-*lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-
-/* get prior ratio */
-*lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-*lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
 
 /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
 

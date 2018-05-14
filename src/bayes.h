@@ -869,9 +869,10 @@ typedef struct param
 #define RHO_FIX                         149
 #define ALPHADIR_EXP                    150
 #define ALPHADIR_FIX                    151
-#define LATENT_MATRIX                   152
-#define ALLOCATIONVECTOR_IID            153
-#define ALLOCATIONVECTOR_COMPACT        154
+#define LATENTMATRIX_UNCORR             152
+#define LATENTMATRIX_UNCORR             153
+#define ALLOCATIONVECTOR_UNCORR         154
+#define ALLOCATIONVECTOR_CORR           155
 
 #if defined (BEAGLE_ENABLED)
 #define MB_BEAGLE_SCALE_ALWAYS          0
@@ -1011,12 +1012,11 @@ typedef struct model
     char        rhoPr[100];        /* prior for inverse correlation factor         */
     MrBFlt      rhoFix;
     MrBFlt      rhoExp;
-    char        alphaDirPr[100];     /* prior for DPMM concentration parameter     */
+    char        alphaDirPr[100];   /* prior for DPMM concentration parameter       */
     MrBFlt      alphaDirFix;
     MrBFlt      alphaDirExp;
     int         allocationVector[numChars];
     int         latentMatrix[numTaxa][numChars];
-
 
     char        revMatPr[100];     /* prior for GTR model                          */
     MrBFlt      revMatFix[6];
@@ -1237,9 +1237,10 @@ typedef struct modelinfo
     int         nst;                        /* # substitution types                     */
     int         aaModelId;                  /* amino acid model type                    */
     int         parsModelId;                /* is parsimony model used YES/NO           */
+    int         corrModelId;                /* is correlation model used YES/NO         */
 
     /* Specific model information */
-    int         numRateCats;                /* number of rate cats (1 if inapplic.)    */
+    int         numRateCats;                /* number of rate cats (1 if inapplic.)     */
     int         numBetaCats;                /* number of beta cats (1 if inapplic.)     */
     int         numOmegaCats;               /* number of omega cats (1 if inapplic.)    */
     int         numTiCats;                  /* number of cats needing different tis     */

@@ -18506,6 +18506,12 @@ int SetModelInfo (void)
         else
             m->parsModelId = NO;
 
+        /* correlation model? */
+        if (!strcmp(mp->correlationModel, "Yes"))
+            m->corrModelId = YES;
+        else
+            m->corrModelId = NO;
+
         /* number of rate categories */
         if (activeParams[P_SHAPE][i] > 0)
             {
@@ -18930,9 +18936,7 @@ int SetModelParams (void)
 
             /* find the parameter x prior type */
             if (!strcmp(mp->rhoPr,"Exponential"))
-                {
                 p->paramId = RHO_EXP;
-                }
             else
                 p->paramId = RHO_FIX;
 
@@ -18961,9 +18965,7 @@ int SetModelParams (void)
 
             /* find the parameter x prior type */
             if (!strcmp(mp->alphaDirPr,"Exponential"))
-                {
                 p->paramId = ALPHADIR_EXP;
-                }
             else
                 p->paramId = ALPHADIR_FIX;
 
@@ -18972,6 +18974,62 @@ int SetModelParams (void)
 
             /* report alphaDir (DPMM scaling factor) */
             SafeStrcat (&p->paramHeader,"alphaDir");
+            SafeStrcat (&p->paramHeader, partString);
+            }
+        else if (j == P_ALLOCATIONVECTOR)
+            {
+            /* Set up allocationVector for correlation model DPMM ***********************************************************/
+            p->paramType = P_ALLOCATIONVECTOR;
+            p->nValues = m->numChars;
+            p->nSubValues = 0;
+            p->min = 0;
+            p->max = POS_INFINITY;
+            for (i=0; i<numCurrentDivisions; i++)
+                if (isPartTouched[i] == YES)
+                    modelSettings[i].allocationVector = p;
+
+            p->paramTypeName = "Allocation vector";
+            SafeStrcat(&p->name, "allocationVector");
+            SafeStrcat(&p->name, partString);
+
+            /* find the parameter x prior type */
+            if (!strcmp(mp->allocationVectorPr,"Correlated"))
+                p->paramId = ALLOCATIONVECTOR_CORR;
+            else
+                p->paramId = ALLOCATIONVECTOR_UNCORR;
+
+            p->printParam = YES;
+
+            /* report alloctionVector */
+            SafeStrcat (&p->paramHeader,"allocationVector");
+            SafeStrcat (&p->paramHeader, partString);
+            }
+        else if (j == P_LATENTMATRIX)
+            {
+            /* Set up latentMatrix for correlation model DPMM ***********************************************************/
+            p->paramType = P_LATENTMATRIX;
+            p->nValues = m->numChars * m->numTaxa;
+            p->nSubValues = 0;
+            p->min = 0;
+            p->max = 2;
+            for (i=0; i<numCurrentDivisions; i++)
+                if (isPartTouched[i] == YES)
+                    modelSettings[i].latentMatrix = p;
+
+            p->paramTypeName = "Latent matrix";
+            SafeStrcat(&p->name, "latentMatrix");
+            SafeStrcat(&p->name, partString);
+
+            /* find the parameter x prior type */
+            if (!strcmp(mp->allocationVectorPr,"Correlated"))
+                p->paramId = LATENTMATRIX_CORR;
+            else
+                p->paramId = LATENTMATRIX_UNCORR;
+
+            p->printParam = YES;
+
+            /* report alloctionVector */
+            SafeStrcat (&p->paramHeader,"latentMatrix");
             SafeStrcat (&p->paramHeader, partString);
             }
         else if (j == P_REVMAT)

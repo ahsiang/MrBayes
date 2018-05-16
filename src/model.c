@@ -23923,6 +23923,14 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             {
             MrBayesPrint ("%s      Alphadir          ", spacer);
             }
+        else if (j == P_ALLOCATIONVECTOR)
+            {
+            MrBayesPrint ("%s      Allocationvector  ", spacer);
+            }
+        else if (j == P_LATENTMATRIX)
+            {
+            MrBayesPrint ("%s      Latentmatrix      ", spacer);
+            }
         else if (j == P_OMEGA)
             {
             MrBayesPrint ("%s      Omega             ", spacer);

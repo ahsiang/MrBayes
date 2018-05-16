@@ -218,6 +218,8 @@ int AddDummyChars (void)
                 m->numDummyChars += 2;
             if (mp->coding & NOSINGLETONS)
                 m->numDummyChars += 2*numLocalTaxa;
+            if (strcmp(m->correlationModel,"Yes"))
+                m->numDummyChars = 0;
             numStdChars += (m->numChars + m->numDummyChars);
             }
 
@@ -2629,6 +2631,17 @@ int CompressData (void)
         goto errorExit;
     getchar();
 #   endif
+
+    /* Use uncompressed matrix if correlation model is set */
+    /* Still need to run CompressData to get numSitesOfPat */
+    if (strcmp(m->correlationModel,"Yes"))
+        m->numChars = m->numUncompressedChars;
+        m->compMatrixStart = 0;
+        m->compMatrixStop = m->numChars;
+        compMatrix = (BitsLong *) SafeCalloc (m->numChars * numLocalTaxa, sizeof(BitsLong));
+        for (i=0; i<numLocalTaxa; i++)
+            for (j=0; j<m->numChars; j++)
+                compMatrix[pos(i,j,m->numChars)] = matrix[pos(i,j,m->numChars)];
 
     /* free the temporary variables */
     free (tempSitesOfPat);
@@ -21207,22 +21220,35 @@ void SetUpMoveTypes (void)
 
     /* Move_Allocation */
     mt = &moveTypes[i++];
-    mt->name = "Sliding window";
-    mt->shortName = "Slider";
-    mt->tuningName[0] = "Sliding window size";
-    mt->shortTuningName[0] = "delta";
-    mt->applicableTo[0] = ALLOCATIONVECTOR_IID;
-    mt->applicableTo[1] = ALLOCATIONVECTOR_COMPACT;
-    mt->nApplicable = 1;
-    mt->moveFxn = &Move_Adgamma;
+    mt->name = "Switch single character allocation table";
+    mt->shortName = "SwitchTable";
+    mt->applicableTo[0] = ALLOCATIONVECTOR_UNCORR;
+    mt->applicableTo[1] = ALLOCATIONVECTOR_CORR;
+    mt->nApplicable = 2;
+    mt->moveFxn = &Move_Allocation;
     mt->relProposalProb = 1.0;
-    mt->numTuningParams = 1;
-    mt->tuningParam[0] = 0.5;  /* window size */
-    mt->minimum[0] = 0.001;
-    mt->maximum[0] = 1.999;
+    mt->numTuningParams = 0;
     mt->parsimonyBased = NO;
     mt->level = STANDARD_USER;
-    mt->Autotune = &AutotuneSlider;
+
+    /* Move_Alphadir_M */
+    mt = &moveTypes[i++];
+    mt->name = "Multiplier";
+    mt->shortName = "Multiplier";
+    mt->tuningName[0] = "Multiplier tuning parameter";
+    mt->shortTuningName[0] = "lambda";
+    mt->applicableTo[0] = ALPHADIR_FIX;
+    mt->applicableTo[1] = ALPHADIR_EXP;
+    mt->nApplicable = 2;
+    mt->moveFxn = &Move_Alphadir_M;
+    mt->relProposalProb = 1.0;
+    mt->numTuningParams = 1;
+    mt->tuningParam[0] = 2.0 * log (1.5);  /* so-called lambda */
+    mt->minimum[0] = 0.0001;
+    mt->maximum[0] = 20.0;
+    mt->parsimonyBased = NO;
+    mt->level = STANDARD_USER;
+    mt->Autotune = &AutotuneMultiplier;
     mt->targetRate = 0.25;
 
     /* Move_Beta */
@@ -21635,12 +21661,14 @@ void SetUpMoveTypes (void)
 
     /* Move_Latent */
     mt = &moveTypes[i++];
-    mt->name = "Latent matrix move for correlation model";
-    mt->shortName = "Latent";
-    mt->applicableTo[0] = LATENT_MATRIX;
-    mt->nApplicable = 1;
-    mt->moveFxn = &Move_Adgamma;
+    mt->name = "Switch intemediate latent state to end state";
+    mt->shortName = "SwitchLatent";
+    mt->applicableTo[0] = LATENTMATRIX_UNCORR;
+    mt->applicableTo[1] = LATENTMATRIX_CORR;
+    mt->nApplicable = 2;
+    mt->moveFxn = &Move_Latent;
     mt->relProposalProb = 1.0;
+    mt->numTuningParams = 0;
     mt->parsimonyBased = NO;
     mt->level = STANDARD_USER;
 
@@ -22526,6 +22554,26 @@ void SetUpMoveTypes (void)
     mt->parsimonyBased = NO;
     mt->level = STANDARD_USER;
     mt->Autotune = &AutotuneDirichlet;
+    mt->targetRate = 0.25;
+
+    /* Move_Rho_Dir */
+    mt = &moveTypes[i++];
+    mt->name = "Multiplier";
+    mt->shortName = "Multiplier";
+    mt->tuningName[0] = "Multiplier tuning parameter";
+    mt->shortTuningName[0] = "lambda";
+    mt->applicableTo[0] = RHO_FIX;
+    mt->applicableTo[1] = RHO_EXP;
+    mt->nApplicable = 2;
+    mt->moveFxn = &Move_Rho_Dir;
+    mt->relProposalProb = 1.0;
+    mt->numTuningParams = 1;
+    mt->tuningParam[0] = 2.0 * log (1.5);  /* so-called lambda */
+    mt->minimum[0] = 0.0001;
+    mt->maximum[0] = 20.0;
+    mt->parsimonyBased = NO;
+    mt->level = STANDARD_USER;
+    mt->Autotune = &AutotuneMultiplier;
     mt->targetRate = 0.25;
 
     /* Move_Speciation */

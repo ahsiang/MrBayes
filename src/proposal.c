@@ -447,13 +447,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     int         i, j, *oldAllocationVector, *newAllocationVector, randCharIndex,
                 oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
                 newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, tuning, probNewTable,
-                *nSitesOfPat;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable, *nSitesOfPat;
     ModelParams *mp;
     ModelInfo   *m;
-
-    /* Get tuning parameter */
-    tuning = mvp[0];
 
     /* Get model params and model settings */
     mp = &modelParams[param->relParts[0]];

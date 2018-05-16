@@ -9856,7 +9856,13 @@ int TiProbs_Fels (TreeNode *p, int division, int chain)
 }
 
 
-int TiProbs_Corr (TreeNode *p, int division, int chain)
+/*----------------------------------------------------------------
+|
+|   TiProbs_StdCorr: Calculates transition probabilities for
+|       correlation model with standard characters.
+|
+-----------------------------------------------------------------*/
+int TiProbs_StdCorr (TreeNode *p, int division, int chain)
 {
     int         i, j, k, index;
     MrBFlt      t, a, b, u, u_inv, x, y, z, *rho, *catRate,
@@ -9887,7 +9893,7 @@ int TiProbs_Corr (TreeNode *p, int division, int chain)
     /* compute pis */
     /* TODO: error: invalid operands to binary expression ('double' and 'MrBFlt *' (aka 'double *')) */
     *pis[0] = *pis[2] = 1.0 / (2.0 + *rho);  /* alpha */
-    *pis[1] = 1.0 - (2.0 * *pis[0]);            /* beta */
+    *pis[1] = 1.0 - (2.0 * *pis[0]);         /* beta */
 
     /* find length */
     if (m->cppEvents != NULL)

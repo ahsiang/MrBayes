@@ -560,6 +560,7 @@ int InitializeMrBayes (void)
     defaultModel.tRatioDir[0] = 1.0;
     defaultModel.tRatioDir[1] = 1.0;
     strcpy(defaultModel.correlationModel, "No");        /* use correlation model? (yes/no)              */
+    strcpy(defaultModel.corrPr, "Uncorrelated");        /* prior for allocation vector and latent matrix initialization state */
     strcpy(defaultModel.rhoPr, "Exponential");          /* prior for inverse correlation factor         */
     defaultModel.rhoFix = 0.05;
     defaultModel.rhoExp = 20;

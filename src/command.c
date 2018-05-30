@@ -47,7 +47,7 @@
 #endif
 
 #define NUMCOMMANDS                     62    /* The total number of commands in the program  */
-#define NUMPARAMS                       281   /* The total number of parameters  */
+#define NUMPARAMS                       282   /* The total number of parameters  */
 #define PARAM(i, s, f, l)               p->string = s;    \
                                         p->fp = f;        \
                                         p->valueList = l; \
@@ -11639,10 +11639,10 @@ int GetUserHelp (char *helpTkn)
                 MrBayesPrint ("\n");
 
             /* TODO: What should be printed? */
-            MrBayesPrint ("   Allocationvectorpr       Uncorrelated/Correlated            %s", mp->allocationVectorPr);
-            if (!strcmp(mp->allocationVectorPr, "Uncorrelated"))
-                MrBayesPrint ("(...,%d,...)\n", mp->allocationVectorUncorr);
-            else if (!strcmp(mp->allocationVectorPr,"Correlated"))
+            MrBayesPrint ("   Corrpr           Uncorrelated/Correlated      %s", mp->corrPr);
+            if (!strcmp(mp->corrPr, "Uncorrelated"))
+                MrBayesPrint ("");
+            else if (!strcmp(mp->corrPr,"Correlated"))
                 MrBayesPrint ("");
             else
                 MrBayesPrint ("\n");
@@ -14599,13 +14599,14 @@ void SetUpParms (void)
     PARAM (275, "Beagleresource", DoSetParm,         "\0");
     PARAM (276, "Nlnormcat",      DoLsetParm,        "\0");
     PARAM (277, "Nmixtcat",       DoLsetParm,        "\0");
-    PARAM (278, "Corrmodel",      DoLsetParm,        "Yes|No|\0");
+    PARAM (278, "Correlationmodel", DoLsetParm,      "Yes|No|\0");
     PARAM (279, "Rhopr",          DoPrsetParm,       "Exp|Fixed|\0");
     PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exp|Fixed|\0");
+    PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|\0");
 
 
     /* NOTE: If a change is made to the parameter table, make certain you change
-            NUMPARAMS (now 281; one more than last index) at the top of this file. */
+            NUMPARAMS (now 282; one more than last index) at the top of this file. */
     /* CmdType commands[] */
 }
 

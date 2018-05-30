@@ -8429,7 +8429,7 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
             }
         }
 
-    return (totalProb);
+    return (log(totalProb));
 }
 
 
@@ -8465,7 +8465,7 @@ int LnProbLatentCluster (int *latentColumn, int *allocationVector, int *allocati
     /* Calculate final probability */
     columnProb = numIntmedStates * (1.0 / (1 << (numCharsInCluster - 1)));
 
-    return (columnProb);
+    return (log(columnProb));
 }
 
 
@@ -8477,25 +8477,31 @@ int LnProbLatentCluster (int *latentColumn, int *allocationVector, int *allocati
 -----------------------------------------------------------------*/
 int LnProbLatentMatrix (int *latentMatrix, BitsLong *preprocMatrix, int *allocationVector)
 {
-    int         i, j, numChars, numProcesses, currColumn;
+    int         i, j, k, numChars, numProcesses, currColumn;
     MrBFlt      currProb, totalProb;
     ModelInfo   *m;
     ModelParams *mp;
+    Param       *p;
 
-    numChars = m->numChars;
+    numChar = m->numChar;
     numTaxa = m->numTaxa;
 
     totalProb = 1.0;
 
     /* Get number of independent processes (i.e., number of columns) in latent matrix */
-    numProcesses = int (sizeof(latentMatrix) / numChars);
+    numProcesses = 1;
+    for (k=0; k<numChar; i++)
+        {
+        if (allocationVector[k] > numProcesses)
+            numProcesses = allocationVector[k];
+        }
 
     /* Loop through processes and calculate probability */
     for (i=0; i<numProcesses; i++)
         {
         /* Grab current column/cluster/process */
         for (j=0; j<numTaxa; j++)
-            currColumn[j] = *latentMatrix[j][i];
+            currColumn[j] = *latentMatrix[pos(i,j,numTaxa)];
         currProb = LnProbLatentCluster(currColumn, *allocationVector, i)
         totalProb = totalProb * currProb;
         }

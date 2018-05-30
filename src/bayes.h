@@ -427,7 +427,6 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define ALLOC_BEST               88
 #define ALLOC_SPECIESPARTITIONS  89
 #define ALLOC_SS                 90
-#define ALLOC_PREPROCMATRIX      91
 
 #define LINKED                  0
 #define UNLINKED                1

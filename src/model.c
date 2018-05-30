@@ -2635,13 +2635,13 @@ int CompressData (void)
     /* Use uncompressed matrix if correlation model is set */
     /* Still need to run CompressData to get numSitesOfPat */
     if (strcmp(m->correlationModel,"Yes"))
+        {
         m->numChars = m->numUncompressedChars;
         m->compMatrixStart = 0;
         m->compMatrixStop = m->numChars;
-        compMatrix = (BitsLong *) SafeCalloc (m->numChars * numLocalTaxa, sizeof(BitsLong));
-        for (i=0; i<numLocalTaxa; i++)
-            for (j=0; j<m->numChars; j++)
-                compMatrix[pos(i,j,m->numChars)] = matrix[pos(i,j,m->numChars)];
+        /* Preprocess matrix */
+        compMatrix = CorrPreprocess();
+        }
 
     /* free the temporary variables */
     free (tempSitesOfPat);
@@ -11109,19 +11109,19 @@ int CorrPreprocess (void)
     #   endif
 
     /* Allocate space for processed matrix */
-    if (memAllocs[ALLOC_PREPROCMATRIX] == YES)
+    if (memAllocs[ALLOC_COMPMATRIX] == YES)
         {
-        free (preprocMatrix);
-        preprocMatrix = NULL;
-        memAllocs[ALLOC_PREPROCMATRIX] = NO;
+        free (compMatrix);
+        compMatrix = NULL;
+        memAllocs[ALLOC_COMPMATRIX] = NO;
         }
-    preprocMatrix = (BitsLong *) SafeCalloc (m->numChar * m->numTaxa, sizeof(BitsLong));
-    if (!preprocMatrix)
+    compMatrix = (BitsLong *) SafeCalloc (m->numChar * m->numTaxa, sizeof(BitsLong));
+    if (!compMatrix)
         {
-        MrBayesPrint ("%s   Problem allocating preprocMatrix (%d)\n", spacer, m->numChar * m->numTaxa * sizeof(BitsLong));
+        MrBayesPrint ("%s   Problem allocating preprocessed compMatrix (%d)\n", spacer, m->numChar * m->numTaxa * sizeof(BitsLong));
         goto errorExit;
         }
-    memAllocs[ALLOC_PREPROCMATRIX] = YES;
+    memAllocs[ALLOC_COMPMATRIX] = YES;
 
     /* Allocate space for vector keeping track of original states of first taxon... */
     firstTaxonStates = (CLFlt *) SafeCalloc (m->numChars, sizeof (CLFlt));
@@ -11135,13 +11135,13 @@ int CorrPreprocess (void)
         for (k=0; k<m->numChar; k++)
             {
             if (firstTaxonState[k] == 1) /* Case where all bits need to be flipped */
-                preprocMatrix[pos(j,k,m->numChar)] = ~(matrix[pos(j,k,m->numChar)]);
+                compMatrix[pos(j,k,m->numChar)] = ~(matrix[pos(j,k,m->numChar)]);
             else /* Case where no bits need to be flipped */
-                preprocMatrix[pos(j,k,m->numChar)] = matrix[pos(j,k,m->numChar)];
+                compMatrix[pos(j,k,m->numChar)] = matrix[pos(j,k,m->numChar)];
             }
 
     #   if defined (DEBUG_CORRPREPROCESS)
-    if (PrintPreprocMatrix() == ERROR) /* TODO: PrintPreprocMatrix function */
+    if (PrintCompMatrix() == ERROR)
         goto errorExit;
     getchar();
     #   endif
@@ -11218,11 +11218,16 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     for (j=0; j<m->numChars; j++)
                         intValue[j] = j;
+                    m->numLatCols = m->numChars;
                     }
                 else if (p->paramId == ALLOCATIONVECTOR_CORR)
                     {
+                    int maxTable = 0;
                     for (j=0; j<m->numChars; j++)
                         intValue[j] = numSitesOfPat[j];
+                        if (numSitesOfPat[j] > maxTable)
+                            maxTable = numSitesOfPat[j];
+                    m->numLatCols = maxTable + 1;
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -11231,13 +11236,13 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 /* Fill in latentmatrix *************************************************************************************/
                 if (p->paramId == LATENTMATRIX_UNCORR)
                     {
-                    for (i=0; i<m->numChars; i++)
+                    for (i=0; i<m->numLatCols; i++)
                         {
                         for (j=0; j<m->numTaxa; j++)
                             {
-                            if (matrix[pos(i,j,numChar)] == 0)
+                            if (matrix[pos(i,j,m->numLatCols)] == 0)
                                 intValue[i][j] = 0;
-                            else if (matrix[pos(i,j,numChar)] == 1)
+                            else if (matrix[pos(i,j,m->numLatCols)] == 1)
                                 intValue[i][j] = 2;
                             }
                         }
@@ -11245,15 +11250,15 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
                     int currTable = 0;
-                    for (i=0; i<m->numChars; i++)
+                    for (i=0; i<m->numLatCols; i++)
                         {
                         if (numSitesOfPat[i] == currTable)
                             {
                             for (j=0; j<m->numTaxa; j++)
                                 {
-                                if (matrix[pos(j,i,numChar)] == 0)
+                                if (matrix[pos(j,i,m->numLatCols)] == 0)
                                     intValue[j][currTable] = 0;
-                                else if (matrix[pos(j,i,numChar)] == 1)
+                                else if (matrix[pos(j,i,m->numLatCols)] == 1)
                                     intValue[j][currTable] = 2;
                                 }
                             currTable++;
@@ -15458,9 +15463,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
 
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; /* part1 has a parsimony model and tratio does not apply */
+            *isApplic1 = NO; /* part1 has a parsimony model and rho does not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; /* part2 has a parsimony model and tratio does not apply */
+            *isApplic2 = NO; /* part2 has a parsimony model and rho does not apply */
 
         /* Check that the data are standard for both partitions 1 and 2 */
         if (modelParams[part1].dataType != STANDARD)
@@ -15498,21 +15503,21 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
 
         /* Check if the model is parsimony for either partition */
         if (!strcmp(modelParams[part1].parsModel, "Yes"))
-            *isApplic1 = NO; /* part1 has a parsimony model and tratio does not apply */
+            *isApplic1 = NO; /* part1 has a parsimony model and alphadir does not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
-            *isApplic2 = NO; /* part2 has a parsimony model and tratio does not apply */
+            *isApplic2 = NO; /* part2 has a parsimony model and alphadir does not apply */
 
         /* Check that the data are standard for both partitions 1 and 2 */
         if (modelParams[part1].dataType != STANDARD)
-            *isApplic1 = NO; /* part1 is not standard data so rho does not apply */
+            *isApplic1 = NO; /* part1 is not standard data so alphadir does not apply */
         if (modelParams[part2].dataType != STANDARD)
-            *isApplic2 = NO; /* part2 is not standard data so rho does not apply */
+            *isApplic2 = NO; /* part2 is not standard data so alphadir does not apply */
 
         /* Check that both partitions have the correlation model set */
         if (strcmp(modelParams[part1].correlationModel, "Yes") != 0)
-            *isApplic1 = NO; /* part1 is not under the correlation model so rho does not apply */
+            *isApplic1 = NO; /* part1 is not under the correlation model so alphadir does not apply */
         if (strcmp(modelParams[part2].correlationModel, "Yes") != 0)
-            *isApplic2 = NO; /* part2 is not under the correlation model so rho does not apply */
+            *isApplic2 = NO; /* part2 is not under the correlation model so alphadir does not apply */
 
         /* Check if the prior is the same for both. */
         if (!strcmp(modelParams[part1].alphaDirPr,"Exponential") && !strcmp(modelParams[part2].alphaDirPr,"Exponential"))
@@ -15528,9 +15533,77 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         else
             isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
 
-        /* Check to see if rho is inapplicable for either partition. */
+        /* Check to see if alphadir is inapplicable for either partition. */
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO; /* if alphadir is inapplicable for either partition, then the parameter cannot be the same */
+        }
+    else if (whichParam == P_ALLOCATIONVECTOR)
+        {
+        /* Check the allocation vector parameter for partitions 1 and 2. */
+
+        /* Check if the model is parsimony for either partition */
+        if (!strcmp(modelParams[part1].parsModel, "Yes"))
+            *isApplic1 = NO; /* part1 has a parsimony model and allocation vector does not apply */
+        if (!strcmp(modelParams[part2].parsModel, "Yes"))
+            *isApplic2 = NO; /* part2 has a parsimony model and allocation vector does not apply */
+
+        /* Check that the data are standard for both partitions 1 and 2 */
+        if (modelParams[part1].dataType != STANDARD)
+            *isApplic1 = NO; /* part1 is not standard data so allocation vector does not apply */
+        if (modelParams[part2].dataType != STANDARD)
+            *isApplic2 = NO; /* part2 is not standard data so allocation vector does not apply */
+
+        /* Check that both partitions have the correlation model set */
+        if (strcmp(modelParams[part1].correlationModel, "Yes") != 0)
+            *isApplic1 = NO; /* part1 is not under the correlation model so allocation vector does not apply */
+        if (strcmp(modelParams[part2].correlationModel, "Yes") != 0)
+            *isApplic2 = NO; /* part2 is not under the correlation model so allocation vector does not apply */
+
+        /* Check if the prior is the same for both. */
+        if (!strcmp(modelParams[part1].corrPr,"Uncorrelated") && !strcmp(modelParams[part2].corrPr,"Uncorrelated"))
+            isSame = NO;
+        else if (!strcmp(modelParams[part1].corrPr,"Correlated") && !strcmp(modelParams[part2].corrPr,"Correlated"))
+            isSame = NO;
+        else
+            isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
+
+        /* Check to see if allocation vector is inapplicable for either partition. */
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO; /* if allocation vector is inapplicable for either partition, then the parameter cannot be the same */
+        }
+    else if (whichParam == P_LATENTMATRIX)
+        {
+        /* Check the latent matrix parameter for partitions 1 and 2. */
+
+        /* Check if the model is parsimony for either partition */
+        if (!strcmp(modelParams[part1].parsModel, "Yes"))
+            *isApplic1 = NO; /* part1 has a parsimony model and latent matrix does not apply */
+        if (!strcmp(modelParams[part2].parsModel, "Yes"))
+            *isApplic2 = NO; /* part2 has a parsimony model and latent matrix does not apply */
+
+        /* Check that the data are standard for both partitions 1 and 2 */
+        if (modelParams[part1].dataType != STANDARD)
+            *isApplic1 = NO; /* part1 is not standard data so latent matrix does not apply */
+        if (modelParams[part2].dataType != STANDARD)
+            *isApplic2 = NO; /* part2 is not standard data so latent matrix does not apply */
+
+        /* Check that both partitions have the correlation model set */
+        if (strcmp(modelParams[part1].correlationModel, "Yes") != 0)
+            *isApplic1 = NO; /* part1 is not under the correlation model so latent matrix does not apply */
+        if (strcmp(modelParams[part2].correlationModel, "Yes") != 0)
+            *isApplic2 = NO; /* part2 is not under the correlation model so latent matrix does not apply */
+
+        /* Check if the prior is the same for both. */
+        if (!strcmp(modelParams[part1].corrPr,"Uncorrelated") && !strcmp(modelParams[part2].corrPr,"Uncorrelated"))
+            isSame = NO;
+        else if (!strcmp(modelParams[part1].corrPr,"Correlated") && !strcmp(modelParams[part2].corrPr,"Correlated"))
+            isSame = NO;
+        else
+            isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
+
+        /* Check to see if latent matrix is inapplicable for either partition. */
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO; /* if latent matrix is inapplicable for either partition, then the parameter cannot be the same */
         }
     else
         {
@@ -15851,132 +15924,6 @@ int PrintCompMatrix (void)
                         break;
                     if (mp->dataType == CONTINUOUS)
                         MrBayesPrint ("%3d ", compMatrix[pos(i,j,compMatrixRowSize)]);
-                    else
-                        MrBayesPrint ("%c", whichChar((int)compMatrix[pos(i,j,compMatrixRowSize)]));
-                    }
-                MrBayesPrint("\n");
-                }
-            MrBayesPrint("\nNo. sites    ");
-            for (j=c; j<c+k; j++)
-                {
-                if (j >= m->compMatrixStop)
-                    break;
-                i = (int) numSitesOfPat[m->compCharStart + (0*numCompressedChars) + (j - m->compMatrixStart)/m->nCharsPerSite]; /* NOTE: We are printing the unadulterated site pat nums */
-                if (i>9)
-                    i = 'A' + i - 10;
-                else
-                    i = '0' + i;
-                if (mp->dataType == CONTINUOUS)
-                    MrBayesPrint("   %c ", i);
-                else
-                    {
-                    if ((j-m->compMatrixStart) % m->nCharsPerSite == 0)
-                        MrBayesPrint ("%c", i);
-                    else
-                        MrBayesPrint(" ");
-                    }
-                }
-            MrBayesPrint ("\nOrig. char   ");
-            for (j=c; j<c+k; j++)
-                {
-                if (j >= m->compMatrixStop)
-                    break;
-                i = origChar[j];
-                if (i>9)
-                    i = '0' + (i % 10);
-                else
-                    i = '0' +i;
-                if (mp->dataType == CONTINUOUS)
-                    MrBayesPrint("   %c ", i);
-                else
-                    MrBayesPrint ("%c", i);
-                }
-
-            if (mp->dataType == STANDARD && m->nStates != NULL)
-                {
-                MrBayesPrint ("\nNo. states   ");
-                for (j=c; j<c+k; j++)
-                    {
-                    if (j >= m->compMatrixStop)
-                        break;
-                    i = m->nStates[j-m->compCharStart];
-                    MrBayesPrint ("%d", i);
-                    }
-                MrBayesPrint ("\nCharType     ");
-                for (j=c; j<c+k; j++)
-                    {
-                    if (j >= m->compMatrixStop)
-                        break;
-                    i = m->cType[j-m->compMatrixStart];
-                    if (i == ORD)
-                        MrBayesPrint ("%c", 'O');
-                    else if (i == UNORD)
-                        MrBayesPrint ("%c", 'U');
-                    else
-                        MrBayesPrint ("%c", 'I');
-                    }
-                MrBayesPrint ("\ntiIndex      ");
-                for (j=c; j<c+k; j++)
-                    {
-                    if (j >= m->compMatrixStop)
-                        break;
-                    i = m->tiIndex[j-m->compCharStart];
-                    MrBayesPrint ("%d", i % 10);
-                    }
-                MrBayesPrint ("\nbsIndex      ");
-                for (j=c; j<c+k; j++)
-                    {
-                    if (j >= m->compMatrixStop)
-                        break;
-                    i = m->bsIndex[j-m->compCharStart];
-                    MrBayesPrint ("%d", i % 10);
-                    }
-                }
-            MrBayesPrint ("\n\n");
-            }
-        MrBayesPrint ("Press return to continue\n");
-        getchar();
-        }   /* next division */
-
-    return NO_ERROR;
-}
-
-
-/*-----------------------------------------------------------------------
-|
-|   PrintPreprocMatrix: Print preprocessed matrix for correlation model
-|
-------------------------------------------------------------------------*/
-int PrintPreprocMatrix (void)
-{
-    int             i, j, k, c, d;
-    ModelInfo       *m;
-    ModelParams     *mp;
-    char            tempName[100];
-    char            (*whichChar)(int);
-
-    if (!preprocMatrix)
-        return ERROR;
-
-    whichChar = &WhichStand;
-
-    for (d=0; d<numCurrentDivisions; d++)
-        {
-        m = &modelSettings[d];
-        mp = &modelParams[d];
-
-        MrBayesPrint ("\nPreprocessed matrix for division %d\n\n",d+1);
-
-        for (c=m->compMatrixStart; c<m->compMatrixStop; c+=k)
-            {
-            for (i=0; i<numLocalTaxa; i++)
-                {
-                strcpy (tempName, localTaxonNames[i]);
-                MrBayesPrint ("%-10.10s   ", tempName);
-                for (j=c; j<c+k; j++)
-                    {
-                    if (j >= m->compMatrixStop)
-                        break;
                     else
                         MrBayesPrint ("%c", whichChar((int)compMatrix[pos(i,j,compMatrixRowSize)]));
                     }
@@ -19006,7 +18953,7 @@ int SetModelParams (void)
             SafeStrcat(&p->name, partString);
 
             /* find the parameter x prior type */
-            if (!strcmp(mp->allocationVectorPr,"Correlated"))
+            if (!strcmp(mp->corrPr,"Correlated"))
                 p->paramId = ALLOCATIONVECTOR_CORR;
             else
                 p->paramId = ALLOCATIONVECTOR_UNCORR;
@@ -19021,7 +18968,6 @@ int SetModelParams (void)
             {
             /* Set up latentMatrix for correlation model DPMM ***********************************************************/
             p->paramType = P_LATENTMATRIX;
-            p->nValues = m->numChars * m->numTaxa;
             p->nSubValues = 0;
             p->min = 0;
             p->max = 2;
@@ -19034,10 +18980,21 @@ int SetModelParams (void)
             SafeStrcat(&p->name, partString);
 
             /* find the parameter x prior type */
-            if (!strcmp(mp->allocationVectorPr,"Correlated"))
+            if (!strcmp(mp->corrPr,"Correlated"))
+                {
                 p->paramId = LATENTMATRIX_CORR;
+                p->numLatCols = 0;
+                for (j=0; j<m->numChars; j++)
+                    if (numSitesOfPat[j] > p->numLatCols)
+                        p->numLatCols = numSitesOfPat[j];
+                }
+                p->nValues = m->numLatCols * m->numTaxa;
             else
+                {
                 p->paramId = LATENTMATRIX_UNCORR;
+                p->numLatCols = m->numChars;
+                p->nValues = m->numLatCols * m->numTaxa;
+                }
 
             p->printParam = YES;
 
@@ -23366,6 +23323,10 @@ int ShowModel (void)
                                   MrBayesPrint ("%s                     Alphadir is fixed to %1.2lf\n", spacer, modelParams[i].alphaDirFix);
                               else /* if (!strcmp(modelParams[i].alphaDirPr,"Exponential")) */
                                   MrBayesPrint ("%s                     Alphadir has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].alphaDirExp);
+                              if (!strcmp(modelParams[i].corrPr,"Uncorrelated"))
+                                  MrBayesPrint ("%s                     Correlation model is initialized with all characters uncorrelated\n", spacer);
+                              else /* if (!strcmp(modelParams[i].alphaDirPr,"Exponential")) */
+                                  MrBayesPrint ("%s                     Correlation model is initialized with maximum correlation\n", spacer);
                               }
                           else
                               MrBayesPrint ("%s         # States  = Variable, up to 10\n", spacer);
@@ -24135,6 +24096,20 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                 MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->alphaDirExp, modelParams[i].alphaDirExp);
             else
                 MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->alphaDirFix);
+            }
+        else if (j == P_ALLOCATIONVECTOR)
+            {
+            if (!strcmp(mp->corrPr,"Uncorrelated"))
+                MrBayesPrint ("%s            Prior      = Uncorrelated\n", spacer);
+            else
+                MrBayesPrint ("%s            Prior      = Correlated\n", spacer);
+            }
+        else if (j == P_LATENTMATRIX)
+            {
+            if (!strcmp(mp->corrPr,"Uncorrelated"))
+                MrBayesPrint ("%s            Prior      = Uncorrelated\n", spacer);
+            else
+                MrBayesPrint ("%s            Prior      = Correlated\n", spacer);
             }
         else if (j == P_OMEGA)
             {

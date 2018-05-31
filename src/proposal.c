@@ -430,7 +430,7 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     *GetParamVals(param, chain, state[chain]) = newA;
 
     /* compute probability of allocation vector given old and new alphadir values */
-    allocationVector = GetParamVals(m->allocationVector, chain, state[chain]);
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
     *lnPriorRatio += LnProbAllocation(allocationVector, m->numChars, newA);
     *lnPriorRatio -= LnProbAllocation(allocationVector, m->numChars, oldA);
 

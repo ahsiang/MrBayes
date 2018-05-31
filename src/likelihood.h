@@ -64,6 +64,7 @@ int       CondLikeDown_NY98 (TreeNode *p, int division, int chain);
 int       CondLikeDown_NY98_SSE (TreeNode *p, int division, int chain);
 #endif
 int       CondLikeDown_Std (TreeNode *p, int division, int chain);
+int       CondLikeDown_StdCorr (TreeNode *p, int division, int chain);
 int       CondLikeRoot_Bin (TreeNode *p, int division, int chain);
 #if defined (SSE_ENABLED)
 int       CondLikeRoot_Bin_SSE (TreeNode *p, int division, int chain);
@@ -89,6 +90,7 @@ int       CondLikeRoot_NY98 (TreeNode *p, int division, int chain);
 int       CondLikeRoot_NY98_SSE (TreeNode *p, int division, int chain);
 #endif
 int       CondLikeRoot_Std (TreeNode *p, int division, int chain);
+int       CondLikeRoot_StdCorr (TreeNode *p, int division, int chain);
 int       CondLikeScaler_Gen (TreeNode *p, int division, int chain);
 #if defined (SSE_ENABLED)
 int       CondLikeScaler_Gen_SSE (TreeNode *p, int division, int chain);
@@ -107,10 +109,12 @@ int       CondLikeScaler_NY98 (TreeNode *p, int division, int chain);
 int       CondLikeScaler_NY98_SSE (TreeNode *p, int division, int chain);
 #endif
 int       CondLikeScaler_Std (TreeNode *p, int division, int chain);
+
 int       CondLikeUp_Bin (TreeNode *p, int division, int chain);
 int       CondLikeUp_Gen (TreeNode *p, int division, int chain);
 int       CondLikeUp_NUC4 (TreeNode *p, int division, int chain);
 int       CondLikeUp_Std (TreeNode *p, int division, int chain);
+int       CondLikeUp_StdCorr (TreeNode *p, int division, int chain);
 void      LaunchLogLikeForDivision (int chain, int d, MrBFlt* lnL);
 int       Likelihood_Adgamma (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
 int       Likelihood_Gen (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
@@ -140,13 +144,17 @@ int       Likelihood_Res (TreeNode *p, int division, int chain, MrBFlt *lnL, int
 int       Likelihood_Res_SSE (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
 #endif
 int       Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
-int       LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir);
+int       Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
+int       LnProbAllocation (TreeNode *p, int division, int chain);
+int       LnProbLatentCluster (int numChar, int *latentColumn, int *allocationVector, int allocationValue);
+int       LnProbLatentMatrix (TreeNode *p, int division, int chain);
 int       TiProbs_Fels (TreeNode *p, int division, int chain);
 int       TiProbs_Gen (TreeNode *p, int division, int chain);
 int       TiProbs_GenCov (TreeNode *p, int division, int chain);
 int       TiProbs_Hky (TreeNode *p, int division, int chain);
 int       TiProbs_JukesCantor (TreeNode *p, int division, int chain);
 int       TiProbs_Std (TreeNode *p, int division, int chain);
+int       TiProbs_StdCorr (TreeNode *p, int division, int chain);
 int       TiProbs_Res (TreeNode *p, int division, int chain);
 
 #endif  /* __LIKELIHOOD_H__ */

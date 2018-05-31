@@ -869,7 +869,7 @@ typedef struct param
 #define ALPHADIR_EXP                    150
 #define ALPHADIR_FIX                    151
 #define LATENTMATRIX_UNCORR             152
-#define LATENTMATRIX_UNCORR             153
+#define LATENTMATRIX_CORR               153
 #define ALLOCATIONVECTOR_UNCORR         154
 #define ALLOCATIONVECTOR_CORR           155
 
@@ -1007,15 +1007,16 @@ typedef struct model
     MrBFlt      tRatioFix;
     MrBFlt      tRatioDir[2];
 
-    char        correlationModel[5];/* use correlation model? (yes/no)             */
+    char        corrModel[100];    /* use covarion model? (yes/no)                 */
     char        rhoPr[100];        /* prior for inverse correlation factor         */
     MrBFlt      rhoFix;
     MrBFlt      rhoExp;
     char        alphaDirPr[100];   /* prior for DPMM concentration parameter       */
     MrBFlt      alphaDirFix;
     MrBFlt      alphaDirExp;
-    int         allocationVector[numChars];
-    int         latentMatrix[numTaxa][numChars];
+    int         allocationVector[100];
+    int         latentMatrix[100];
+    char        corrPr[100];       /* prior for correlation model initialization   */
 
     char        revMatPr[100];     /* prior for GTR model                          */
     MrBFlt      revMatFix[6];
@@ -1321,6 +1322,9 @@ typedef struct modelinfo
     int         numParsSets;                /* number of parsimony sets                     */
     CLFlt       *parsNodeLens;              /* parsimony node lengths                       */
     int         numParsNodeLens;            /* number of parsimony node lengths             */
+
+    /* Variables for correlation model */
+    int         numLatCols;                 /* number of processes in current latent matrix */
 
     /* Miscellaneous parameters */
     int         mark;                       /* scratch parameter                            */

@@ -54,6 +54,7 @@ extern int      numLocalChains;
 extern int      rateProbRowSize;            /* size of rate probs for one chain one state   */
 extern MrBFlt   **rateProbs;                /* pointers to rate probs used by adgamma model */
 
+
 /* local prototypes */
 void      CopySiteScalers (ModelInfo *m, int chain);
 void      FlipCondLikeSpace (ModelInfo *m, int chain, int nodeIndex);
@@ -2006,12 +2007,23 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             c, k, nStates, *leftStates, *rightStates;
+    int             i, c, k, nStates, *leftStates, *rightStates,
+                    numLatCols, *allocationVector;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     ModelInfo       *m;
 
     m = &modelSettings[division];
     nStates = 3;
+
+    /* Get number of latent matrix columns */
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    numLatCols = 0;
+    for (i=0; i<m->numChars; i++)
+        {
+        if (allocationVector[i] > numLatCols)
+            numLatCols = allocationVector[i];
+        }
+    numLatCols++;
 
     /* Flip conditional likelihood space */
     FlipCondLikeSpace (m, chain, p->index);
@@ -2027,11 +2039,13 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 
     /* Find appropriate rows in latentMatrix */
     if (p->left->left == NULL)
-        leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
+        //leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
+        leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * numLatCols;
     else
         leftStates = NULL;
     if (p->right->left == NULL)
-        rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * m->numChars;
+        //rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * m->numChars;
+        rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * numLatCols;
     else
         rightStates = NULL;
 
@@ -7884,9 +7898,9 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
 {
-    int             c, j, k, nRateCats, nStates, numReps;
+    int             c, j, k, nRateCats, nStates, numReps, *nSitesOfPat;
     MrBFlt          catLike, catFreq, rateFreq, like, bs[3], rho,
-                    pUnobserved, pObserved, *nSitesOfPat;
+                    pUnobserved, pObserved;
     CLFlt           *clPtr, **clP, *lnScaler;
     ModelInfo       *m;
 
@@ -7894,9 +7908,9 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
 
     /* Get number of site patterns */
     /* TODO: warning: incompatible pointer types assigning to 'CLFlt *' (aka 'float *') from 'MrBFlt *' (aka 'double *') */
-    nSitesOfPat = GetParamVals(m->allocationVector, chain, state[chain]);
+    nSitesOfPat = GetParamIntVals(m->allocationVector, chain, state[chain]);
 
-    /* TO DO: get actual number of tables in the current state of the model */
+    /* TODO: get actual number of tables in the current state of the model */
     numReps = m->numChars * 3; /* 3 is the number of states in the rate matrix */
 
     /* find conditional likelihood pointers */
@@ -7940,7 +7954,8 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         clP[k] += nStates;
         }
     /* TODO: warning: variable 'c' is uninitialized when used here */
-    pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
+    //pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
+    pUnobserved += 2 * like * exp(lnScaler[0]); /* take advantage of model symmetry */
 
     pObserved =  1.0 - pUnobserved; /* total probability for all patterns in L */
     if (pObserved < LIKE_EPSILON)
@@ -8393,16 +8408,24 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
 |       vector for a particular alphadir value
 |
 -----------------------------------------------------------------*/
-int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
+int LnProbAllocation (TreeNode *p, int division, int chain)
 {
-    int         i, j, newestTableIndex, numSeatedAtTable;
-    MrBFlt      totalProb;
+    int         i, j, newestTableIndex, numSeatedAtTable, numChars,
+                *allocationVector;
+    MrBFlt      alphaDir, totalProb;
+    ModelInfo   *m;
+
+    m = &modelSettings[division];
+
+    numChars = m->numChars;
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
 
     /* Initialize counter to keep track of highest current table number */
     newestTableIndex = 0;
 
     /* Probability of sitting at first table is always 1 */
-    totalProb = 1;
+    totalProb = 1.0;
 
     /* Loop through the rest of the tables */
     for (i=1; i<numChars; i++)
@@ -8429,7 +8452,7 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
             }
         }
 
-    return (log(totalProb));
+    return ( log(totalProb) );
 }
 
 
@@ -8439,14 +8462,10 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 |       for a particular column of the latent matrix
 |
 -----------------------------------------------------------------*/
-int LnProbLatentCluster (int *latentColumn, int *allocationVector, int *allocationValue)
+int LnProbLatentCluster (int numChar, int *latentColumn, int *allocationVector, int allocationValue)
 {
-    int         i, j, numTaxa, numChar, numIntmedStates, numCharsInCluster;
+    int         i, j, numIntmedStates=0, numCharsInCluster=0;
     MrBFlt      columnProb;
-    ModelInfo   *m;
-
-    numChar = m->numChar;
-    numTaxa = m->numTaxa;
 
     /* Loop through column and count number of taxa in intermediate state */
     for (i=0; i<numTaxa; i++)
@@ -8465,7 +8484,7 @@ int LnProbLatentCluster (int *latentColumn, int *allocationVector, int *allocati
     /* Calculate final probability */
     columnProb = numIntmedStates * (1.0 / (1 << (numCharsInCluster - 1)));
 
-    return (log(columnProb));
+    return ( log(columnProb) );
 }
 
 
@@ -8475,34 +8494,38 @@ int LnProbLatentCluster (int *latentColumn, int *allocationVector, int *allocati
 |       given the latext matrix
 |
 -----------------------------------------------------------------*/
-int LnProbLatentMatrix (int *latentMatrix, BitsLong *preprocMatrix, int *allocationVector)
+int LnProbLatentMatrix (TreeNode *p, int division, int chain)
 {
-    int         i, j, k, numChars, numProcesses, currColumn;
+    int         i, j, k, numProcesses, *allocationVector,
+                *latentMatrix, numChar;
     MrBFlt      currProb, totalProb;
     ModelInfo   *m;
-    ModelParams *mp;
-    Param       *p;
 
-    numChar = m->numChar;
-    numTaxa = m->numTaxa;
+    m = &modelSettings[division];
+
+    numChar = m->numChars;
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
     totalProb = 1.0;
 
     /* Get number of independent processes (i.e., number of columns) in latent matrix */
     numProcesses = 1;
-    for (k=0; k<numChar; i++)
+    for (k=0; k<numChar; k++)
         {
         if (allocationVector[k] > numProcesses)
             numProcesses = allocationVector[k];
         }
+
+    int currColumn[numTaxa];
 
     /* Loop through processes and calculate probability */
     for (i=0; i<numProcesses; i++)
         {
         /* Grab current column/cluster/process */
         for (j=0; j<numTaxa; j++)
-            currColumn[j] = *latentMatrix[pos(i,j,numTaxa)];
-        currProb = LnProbLatentCluster(currColumn, *allocationVector, i)
+            currColumn[j] = latentMatrix[pos(i,j,numTaxa)];
+        currProb = LnProbLatentCluster(numChar, currColumn, allocationVector, i);
         totalProb = totalProb * currProb;
         }
 

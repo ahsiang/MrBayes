@@ -391,7 +391,8 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* change alphadir parameter using multiplier */
 
-    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning, *allocationVector;
+    int         *allocationVector;
+    MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -440,7 +441,7 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 }
 
 
-int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp, int numTaxa)
+int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* Change allocation vector by picking random character and re-seating it */
 
@@ -582,23 +583,22 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         }
 
-    /* Get new numLatCols and numValues */
+    /* Get new numLatCols */
     int maxTable = 0;
     for (i=0; i<m->numChars; i++)
         {
-        if (allocationVector[i] > maxTable)
+        if (newAllocationVector[i] > maxTable)
             maxTable = newAllocationVector[i];
         }
-    mp->numLatCols = maxTable + 1;
-    mp->numValues = mp->numLatCols * m->numTaxa;
+    m->numLatCols = maxTable + 1;
 
     /* get proposal ratio */
-    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, lambda);
+    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, lambda);
 
     /* get prior ratio */
-    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, lambda);
+    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, lambda);
 
     /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
 
@@ -5982,24 +5982,24 @@ int Move_RelaxedClockModel (Param *param, int chain, RandLong *seed, MrBFlt *lnP
 }
 
 
-int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matrix)
+int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* Change latent matrix for correlation model by randomly selecting an intermediate state
        and changing it to an end state */
 
-    int         i, j, k, l, m, n, o, *allocationVector, randCharIndex, *latentMatrix,
-                numChars, numTaxa, *oldLatentMatrix, *newLatentMatrix, numLatCols=0, numIntmedStates=0,
-                *allocationCount, maxCount=1, randClustIndex, idx,
-                randIntmedIndex, numCharsInCluster, currIntmedState, numSame, numOpposite;
-    MrBFlt      probOldLatentStates, probNewLatentStates;
+    int         i, j, k, l, n, o, p, *allocationVector, numChars, *oldLatentMatrix,
+                *newLatentMatrix, numIntmedStates=0, maxCount=1, randClustIndex, idx,
+                numLatCols, numValues, numCorrClusters, randIntmedIndex, numCharsInCluster,
+                numSame, numOpposite, ciIdx;
+    MrBFlt      probOldLatentStates, probNewLatentStates, probForwardMove, probBackwardsMove;
     ModelInfo   *m;
 
-    /* Get numChars, numTaxa, numLatCols, and numValues */
+    /* Get numChars */
+    m = &modelSettings[param->relParts[0]];
     numChars = m->numChars;
-    numTaxa = m->numTaxa;
 
     /* Get allocation vector */
-    allocationVector = *GetParamIntVals(m->allocationVector, chain, state[chain]);
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
 
     /* Get new and old latent matrices */
     oldLatentMatrix = GetParamIntVals(param, chain, state[chain] ^ 1);
@@ -6007,7 +6007,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
 
     /* Count number of characters in each cluster */
     /* Initialize allocationCount to keep track of counts, setting all elements to 0 */
-    allocationCount[numLatCols] = {0};
+    int allocationCount[m->numLatCols];
+    for (i=0; i<m->numLatCols; i++)
+        allocationCount[i] = 0;
 
     /* Loop through allocation vector to make counts */
     for (i=0; i<numChars; i++)
@@ -6017,7 +6019,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
             maxCount = allocationCount[allocationVector[i]];
 
     /* Get numLatCols and numValues */
-    numLatCols = maxCount + 1;
+    //numLatCols = maxCount + 1;
+    numLatCols = m->numLatCols;
     numValues = numLatCols * numTaxa;
 
     /* Determine how many columns have count > 1 */
@@ -6044,7 +6047,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
         {
         for (j=0; j<numTaxa; j++)
             {
-            clusters[pos(i,j,numTaxa)] = oldLatentMatrix[pos(cluserIndices[i],j,numTaxa)];
+            clusters[pos(i,j,numTaxa)] = oldLatentMatrix[pos(clusterIndices[i],j,numTaxa)];
             }
         }
 
@@ -6055,9 +6058,10 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
         /* Subset out only those columns with count > 1 that have intermediate states in them */
         /* First count number of columns with intermediate states */
         int numColWithIntmed = 0;
-        int hasIntmedState[numCorrClusters] = {0};
+        int hasIntmedState[numCorrClusters];
         for (i=0; i<numCorrClusters; i++)
             {
+            hasIntmedState[i] = 0;
             for (j=0; j<numTaxa; j++)
                 {
                 if (clusters[pos(i,j,numTaxa)] == 1)
@@ -6121,11 +6125,15 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
         /* Set the randomly selected state to an end state (0, without loss of generality) */
         int newLatentStates[numTaxa];
         newLatentStates[intmedIndices[randIntmedIndex]] = 0;
+        int numNewIntmedStates = 0; /* Also keep track of how many intermediate states are in the new latent column */
         /* Need to resolve other latent states. All former 0's and 2's become 1's... */
         for (i=0; i<numTaxa; i++)
             {
             if (oldLatentStates[i] == 0 || oldLatentStates[i] == 2)
+                {
                 newLatentStates[i] = 1;
+                numNewIntmedStates++;
+                }
             /* For former 1's, the new state depends on the state that was selected
             to become the new end state */
             /* Get associated data for the selected row */
@@ -6138,12 +6146,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                     {
                     if (allocationVector[j] == clusterIntmedIndices[randClustIndex])
                         {
-                        selectedData[idx] = *matrix[pos(j,intmedIndices[randIntmedIndex],numTaxa)];
+                        selectedData[idx] = compMatrix[pos(j,intmedIndices[randIntmedIndex],numTaxa)];
                         idx++;
                         }
                     }
                 /* Do the same for all the other intermediate states */
-                for (k=0; k<numIntermedStates; k++)
+                for (k=0; k<numIntmedStates; k++)
                     {
                     if (!(intmedIndices[k] == randIntmedIndex))
                         {
@@ -6151,16 +6159,16 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                         idx = 0;
                         for (l=0; l<numChar; l++)
                             {
-                            currIntmedState[idx] = *matrix[pos(l,intmedIndices[k],numTaxa)];
+                            currIntmedState[idx] = compMatrix[pos(l,intmedIndices[k],numTaxa)];
                             idx++;
                             }
                         /* Change latent column state assignment as necessary */
                         /* First count number of states that are the same vs. opposite */
                         numSame = 0;
                         numOpposite = 0;
-                        for (m=0; m<numCharsInCluster; m++)
+                        for (p=0; p<numCharsInCluster; p++)
                             {
-                            if (selectedData[m] == currIntmedState[m])
+                            if (selectedData[p] == currIntmedState[p])
                                 numSame++;
                             else /* NOTE: This won't work for non-binary characters! */
                                 numOpposite++;
@@ -6170,7 +6178,10 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                         else if (numOpposite == numCharsInCluster)
                             newLatentStates[i] = 2; /* Case where states are opposites of one another */
                         else
+                            {
                             newLatentStates[i] = 1; /* Otherwise just another intermediate state */
+                            numNewIntmedStates++;
+                            }
                         }
                     }
                 }
@@ -6184,8 +6195,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *mvp, int *matr
                 newLatentMatrix[pos(clusterIntmedIndices[randClustIndex],n,numTaxa)] = newLatentStates[n];
 
             /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
-            probOldLatentStates = LnProbLatentCluster(oldLatentStates,allocationVector,randClustIndex);
-            probNewLatentStates = LnProbLatentCluster(newLatentStates,allocationVector,randClustIndex);
+            probOldLatentStates = LnProbLatentCluster(oldLatentStates, randClustIndex, numChars, allocationVector, chain);
+            probNewLatentStates = LnProbLatentCluster(newLatentStates, randClustIndex, numChars, allocationVector, chain);
             /* Get prior ratio */
             *lnPriorRatio = probNewLatentStates - probOldLatentStates;
 

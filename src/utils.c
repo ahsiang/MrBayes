@@ -137,7 +137,7 @@ int cmpMrBFlt(const void *a, const void *b)
 {
     MrBFlt  x = *((MrBFlt *)(a));
     MrBFlt  y = *((MrBFlt *)(b));
-    
+
     if ( x < y )
         return -1;
     else if ( x == y )
@@ -157,7 +157,7 @@ int AddBitfield (BitsLong ***list, int listLen, int *set, int setLen)
     (*list) = (BitsLong **) SafeRealloc ((void *)(*list), ((size_t)listLen+1)*sizeof(BitsLong *));
     if (!(*list))
         return ERROR;
-    
+
     (*list)[listLen] = (BitsLong *) SafeMalloc ((size_t)nLongsNeeded*sizeof(BitsLong));
     if (!(*list)[listLen])
         return ERROR;
@@ -212,13 +212,13 @@ void *AlignedSafeFree (void *ptr)
 int AreBitfieldsEqual (BitsLong *p, BitsLong *q, int length)
 {
     int i;
-    
+
     for (i=0; i<length; i++)
         {
         if (p[i] != q[i])
             return NO;
         }
-    
+
     return YES;
 }
 
@@ -264,7 +264,7 @@ void ClearBit (int i, BitsLong *bits)
 void ClearBits (BitsLong *bits, int nLongs)
 {
     int     i;
-    
+
     for (i=0; i<nLongs; i++)
         bits[i] = 0;
 }
@@ -300,7 +300,7 @@ int CopyResults (FILE *toFile, char *fromFileName, int lastGen)
         free (strBuf);
         return ERROR;
         }
-    
+
     while (fgets(strBuf,longestLine,fromFile)!=NULL)
         {
         strncpy (strCpy,strBuf,longestLine);
@@ -311,7 +311,7 @@ int CopyResults (FILE *toFile, char *fromFileName, int lastGen)
         fprintf (toFile,"%s",strBuf);
         fflush (toFile);
         }
-    
+
     SafeFclose(&fromFile);
     free(strBuf);
     return (NO_ERROR);
@@ -339,7 +339,7 @@ int CopyProcessSsFile (FILE *toFile, char *fromFileName, int lastStep, MrBFlt *m
         free (strBuf);
         return ERROR;
         }
-    
+
     while (fgets(strBuf,longestLine,fromFile)!=NULL)
         {
         strncpy (strCpy,strBuf,longestLine);
@@ -382,7 +382,7 @@ int CopyProcessSsFile (FILE *toFile, char *fromFileName, int lastStep, MrBFlt *m
                 }
             }
         }
-    
+
     SafeFclose(&fromFile);
     free(strBuf);
     return (NO_ERROR);
@@ -395,7 +395,7 @@ int CopyTreeResults (FILE *toFile, char *fromFileName, int lastGen, int *numTree
     int     longestLine;
     char    *strBuf, *strCpy, *word;
     FILE    *fromFile;
-    
+
     (*numTrees) = 0;
 
     if ((fromFile = OpenBinaryFileR(fromFileName)) == NULL)
@@ -411,7 +411,7 @@ int CopyTreeResults (FILE *toFile, char *fromFileName, int lastGen, int *numTree
         free (strBuf);
         return ERROR;
         }
-    
+
     while (fgets(strBuf,longestLine,fromFile)!=NULL)
         {
         strncpy (strCpy,strBuf,longestLine);
@@ -430,7 +430,7 @@ int CopyTreeResults (FILE *toFile, char *fromFileName, int lastGen, int *numTree
             fprintf (toFile,"%s",strBuf);
         fflush (toFile);
         }
-        
+
     SafeFclose(&fromFile);
     free(strBuf);
     return (NO_ERROR);
@@ -467,7 +467,7 @@ long FirstTree (FILE *fp, char *lineBuf, int longestLine)
 {
     long    firstTree;
     char    *word;
-    
+
     do {
         firstTree = ftell(fp);
         if ((fgets (lineBuf, longestLine, fp)) == NULL)
@@ -491,7 +491,7 @@ int Flip01 (int x)
 void FlipBits (BitsLong *partition, int length, BitsLong *mask)
 {
     int         i;
-    
+
     for (i=0; i<length; i++)
         {
         partition[i] ^= mask[i];
@@ -620,7 +620,7 @@ void GetIntSummary (int **vals, int nRows, int *rowCount, Stat *theStats, int HP
             (*p++) = (MrBFlt) (vals[i][j]);
             }
         }
-    
+
     /* get statistics */
     MeanVariance (theValues, nVals, &(theStats->mean), &(theStats->var));
     if (HPD == YES)
@@ -640,7 +640,7 @@ int GetKFromGrowthFxn(int *growthFxn)
     for (i=0; i<6; i++)
         if (growthFxn[i] > k)
             k = growthFxn[i];
-    
+
     return k+1;
 }
 
@@ -664,7 +664,7 @@ void GetSummary (MrBFlt **vals, int nRows, int *rowCount, Stat *theStats, int HP
         memcpy ((void *)(p), (void *)(vals[i]), (size_t)rowCount[i] * sizeof(MrBFlt));
         p += rowCount[i];
         }
-    
+
     /* get statistics */
     MeanVariance (theValues, nVals, &(theStats->mean), &(theStats->var));
     if (HPD == YES)
@@ -700,7 +700,7 @@ int HarmonicArithmeticMeanOnLogs (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt 
     MrBFlt          a, x, y, scaler, n;
 
     reliable = YES;
-    
+
     scaler = vals[nVals-1];
     a  = n = 0.0;
     for (i=0; i<nVals; i++)
@@ -718,9 +718,9 @@ int HarmonicArithmeticMeanOnLogs (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt 
             scaler += y - 100.0;
             y = 100.0;
             }
-        
+
         x = (MrBFlt) exp(y);
-         
+
         if (n < 0.5)
             a = x;
         else
@@ -732,7 +732,7 @@ int HarmonicArithmeticMeanOnLogs (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt 
 
     /* arithmetic mean */
     (*mean) = (MrBFlt) log(a/n) + scaler;
-    
+
     scaler = (MrBFlt) (0.0 - vals[nVals-1]);
     a  = n = 0.0;
     for (i=0; i<nVals; i++)
@@ -750,9 +750,9 @@ int HarmonicArithmeticMeanOnLogs (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt 
             scaler += y - 100.0;
             y = 100.0;
             }
-        
+
         x = (MrBFlt) exp(y);
-        
+
         if (n < 0.5)
             a = x;
         else
@@ -826,7 +826,7 @@ int IsPartCompatible (BitsLong *smaller, BitsLong *larger, int length)
             if ((smaller[i]|larger[i]) != larger[i])
                 break;
         }
-        
+
     if (i == length)    /* passed either one of the tests */
         return YES;
     else
@@ -842,7 +842,7 @@ int IsPartNested (BitsLong *smaller, BitsLong *larger, int length)
     for (i=0; i<length; i++)
         if ((smaller[i] | larger[i]) != larger[i])
             break;
-        
+
     if (i == length)
         return YES;
     else
@@ -858,7 +858,7 @@ int IsSectionEmpty (BitsLong *bitField1, BitsLong *bitField2, int length)
     for (i=0; i<length; i++)
         if ((bitField1[i] & bitField2[i]) != 0)
             return NO;
-        
+
     return YES;
 }
 
@@ -871,7 +871,7 @@ int IsUnionEqThird (BitsLong *bitField1, BitsLong *bitField2, BitsLong *bitField
     for (i=0; i<length; i++)
         if ((bitField1[i] | bitField2[i]) != bitField3[i])
             return NO;
-        
+
     return YES;
 }
 
@@ -881,7 +881,7 @@ long LastBlock (FILE *fp, char *lineBuf, int longestLine)
 {
     long    lastBlock;
     char    *word;
-    
+
     lastBlock = 0L;
     rewind (fp);
 
@@ -919,7 +919,7 @@ int LineTermType (FILE *fp)
             }
         }
     (void)fseek(fp, 0L, 0);     /* rewind */
-    
+
     return (term);
 }
 
@@ -928,7 +928,7 @@ int LineTermType (FILE *fp)
 int LongestLine (FILE *fp)
 {
     int         ch, lineLength, longest;
-    
+
     longest = 0;
     lineLength = 0;
     ch = fgetc(fp);
@@ -973,7 +973,7 @@ int LongestLine (FILE *fp)
             */
         }
     rewind (fp);        /* rewind */
-    
+
     return (longest+1); /*+1 to accommodate last character*/
 }
 
@@ -981,9 +981,9 @@ int LongestLine (FILE *fp)
 /* LowerUpperMedian: Determine median and 95 % credible interval */
 void LowerUpperMedian (MrBFlt *vals, int nVals, MrBFlt *lower, MrBFlt *upper, MrBFlt *median)
 
-{    
+{
     SortMrBFlt (vals, 0, nVals-1);
-    
+
     *lower  = vals[(int)(0.025*nVals)];
     *upper  = vals[(int)(0.975*nVals)];
     *median = vals[nVals/2];
@@ -998,7 +998,7 @@ void LowerUpperMedianHPD (MrBFlt *vals, int nVals, MrBFlt *lower, MrBFlt *upper,
     MrBFlt  f, g, interval;
 
     SortMrBFlt (vals, 0, nVals-1);
-    
+
     width = (int)(nVals * 0.95 + 0.5);
     theStart = 0;
     interval = vals[width-1] - vals[0];
@@ -1068,7 +1068,7 @@ void MeanVariance (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt *var)
 
     /* mean */
     (*mean) = a;
-    
+
     /* variance */
     if (nVals <= 1)
         (*var) = 0.0;
@@ -1081,8 +1081,8 @@ void MeanVariance (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt *var)
 @param vals    pointer to values in log scale
 @param nVals   number of "vals", minimum 1
 @param mean    adress of variable where computed mean is returned by the function
-@param var     adress of variable where computed variance is returned by the function. Could be set to NULL if this value need not to be returened. 
-@param varEst  adress of variable where computed estimate of the population variance is returned, could be set to NULL if this value need not to be returened. 
+@param var     adress of variable where computed variance is returned by the function. Could be set to NULL if this value need not to be returened.
+@param varEst  adress of variable where computed estimate of the population variance is returned, could be set to NULL if this value need not to be returened.
                Could be set to NULL if this value need not to be returened.
 Note: We devide by nVals or by (nVals-1) when var and varEst is calculated from the sum of square differences. */
 void MeanVarianceLog (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt *var, MrBFlt *varEst)
@@ -1113,7 +1113,7 @@ void MeanVarianceLog (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt *var, MrBFlt
 
     /* mean */
     (*mean) = log(a) + scaler;
-    
+
     /* variance */
     if (var!=NULL)
         {
@@ -1249,10 +1249,10 @@ int NextTaxonInPartition(int currentTaxon, BitsLong *partition, int length)
 int NBits (int x)
 {
     int n=0;
-    
+
     for (n=0; x != 0; n++)
         x &= (x-1);
-    
+
     return n;
 }
 
@@ -1284,8 +1284,8 @@ FILE *OpenBinaryFileR (char *name)
     strcpy(fileName, workingDir);
     strncat(fileName, name, 199 - strlen(fileName));
 
-    if ((fp = fopen (fileName, "rb")) == NULL)  
-        {   
+    if ((fp = fopen (fileName, "rb")) == NULL)
+        {
         MrBayesPrint ("%s   Could not open file \"%s\"\n", spacer, name);
         return (NULL);
         }
@@ -1302,8 +1302,8 @@ FILE *OpenTextFileR (char *name)
     strcpy(fileName, workingDir);
     strncat(fileName, name, 199 - strlen(fileName));
 
-    if ((fp = fopen (fileName, "r")) == NULL)  
-        {   
+    if ((fp = fopen (fileName, "r")) == NULL)
+        {
         MrBayesPrint ("%s   Could not open file \"%s\"\n", spacer, fileName);
         return (NULL);
         }
@@ -1320,8 +1320,8 @@ FILE *OpenTextFileRQuait (char *name)
     strcpy(fileName, workingDir);
     strncat(fileName, name, 199 - strlen(fileName));
 
-    if ((fp = fopen (fileName, "r")) == NULL)  
-        {   
+    if ((fp = fopen (fileName, "r")) == NULL)
+        {
         return (NULL);
         }
     else
@@ -1337,8 +1337,8 @@ FILE *OpenTextFileA (char *name)
     strcpy(fileName, workingDir);
     strncat(fileName, name, 199 - strlen(fileName));
 
-    if ((fp = fopen (fileName, "a+")) == NULL)  
-        {   
+    if ((fp = fopen (fileName, "a+")) == NULL)
+        {
         MrBayesPrint ("%s   Could not open file \"%s\"\n", spacer, name);
         return (NULL);
         }
@@ -1355,8 +1355,8 @@ FILE *OpenTextFileW (char *name)
     strcpy(fileName, workingDir);
     strncat(fileName, name, 199 - strlen(fileName));
 
-    if ((fp = fopen (fileName, "w+")) == NULL)  
-        {   
+    if ((fp = fopen (fileName, "w+")) == NULL)
+        {
         MrBayesPrint ("%s   Could not open file \"%s\"\n", spacer, name);
         return (NULL);
         }
@@ -1426,7 +1426,7 @@ void EstimatedSampleSize (MrBFlt **vals, int nRuns, int *count, MrBFlt *returnES
     int         i, j, lag, maxLag, samples;
     MrBFlt      *values, mean, del1, del2, varStat=0.0;
     MrBFlt      gammaStat[2000];
-        
+
     for (i=0; i<nRuns; i++)
         {
         samples=count[i];
@@ -1443,7 +1443,7 @@ void EstimatedSampleSize (MrBFlt **vals, int nRuns, int *count, MrBFlt *returnES
         for (lag = 0; lag < maxLag; lag++)
             {
             gammaStat[lag]=0;
-            for (j = 0; j < samples - lag; j++) 
+            for (j = 0; j < samples - lag; j++)
                 {
                 del1 = values[j] - mean;
                 del2 = values[j + lag] - mean;
@@ -1452,13 +1452,13 @@ void EstimatedSampleSize (MrBFlt **vals, int nRuns, int *count, MrBFlt *returnES
 
             gammaStat[lag] /= ((MrBFlt) (samples - lag));
 
-            if (lag == 0) 
+            if (lag == 0)
                 {
                 varStat = gammaStat[0];
-                } 
-            else if (lag % 2 == 0) 
+                }
+            else if (lag % 2 == 0)
                 {
-                if (gammaStat[lag - 1] + gammaStat[lag] > 0) 
+                if (gammaStat[lag - 1] + gammaStat[lag] > 0)
                     {
                     varStat += 2.0 * (gammaStat[lag - 1] + gammaStat[lag]);
                     }
@@ -1476,13 +1476,13 @@ int SafeFclose(FILE **fp) {
 #   if defined MPI_ENABLED
     if (proc_id == 0) {
 #   endif
-    if (fp!=NULL && (*fp)!=NULL) 
+    if (fp!=NULL && (*fp)!=NULL)
         retval=fclose(*fp);
     *fp = NULL;
 #   if defined MPI_ENABLED
     }
 #   endif
-    return retval;  
+    return retval;
 }
 
 
@@ -1742,7 +1742,7 @@ FILE *TestOpenTextFileR (char *name)
     strcpy(fileName, workingDir);
     strncat(fileName, name, 99 - strlen(fileName));
 
-    return fopen (fileName, "r");   
+    return fopen (fileName, "r");
 }
 
 
@@ -1774,7 +1774,7 @@ void UpdateGrowthFxn(int *growthFxn)
         }
 
     for (i=0; i<6; i++)
-        growthFxn[i] = fxn[i];   
+        growthFxn[i] = fxn[i];
 }
 
 
@@ -1860,7 +1860,7 @@ PolyTree *AllocatePolyTree (int numTaxa)
     if (!pt)
         return (NULL);
 
-    pt->memNodes = 2*numTaxa;  
+    pt->memNodes = 2*numTaxa;
     pt->nodes = (PolyNode *) SafeCalloc (2*numTaxa, sizeof(PolyNode));
     pt->allDownPass = (PolyNode **) SafeCalloc (3*numTaxa, sizeof (PolyNode *));
     pt->intDownPass = pt->allDownPass + 2*numTaxa;
@@ -1893,7 +1893,7 @@ PolyTree *AllocatePolyTree (int numTaxa)
 
     /* initialize bitsets */
     pt->bitsets = NULL;
-    
+
     /* initialize relaxed clock parameters */
     pt->nESets = 0;
     pt->nEvents = NULL;
@@ -1936,7 +1936,7 @@ int AllocatePolyTreeRelClockParams (PolyTree *pt, int nBSets, int nESets)
         for (i=0; i<pt->nBSets; i++)
             pt->effectiveBrLen[i] = (MrBFlt *) SafeCalloc (pt->memNodes, sizeof(MrBFlt));
         }
-    
+
     /* take care of breakpoint params */
     if (pt->nESets > 0)
         {
@@ -1971,14 +1971,14 @@ int AllocatePolyTreePartitions (PolyTree *pt)
         return (ERROR);
     for (i=0; i<pt->memNodes*nLongsNeeded; i++)
         pt->bitsets[i] = 0;
-    
+
     /* set node partition pointers */
     for (i=0; i<pt->memNodes; i++)
         pt->nodes[i].partition = pt->bitsets + i*nLongsNeeded;
 
     /* clear and set partitions; if the tree is empty, nothing is set */
     ResetPolyTreePartitions(pt);
-    
+
     return (NO_ERROR);
 }
 
@@ -2052,7 +2052,7 @@ Tree *AllocateFixedTree (int numTaxa, int isRooted)
 {
     int     i;
     Tree    *t;
-    
+
     t = (Tree *) SafeCalloc (1, sizeof (Tree));
     if (t == NULL)
         return NULL;
@@ -2063,7 +2063,7 @@ Tree *AllocateFixedTree (int numTaxa, int isRooted)
     else
         t->memNodes = 2*numTaxa - 2;
     strcpy (t->name, "");
-    
+
     t->isRooted = isRooted;
     t->isClock = NO;
 
@@ -2103,7 +2103,7 @@ Tree *AllocateFixedTree (int numTaxa, int isRooted)
         return NULL;
         }
     t->intDownPass = t->allDownPass + t->nNodes;
-    
+
     /* initialize nodes and set index and memoryIndex */
     for (i=0; i<t->memNodes; i++)
         {
@@ -2121,7 +2121,7 @@ int AllocateTreePartitions (Tree *t)
 {
     int         i, nLongsNeeded, numTaxa;
     TreeNode    *p;
-    
+
     /* get some handy numbers */
     if (t->isRooted == YES)
         numTaxa = t->nNodes - t->nIntNodes - 1;
@@ -2133,11 +2133,11 @@ int AllocateTreePartitions (Tree *t)
     t->bitsets = (BitsLong *) SafeRealloc ((void *)(t->bitsets), (size_t)(t->nNodes) * (size_t)nLongsNeeded * sizeof(BitsLong));
     if (!t->bitsets)
         return (ERROR);
-    
+
     /* clear bit fields */
     for (i=0; i<t->nNodes*nLongsNeeded; i++)
         t->bitsets[i] = 0;
-        
+
     /* set node pointers to bit fields */
     for (i=0; i<t->nNodes; i++)
         {
@@ -2147,7 +2147,7 @@ int AllocateTreePartitions (Tree *t)
 
     /* set partition specifiers for terminals */
     ResetTreePartitions(t);
-    
+
     return (NO_ERROR);
 }
 
@@ -2162,20 +2162,20 @@ int AreTopologiesSame (Tree *t1, Tree *t2)
         return (NO);
     if (t1->nIntNodes != t2->nIntNodes)
         return (NO);
-    
+
     if (t1->isRooted == YES)
         nTaxa = t1->nNodes - t1->nIntNodes - 1;
     else
         nTaxa = t1->nNodes - t1->nIntNodes;
-    
+
     /* allocate space for mask */
     nLongsNeeded = (nTaxa - 1) / nBitsInALong + 1;
     mask = (BitsLong *) SafeCalloc (nLongsNeeded, sizeof(BitsLong));
-    
+
     /* set mask */
     for (i=0; i<nTaxa; i++)
         SetBit(i, mask);
-    
+
     /* allocate and set partition pointers */
     AllocateTreePartitions (t1);
     AllocateTreePartitions (t2);
@@ -2202,7 +2202,7 @@ int AreTopologiesSame (Tree *t1, Tree *t2)
             FreeTreePartitions (t1);
             FreeTreePartitions (t2);
             free (mask);
-            return (NO);            
+            return (NO);
             }
         }
 
@@ -2220,21 +2220,21 @@ int AreTreesSame (Tree *t1, Tree *t2)
     TreeNode    *p, *q;
 
     extern void ShowNodes(TreeNode*, int, int);
-    
+
     if (t1->nNodes != t2->nNodes)
         return (NO);
     if (t1->nIntNodes != t2->nIntNodes)
         return (NO);
-    
+
     if (t1->isRooted == YES)
         nTaxa = t1->nNodes - t1->nIntNodes - 1;
     else
         nTaxa = t1->nNodes - t1->nIntNodes;
-    
+
     /* allocate space for mask */
     nLongsNeeded = (nTaxa - 1) / nBitsInALong + 1;
     mask = (BitsLong *) SafeCalloc (nLongsNeeded, sizeof(BitsLong));
-    
+
     /* set mask */
     for (i=0; i<nTaxa; i++)
         SetBit(i, mask);
@@ -2274,7 +2274,7 @@ int AreTreesSame (Tree *t1, Tree *t2)
             FreeTreePartitions (t1);
             FreeTreePartitions (t2);
             free (mask);
-            return (NO);            
+            return (NO);
             }
         }
 
@@ -2297,7 +2297,7 @@ int BuildConstraintTree (Tree *t, PolyTree *pt, char **localTaxonNames)
     int             i, j, k, constraintId, nLongsNeeded, nextNode;
     BitsLong        *constraintPartition, *mask;
     PolyNode        *pp, *qq, *rr, *ss, *tt;
-    
+
     pt->isRooted = t->isRooted;
 
     nLongsNeeded = (numLocalTaxa - 1) / nBitsInALong + 1;
@@ -2366,7 +2366,7 @@ int BuildConstraintTree (Tree *t, PolyTree *pt, char **localTaxonNames)
     /* Eventually, we might want to be build a parsimony (WAB) or compatibility (WIB) matrix and
        draw a starting tree from the universe according to the score of the tree. A simple way of accomplishing
        approximately this is to use sequential addition, with probabilities in each step determined
-       by the parsimony or compatibility score of the different possibilities. */ 
+       by the parsimony or compatibility score of the different possibilities. */
     nextNode = numLocalTaxa + 1;
     t->nLocks=0;
     for (constraintId=0; constraintId<numDefinedConstraints; constraintId++)
@@ -2385,7 +2385,7 @@ int BuildConstraintTree (Tree *t, PolyTree *pt, char **localTaxonNames)
             j++;
             }
         assert (j == numLocalTaxa);
-                
+
         /* make sure outgroup is outside constrained partition if the tree is unrooted */
         if (t->isRooted == NO && IsBitSet(localOutGroup, constraintPartition))
             FlipBits(constraintPartition, nLongsNeeded, mask);
@@ -2446,7 +2446,7 @@ int BuildConstraintTree (Tree *t, PolyTree *pt, char **localTaxonNames)
         /* go down until node is not included in constraint */
         do {
             qq = pp;
-            pp = pp->anc;       
+            pp = pp->anc;
         } while (IsPartNested(pp->partition, constraintPartition, nLongsNeeded));
 
         /* check that the node has not yet been included */
@@ -2506,7 +2506,7 @@ int BuildConstraintTree (Tree *t, PolyTree *pt, char **localTaxonNames)
         pp->left = tt;
         rr->sib = ss->sib = NULL;
         }
-    
+
     /* relabel interior nodes */
     GetPolyDownPass(pt);
     for (i=0; i<pt->nIntNodes; i++)
@@ -2524,7 +2524,7 @@ int BuildConstraintTree (Tree *t, PolyTree *pt, char **localTaxonNames)
 |   BuildRandomRTopology: Builds a random rooted
 |      topology. Will set indices in t->nodes
 |      such that they are from 0 to n-1 for the n tips
-|      and from n to 2n-2 for the n-1 interior 
+|      and from n to 2n-2 for the n-1 interior
 |      nodes. Last is root. Does not touch labels
 |      of tips.
 |
@@ -2535,7 +2535,7 @@ int BuildRandomRTopology (Tree *t, RandLong *seed)
     TreeNode    *p, *q, *r;
 
     nTips = t->nNodes - t->nIntNodes - 1;
-    
+
     for (i=0; i<t->nNodes; i++)
         {
         p = &t->nodes[i];
@@ -2594,7 +2594,7 @@ int BuildRandomRTopology (Tree *t, RandLong *seed)
 |   BuildRandomUTopology: Builds a random unrooted
 |      topology. Assumes that indices are set
 |      in t->nodes from 0 to n-1 for the n tips
-|      and from n to 2n-3 for the n-2 interior 
+|      and from n to 2n-3 for the n-2 interior
 |      nodes. Move the calculation root after
 |      this routine to get the right root.
 |
@@ -2605,14 +2605,14 @@ int BuildRandomUTopology (Tree *t, RandLong *seed)
     TreeNode    *p, *q, *r;
 
     nTips = t->nNodes - t->nIntNodes;
-    
+
     for (i=0; i<t->nNodes; i++)
         {
         p = &t->nodes[i];
         p->index = i;
         p->left = p->right = p->anc = NULL;
         }
-    
+
     /* connect the first three nodes, assuming 0 is calc root */
     q = &t->nodes[1];
     r = &t->nodes[2];
@@ -2645,7 +2645,7 @@ int BuildRandomUTopology (Tree *t, RandLong *seed)
         }
 
     t->root = &t->nodes[0];
-    
+
     /* get downpass */
     GetDownPass (t);
 
@@ -2667,7 +2667,7 @@ int CheckConstraints (Tree *t)
     int             a, i, j, k, nLongsNeeded;
     BitsLong        *constraintPartition, *mask;
     TreeNode        *p=NULL;
-        
+
     if (t->checkConstraints == NO)
         return (NO_ERROR);
 
@@ -2682,9 +2682,9 @@ int CheckConstraints (Tree *t)
     mask = constraintPartition + nLongsNeeded;
 
     /* set mask (needed to reset unused bits when flipping partitions) */
-    for (i=0; i<numLocalTaxa; i++) 
-      SetBit (i, mask); 
-    
+    for (i=0; i<numLocalTaxa; i++)
+      SetBit (i, mask);
+
     if (AllocateTreePartitions(t) == ERROR)
         {
         MrBayesPrint ("%s   Problems allocating tree partitions in CheckConstraints", spacer);
@@ -2720,7 +2720,7 @@ int CheckConstraints (Tree *t)
                 j++;
                 }
             }
-    
+
         if (j != 1)
             {
             MrBayesPrint ("%s   Tree has %d locks with id %d identifying constraint '%s'\n", spacer, j, a, constraintNames[a]);
@@ -2732,7 +2732,7 @@ int CheckConstraints (Tree *t)
         /* check that locked node is correct */
         for (i=0; i<nLongsNeeded; i++)
             {
-            if (p->partition[i] != constraintPartition[i]) 
+            if (p->partition[i] != constraintPartition[i])
                 {
                 MrBayesPrint ("%s   Lock %d is set for the wrong node [this is a bug]\n", spacer, a);
                 free (constraintPartition);
@@ -2741,7 +2741,7 @@ int CheckConstraints (Tree *t)
                 }
             }
         }
-    
+
     FreeTreePartitions (t);
     free (constraintPartition);
     return (NO_ERROR);
@@ -2758,7 +2758,7 @@ int CheckSetConstraints (Tree *t)
     int             a, i, j, k, nLongsNeeded, foundIt, numLocks;
     BitsLong        *constraintPartition, *mask;
     TreeNode        *p;
-        
+
     if (t->checkConstraints == NO)
         return (NO_ERROR);
 
@@ -2822,7 +2822,7 @@ int CheckSetConstraints (Tree *t)
         k = NumBits(constraintPartition, nLongsNeeded);
         if (k == 0 || k == 1)
             continue;
-            
+
         /* find the node that should be locked */
         foundIt = NO;
         for (i=0; i<t->nIntNodes; i++)
@@ -2848,7 +2848,7 @@ int CheckSetConstraints (Tree *t)
                 break;
                 }
             }
-    
+
         if (foundIt == NO)
             {
             MrBayesPrint ("%s   Tree breaks constraint '%s'\n", spacer, constraintNames[a]);
@@ -2865,7 +2865,7 @@ int CheckSetConstraints (Tree *t)
         free (constraintPartition);
         return (ERROR);
         }
-    
+
     /* exit */
     FreeTreePartitions(t);
     free (constraintPartition);
@@ -2896,7 +2896,7 @@ void ColorClusters (TreeNode *p, int *index)
 /* CopyPolyNodes: Copies everything except pointers and memoryIndex */
 void CopyPolyNodes (PolyNode *p, PolyNode *q, int nLongsNeeded)
 {
-    p->index                  = q->index; 
+    p->index                  = q->index;
     p->mark                   = q->mark;
     p->length                 = q->length;
     p->x                      = q->x;
@@ -3050,7 +3050,7 @@ int CopyToPolyTreeFromPolyTree (PolyTree *to, PolyTree *from)
     to->isRelaxed = from->isRelaxed;
     to->clockRate = from->clockRate;
     strcpy (to->name, from->name);
-  
+
     GetPolyDownPass (to);
 
     /* copy partitions */
@@ -3064,7 +3064,7 @@ int CopyToPolyTreeFromPolyTree (PolyTree *to, PolyTree *from)
 
     /* copy relaxed clock parameters */
     FreePolyTreeRelClockParams (to);
-    
+
     if (from->nBSets + from->nESets > 0)
         AllocatePolyTreeRelClockParams (to, from->nBSets, from->nESets);
 
@@ -3075,7 +3075,7 @@ int CopyToPolyTreeFromPolyTree (PolyTree *to, PolyTree *from)
         for (j=0; j<from->nNodes; j++)
             to->effectiveBrLen[i][j] = from->effectiveBrLen[i][j];
         }
-    
+
     for (i=0; i<to->nESets; i++)
         {
         to->eSetName[i] = (char *) SafeCalloc (strlen(from->eSetName[i])+2, sizeof(char));
@@ -3095,7 +3095,7 @@ int CopyToPolyTreeFromPolyTree (PolyTree *to, PolyTree *from)
                 }
             }
         }
-    
+
     /* copy population size parameters */
     FreePolyTreePopSizeParams(to);
     to->popSizeSet = from->popSizeSet;
@@ -3163,7 +3163,7 @@ int CopyToSpeciesTreeFromPolyTree (Tree *to, PolyTree *from)
         else
             q->anc = NULL;
 
-        if (p->left != NULL)    
+        if (p->left != NULL)
             q->left = to->nodes + p->left->index;
         else
             q->left = NULL;
@@ -3200,7 +3200,7 @@ int CopyToSpeciesTreeFromPolyTree (Tree *to, PolyTree *from)
 
     /* get downpass */
     GetDownPass (to);
-    
+
     /* a user tree might not come with node depths set */
     if (to->root->left->nodeDepth == 0.0)
         SetNodeDepths(to);
@@ -3209,7 +3209,7 @@ int CopyToSpeciesTreeFromPolyTree (Tree *to, PolyTree *from)
     if (to->bitsets)
         ResetTreePartitions(to);
 
-    return (NO_ERROR);      
+    return (NO_ERROR);
 }
 
 
@@ -3244,7 +3244,7 @@ int CopyToTreeFromPolyTree (Tree *to, PolyTree *from)
     assert (numLocalTaxa == from->nNodes - from->nIntNodes);
     assert (!(from->isRooted == YES && from->nNodes != 2*from->nIntNodes + 1));
     assert (!(from->isRooted == NO  && from->nNodes != 2*from->nIntNodes + 2));
-    
+
     /* make sure indices are set correctly for from nodes */
     for (i=0; i<from->nNodes; i++)
         {
@@ -3257,7 +3257,7 @@ int CopyToTreeFromPolyTree (Tree *to, PolyTree *from)
         assert (j != from->nNodes);
         assert (!(p->left == NULL && p->index >= numLocalTaxa));
         }
-                
+
     /* deal with root */
     if (to->isRooted == NO && from->isRooted == YES)
         Deroot(from);
@@ -3278,7 +3278,7 @@ int CopyToTreeFromPolyTree (Tree *to, PolyTree *from)
         else
             q->anc = NULL;
 
-        if (p->left != NULL)    
+        if (p->left != NULL)
             q->left = to->nodes + p->left->index;
         else
             q->left = NULL;
@@ -3332,7 +3332,7 @@ int CopyToTreeFromPolyTree (Tree *to, PolyTree *from)
 
     /* get downpass */
     GetDownPass (to);
-    
+
     /* set node depths */
     if (to->isRooted == YES && to->root->left->nodeDepth == 0.0)
         SetNodeDepths(to);
@@ -3343,7 +3343,7 @@ int CopyToTreeFromPolyTree (Tree *to, PolyTree *from)
 
     /* relaxed clock parameters are not stored in binary trees but in separate parameters */
 
-    return (NO_ERROR);      
+    return (NO_ERROR);
 }
 
 
@@ -3367,7 +3367,7 @@ int CopyToTreeFromTree (Tree *to, Tree *from)
 
     /* check that there is enough memory */
     assert (to->memNodes >= from->nNodes);
-    
+
     /* copy nodes (use index of p as memoryIndex for q) */
     for (i=0; i<from->nNodes; i++)
         {
@@ -3487,7 +3487,7 @@ void CopyTreeToSubtree (Tree *t, Tree *subtree)
                     }
                 }
             }
-        
+
         if (p->anc->marked == NO)
             {
             r = &subtree->nodes[j++];
@@ -3589,7 +3589,7 @@ int Deroot (PolyTree *pt)
         r->sib = q;
         q->sib = NULL;
         }
-    
+
     pt->root = p->left;
     pt->root->left->sib->sib = p->left->sib;
     p->left->sib->length += pt->root->length;
@@ -3614,13 +3614,13 @@ void EraseTreeList (TreeList *treeList)
 
     listElement = treeList->first;
     if (listElement != NULL)
-        do 
+        do
             {
             free (listElement->order);
             previous = listElement;
             listElement = listElement->next;
             free (previous);
-            } 
+            }
         while (listElement != NULL);
 
     treeList->first = treeList->last = NULL;
@@ -3652,7 +3652,7 @@ void UpdateTreeWithClockrate (Tree *t, MrBFlt clockRate)
                     p->length = p->anc->nodeDepth - p->nodeDepth;
                     }
                 else
-                    p->length = 0.0; //not a problem for root node. 
+                    p->length = 0.0; //not a problem for root node.
                 }
             }
         }
@@ -3671,7 +3671,7 @@ void UpdateTreeWithClockrate (Tree *t, MrBFlt clockRate)
 |
 |   findAllowedClockrate: Finds the range of clock rates allowed for the tree.
 |
-|   @param t        - tree to check (IN)  
+|   @param t        - tree to check (IN)
 |   @minClockRate   - adress where minimum allowed clock rate is stored (OUT)
 |   @maxClockRate   - adress where maximum allowed clock rate is stored (OUT)
 |
@@ -3718,7 +3718,7 @@ void findAllowedClockrate (Tree *t, MrBFlt *minClockRate, MrBFlt *maxClockRate)
 
 /* FreePolyTree: Free memory space for a polytomous tree (unrooted or rooted) */
 void FreePolyTree (PolyTree *pt)
-{   
+{
     if (pt != NULL)
         {
         FreePolyTreePartitions(pt);
@@ -3842,7 +3842,7 @@ void FreeTreePartitions (Tree *t)
 void GetDatedNodeDepths (TreeNode *p, MrBFlt *nodeDepths)
 {
     int index = 0;
-    
+
     assert (p != NULL);
 
     nodeDepths[index++] = p->nodeDepth;     /* include root node depth */
@@ -3863,7 +3863,7 @@ void GetDatedNodeDepths (TreeNode *p, MrBFlt *nodeDepths)
 void GetDatedNodes (TreeNode *p, TreeNode **datedNodes)
 {
     int     index = 0;
-    
+
     assert (p != NULL);
 
     if (p->left!= NULL)
@@ -3915,7 +3915,7 @@ void GetPolyAges (PolyTree *t)
     PolyNode    *p;
 
     GetPolyDepths (t); /* just to make sure... */
-    
+
     for (i=0; i<t->nNodes; i++)
         {
         p = t->allDownPass[i];
@@ -3964,7 +3964,7 @@ void GetPolyDownPass (PolyTree *t)
 void GetPolyNodeDownPass (PolyTree *t, PolyNode *p, int *i, int *j)
 {
     PolyNode    *q;
-    
+
     if (p->left != NULL)
         {
         for (q=p->left; q!=NULL; q=q->sib)
@@ -4030,11 +4030,11 @@ int InitBrlens (Tree *t, MrBFlt v)
 }
 
 
-/* 
+/*
 @param levUp        is the number of edges between the "node" and the most resent calibrated predecessor +1,
                     for the calibrated nodes it should be 1
 @param calibrUp     is the age of the most resent calibrated predecessor
-@return             age of the node 
+@return             age of the node
 */
 MrBFlt SetNodeCalibratedAge(TreeNode *node, unsigned levUp, MrBFlt calibrUp)
 {
@@ -4087,7 +4087,7 @@ int InitCalibratedBrlens (Tree *t, MrBFlt clockRate, RandLong *seed)
     printf ("Before initializing calibrated brlens\n");
     ShowNodes(t->root, 0, YES);
 #   endif
-    
+
     if (t->isRooted == NO)
         {
         MrBayesPrint ("%s   Tree is unrooted\n", spacer);
@@ -4211,7 +4211,7 @@ int InitCalibratedBrlens (Tree *t, MrBFlt clockRate, RandLong *seed)
                     }
                 }
             else
-                p->length = 0.0; //not a problem for root node. 
+                p->length = 0.0; //not a problem for root node.
             }
         }
 
@@ -4245,7 +4245,7 @@ int InitClockBrlens (Tree *t)
         MrBayesPrint ("%s   Tree is unrooted\n", spacer);
         return (ERROR);
         }
-    
+
     /* calculate maximum number of branch segments above root */
     for (i=0; i<t->nNodes; i++)
         {
@@ -4277,7 +4277,7 @@ int InitClockBrlens (Tree *t)
         else
             p->nodeDepth = 0.0;
         }
-        
+
     /* calculate branch lengths */
     for (i=0; i<t->nNodes; i++)
         {
@@ -4302,7 +4302,7 @@ int GetRandomEmbeddedSubtree (Tree *t, int nTerminals, RandLong *seed, int *nEmb
 
     /* Calculate number of leaves in subtree (number of terminals minus the root) */
     nLeaves = nTerminals - 1;
-    
+
     /* Initialize all flags */
     for (i=0; i<t->nNodes; i++)
         {
@@ -4311,7 +4311,7 @@ int GetRandomEmbeddedSubtree (Tree *t, int nTerminals, RandLong *seed, int *nEmb
         p->x = 0;
         p->y = 0;
         }
-    
+
     /* Allocate memory */
     nSubTrees = (int *) SafeCalloc (nTerminals * t->nNodes, sizeof(int));
     if (!nSubTrees)
@@ -4405,7 +4405,7 @@ int GetRandomEmbeddedSubtree (Tree *t, int nTerminals, RandLong *seed, int *nEmb
     return (NO_ERROR);
 }
 
-        
+
 /*-----------------------------------------------------------------------------
 |
 | IsCalibratedClockSatisfied: This routine SETS (not just checks as name suggested) calibrated clock tree nodes age, depth. based on branch lengthes
@@ -4425,7 +4425,7 @@ int IsCalibratedClockSatisfied (Tree *t,MrBFlt *minClockRate,MrBFlt *maxClockRat
 
     if (t->isRooted == NO)
         return (NO);
-        
+
     x = (MrBFlt *) SafeCalloc (2*t->nNodes, sizeof (MrBFlt));
     if (x == NULL)
         {
@@ -4465,7 +4465,7 @@ int IsCalibratedClockSatisfied (Tree *t,MrBFlt *minClockRate,MrBFlt *maxClockRat
         p->nodeDepth = p->anc->nodeDepth + p->length;
         }
 
-    /* find maximum height of tree */   
+    /* find maximum height of tree */
     maxHeight = -1.0;
     for (i=0; i<t->nNodes-1; i++)
         {
@@ -4478,7 +4478,7 @@ int IsCalibratedClockSatisfied (Tree *t,MrBFlt *minClockRate,MrBFlt *maxClockRat
                 }
             }
         }
-    
+
     /* calculate node depth from tip of tree */
     for (i=0; i<t->nNodes-1; i++)
         {
@@ -4501,7 +4501,7 @@ int IsCalibratedClockSatisfied (Tree *t,MrBFlt *minClockRate,MrBFlt *maxClockRat
             q = t->allDownPass[j];
             if (x[q->index] < 0.0 && y[q->index] < 0.0)
                 continue;
-            if (p->nodeDepth == q->nodeDepth) // becouse clock rate could be as low as possible we can not take approximate equality. 
+            if (p->nodeDepth == q->nodeDepth) // becouse clock rate could be as low as possible we can not take approximate equality.
                 {
                 /* same depth so they must share a possible age */
                 if ((x[p->index] != -1.0 && y[q->index] !=-1.0 && AreDoublesEqual (x[p->index], y[q->index], tol) == NO && x[p->index] > y[q->index]) ||
@@ -4574,9 +4574,9 @@ int IsCalibratedClockSatisfied (Tree *t,MrBFlt *minClockRate,MrBFlt *maxClockRat
         free (x);
         return (NO);
         }
-    
+
     /* Allow tollerance */
-    if (minRateConstrained == YES && maxRateConstrained == YES && AreDoublesEqual (minRate, maxRate, tol) == YES && minRate > maxRate) 
+    if (minRateConstrained == YES && maxRateConstrained == YES && AreDoublesEqual (minRate, maxRate, tol) == YES && minRate > maxRate)
         {
         maxRate = minRate;
         }
@@ -4624,7 +4624,7 @@ int IsCalibratedClockSatisfied (Tree *t,MrBFlt *minClockRate,MrBFlt *maxClockRat
                 ageToAdd = f;
             }
         }
-    
+
     /* add extra length if any */
     if (AreDoublesEqual (ageToAdd, 0.0, 0.00000001) == NO)
         {
@@ -4652,7 +4652,7 @@ int IsClockSatisfied (Tree *t, MrBFlt tol)
 
     if (t->isRooted == NO)
         return (NO);
-        
+
     foundFirstLength = NO;
     isClockLike = YES;
     for (i=0; i<t->nNodes; i++)
@@ -4867,7 +4867,7 @@ int LabelTree (Tree *t, char **taxonNames)
     nTaxa = t->nNodes - t->nIntNodes;
     if (t->isRooted == YES)
         nTaxa--;
-    
+
     /* erase previous labels, if any */
     for (i=0; i<t->nNodes; i++)
         {
@@ -4928,14 +4928,14 @@ void MarkDistance (TreeNode *p, int YESorNO, int dist, int *n)
 {
     if (p == NULL || p->anc == NULL)
         return;
-    
+
     p->marked = YES;
     if (YESorNO == YES) // in root part
         p->x = p->anc->x -1;
     else               // in crown part
         p->x = p->anc->x +1;
     (*n)++;
-        
+
     if (p->isLocked == NO && abs(p->x) < dist)
         {
         MarkDistance (p->left, YESorNO, dist, n);
@@ -4965,7 +4965,7 @@ void MarkUnconstrained (TreeNode *p)
 
 /*-------------------------------------------------------------------------------------------
 |
-|   MoveCalculationRoot: This routine will move the calculation root to the terminal with 
+|   MoveCalculationRoot: This routine will move the calculation root to the terminal with
 |      index outgroup
 |
 ---------------------------------------------------------------------------------------------*/
@@ -4973,7 +4973,7 @@ int MoveCalculationRoot (Tree *t, int outgroup)
 {
     int             i;
     TreeNode        *p, *q, *r;
-    
+
     if (t->isRooted == YES || outgroup < 0 || outgroup > t->nNodes - t->nIntNodes - (t->isRooted == YES ? 1 : 0))
         {
         MrBayesPrint ("%s   Problem moving calculation root\n", spacer);
@@ -5043,7 +5043,7 @@ int MoveCalculationRoot (Tree *t, int outgroup)
 
 /*-------------------------------------------------------------------------------------------
 |
-|   MovePolyCalculationRoot: This routine will move the calculation root to the terminal with 
+|   MovePolyCalculationRoot: This routine will move the calculation root to the terminal with
 |      index outgroup and place it as the right-most descendant of the root node
 |
 ---------------------------------------------------------------------------------------------*/
@@ -5071,7 +5071,7 @@ int MovePolyCalculationRoot (PolyTree *t, int outgroup)
     /* check if rerooting actually necessary */
     if (t->root->left->sib->sib->index == outgroup)
         return (NO_ERROR);
-    
+
     /* mark the path to the new calculation root */
     for (i=0; i<t->nNodes; i++)
         {
@@ -5129,7 +5129,7 @@ int MovePolyCalculationRoot (PolyTree *t, int outgroup)
         q->length = 0.0;
         p = q;
         }
-    
+
     /* p is now the new root */
     t->root = p;
 
@@ -5160,8 +5160,8 @@ int MovePolyCalculationRoot (PolyTree *t, int outgroup)
 }
 
 
-/* 
-@return the number of levels for the tree rooted at the "node" 
+/*
+@return the number of levels for the tree rooted at the "node"
 */
 int NrSubTreeLevels(TreeNode *node)
 {
@@ -5204,7 +5204,7 @@ int NumConstrainedTips (TreeNode *p)
 int NConstrainedTips (TreeNode *p)
 {
     int     i=0;
-    
+
     if (p!=NULL)
         {
         if (p->left == NULL || p->isLocked == YES)
@@ -5241,7 +5241,7 @@ int NumDatedTips (TreeNode *p)
 int NDatedTips (TreeNode *p)
 {
     int     i=0;
-    
+
     assert (p!=NULL);
 
     if (p->left == NULL || p->isDated == YES)
@@ -5407,7 +5407,7 @@ void PrintPolyNodes (PolyTree *pt)
             printf ("\n");
             }
         }
-    
+
     if (pt->nESets > 0)
         {
         for (i=0; i<pt->nESets; i++)
@@ -5461,7 +5461,7 @@ void PrintTranslateBlock (FILE *fp, Tree *t)
 
 
 /**
-Update relaxed clock parameter of the branch of a node with index "b" after node with index "a" is removed. 
+Update relaxed clock parameter of the branch of a node with index "b" after node with index "a" is removed.
 i.e. make branch of node with index "b" be a concatenation of its original branch and the branch of node with index "a"
 Relaxed clock parameter of node with index "a" become invalid in the process.
 Note: For Non-clock models the routine has no effect.
@@ -5560,7 +5560,7 @@ int PrunePolyTree (PolyTree *pt)
         if (p->left == NULL && taxaInfo[index].isDeleted == YES)
             numDeleted++;
         }
-        
+
     if (numDeleted == 0)
         {
         /* nothing to do */
@@ -5623,7 +5623,7 @@ int PrunePolyTree (PolyTree *pt)
                     strcpy(qa->label, q->label);
                     qa->left = NULL;
                     /* To make sure that q is not treated as the representer of the tip it represented before. i.e. make  condition if (p->left != NULL) true */
-                    q->left = (struct pNode*)1; 
+                    q->left = (struct pNode*)1;
                     }
                 else
                     {
@@ -5669,7 +5669,7 @@ int PrunePolyTree (PolyTree *pt)
             }
         }
 
-#if 0 
+#if 0
     /* place unused space at the end of pt->nodes array. If activated this code p->x has to be set to non 0 value for all p that are deleted. */
     for (i=0; i<pt->nNodes; i++)
         {
@@ -5707,7 +5707,7 @@ int PrunePolyTree (PolyTree *pt)
     /* correct number of nodes */
     pt->nNodes -= (numTermPruned + numIntPruned);
     pt->nIntNodes -= numIntPruned;
-    
+
     /* get downpass; note that the deletion procedure does not change the root in rooted case */
     i=j=0;
     GetPolyNodeDownPass (pt, pt->root, &i, &j);
@@ -5727,7 +5727,7 @@ int RandPerturb (Tree *t, int nPert, RandLong *seed)
 {
     int         i, whichNode;
     TreeNode    *p, *q, *a, *b, *c;
-    
+
     if (t->nConstraints >= t->nIntNodes)
         {
         MrBayesPrint ("%s   User tree cannot be perturbed because all nodes are locked\n", spacer);
@@ -5741,15 +5741,15 @@ int RandPerturb (Tree *t, int nPert, RandLong *seed)
             whichNode = (int)(RandomNumber(seed) * (t->nIntNodes - 1));
             p = t->intDownPass[whichNode];
             } while (p->isLocked == YES);
-        
+
         q = p->anc;
         a  = p->left;
         b  = p->right;
         if (q->left == p)
             c  = q->right;
-        else    
+        else
             c  = q->left;
-        
+
         if (RandomNumber(seed) < 0.5)
             {
             /* swap b and c */
@@ -5780,7 +5780,7 @@ int RandPerturb (Tree *t, int nPert, RandLong *seed)
         else if (t->isClock == YES)
             InitClockBrlens (t);
         }
-    
+
     GetDownPass (t);
 
     if (t->checkConstraints == YES && CheckConstraints (t) == NO_ERROR)
@@ -5794,9 +5794,9 @@ int RandPerturb (Tree *t, int nPert, RandLong *seed)
 
 
 /*
-|       Reorder array of nodes "nodeArray" such that first nodes in it could be paired with "w" to create imediat common ancestor and this ancesor node would not vialate any constraint.  
-|       
-| @param w                      Reference node as described 
+|       Reorder array of nodes "nodeArray" such that first nodes in it could be paired with "w" to create imediat common ancestor and this ancesor node would not vialate any constraint.
+|
+| @param w                      Reference node as described
 | @param nodeArray              A set of node to order as described
 | @param activeConstraints      Array containing indeces of active constraints in the set of defined constraints
 | @param nLongsNeeded           Length of partition information (in BitsLong) in a node and constraint deffinition.
@@ -5850,14 +5850,14 @@ int ConstraintAllowedSet(PolyNode *w, PolyNode **nodeArray, int nodeArraySize, i
                     }
                 }
             }/*end if PARTIAL*/
-        else 
+        else
             {
             assert (definedConstraintsType[k] == NEGATIVE);
             if (isRooted == YES || IsBitSet(localOutGroup, definedConstraintPruned[k])==NO)
                 constraintPartition=definedConstraintPruned;
             else
                 constraintPartition=definedConstraintTwoPruned;
-            
+
             if (IsSectionEmpty(constraintPartition[k], w->partition, nLongsNeeded)==YES)
                 continue;
 
@@ -5880,10 +5880,10 @@ int ConstraintAllowedSet(PolyNode *w, PolyNode **nodeArray, int nodeArraySize, i
 
 
 /*
-|               Check if "partition" violate any constraint.  
-|       
-| @param partiton               Partition to check 
-| @param activeConstraints      Array containing indeces of active constraints in the set of defined constraints  
+|               Check if "partition" violate any constraint.
+|
+| @param partiton               Partition to check
+| @param activeConstraints      Array containing indeces of active constraints in the set of defined constraints
 | @param nLongsNeeded           Length of partition information (in BitsLong) in a node and constraint deffinition
 | @param isRooted               Do constraints apply to rootet tree YES or NO
 |
@@ -5907,7 +5907,7 @@ int ViolatedConstraint(BitsLong *partition, int *activeConstraints, int activeCo
                 !(isRooted == NO && IsPartNested(definedConstraintTwoPruned[k], partition, nLongsNeeded) == YES))
                 return j;
             }/*end if PARTIAL*/
-        else 
+        else
             {
             assert (definedConstraintsType[k] == NEGATIVE);
             if (isRooted == YES || IsBitSet(localOutGroup, definedConstraintPruned[k])==NO)
@@ -5925,7 +5925,7 @@ int ViolatedConstraint(BitsLong *partition, int *activeConstraints, int activeCo
 
 
 /*
-|         Remove from activeConstraints references to constraints that become satisfied if PolyNode "w" exist, i.e. they do not need to be checked furter thus become not active  
+|         Remove from activeConstraints references to constraints that become satisfied if PolyNode "w" exist, i.e. they do not need to be checked furter thus become not active
 |
 | @param activeConstraints      Array containing indeces of active constraints in the set of defined constraints
 | @param nLongsNeeded           Length of partition information (in BitsLong) in a node and constraint deffinition.
@@ -5954,14 +5954,14 @@ int PruneActiveConstraints (PolyNode *w, int *activeConstraints, int activeConst
                 j--;
                 }
             }/*end if PARTIAL*/
-        else 
+        else
             {
             assert (definedConstraintsType[k] == NEGATIVE);
             if (isRooted == YES || IsBitSet(localOutGroup, definedConstraintPruned[k])==NO)
                 constraintPartition=definedConstraintPruned;
             else
                 constraintPartition=definedConstraintTwoPruned;
-            
+
             if (IsPartNested(constraintPartition[k], w->partition, nLongsNeeded)==NO && IsSectionEmpty(constraintPartition[k], w->partition, nLongsNeeded)==NO)
                 {
                 //tmp = activeConstraints[j];
@@ -5980,9 +5980,9 @@ int PruneActiveConstraints (PolyNode *w, int *activeConstraints, int activeConst
 |
 |           RandResolve: Randomly resolve a polytomous tree
 |
-| @param    tt is a tree which contains information about applicable constraints. If it is set to NULL then no constraints will be used. 
+| @param    tt is a tree which contains information about applicable constraints. If it is set to NULL then no constraints will be used.
 |           If t!=NULL then partitions of nodes of polytree should be allocated for example by AllocatePolyTreePartitions (t);
-| @return   NO_ERROR on succes, ABORT if could not resolve a tree without vialating some consraint, ERROR if any other error occur 
+| @return   NO_ERROR on succes, ABORT if could not resolve a tree without vialating some consraint, ERROR if any other error occur
 ---------------------------------------------------------------------*/
 int RandResolve (Tree *tt, PolyTree *t, RandLong *seed, int destinationIsRooted)
 {
@@ -6135,7 +6135,7 @@ int RandResolve (Tree *tt, PolyTree *t, RandLong *seed, int destinationIsRooted)
 void ResetTreeNode (TreeNode *p)
 {
     /* do not change memoryIndex; that is set once and for all when tree is allocated */
-    p->index                  = 0; 
+    p->index                  = 0;
     p->upDateCl               = NO;
     p->upDateTi               = NO;
     p->marked                 = NO;
@@ -6228,7 +6228,7 @@ void ResetPolyTreePartitions (PolyTree *pt)
     /* get some handy numbers */
     numTaxa = pt->memNodes/2;
     nLongsNeeded = (numTaxa - 1) / nBitsInALong + 1;
-    
+
     /* reset bits describing partitions */
     for (i=0; i<pt->memNodes*nLongsNeeded; i++)
         {
@@ -6240,7 +6240,7 @@ void ResetPolyTreePartitions (PolyTree *pt)
         {
         assert (pt->allDownPass != NULL && pt->allDownPass[i] != NULL);
         assert (pt->allDownPass[i]->partition != NULL);
-        
+
         pp = pt->allDownPass[i];
         if (pp->left == NULL)
             {
@@ -6270,7 +6270,7 @@ int ResetRootHeight (Tree *t, MrBFlt rootHeight)
 
     if (t->isClock == NO)
         return ERROR;
-    
+
     /* make sure node depths are set */
     for (i=0; i<t->nNodes-1; i++)
         {
@@ -6309,7 +6309,7 @@ int ResetRootHeight (Tree *t, MrBFlt rootHeight)
 
 /*----------------------------------------------
 |
-|   ResetTipIndices: reset tip indices to be from 
+|   ResetTipIndices: reset tip indices to be from
 |      0 to number of included taxa, in same order
 |      as in the original taxon set.
 |
@@ -6350,7 +6350,7 @@ void ResetTipIndices(PolyTree *pt)
 
 /*----------------------------------------------
 |
-|   ResetTopology: rebuild the tree t to fit the 
+|   ResetTopology: rebuild the tree t to fit the
 |      Newick string s. Everyting except topology
 |      is left in the same state in t.
 |
@@ -6360,7 +6360,7 @@ int ResetTopology (Tree *t, char *s)
     TreeNode    *p, *q;
     int         i, j, k, inLength;
     char        temp[30];
-    
+
     /* set all pointers to NULL */
     for (i=0; i<t->memNodes; i++)
         {
@@ -6473,7 +6473,7 @@ int ResetBrlensFromTree (Tree *tree, Tree *vTree)
 
     if (tree->isRooted != vTree->isRooted)
         return (ERROR);
-    
+
     if (AreTopologiesSame (tree, vTree) == NO)
         return (ERROR);
 
@@ -6523,7 +6523,7 @@ int ResetBrlensFromTree (Tree *tree, Tree *vTree)
         for (i=tree->nNodes-3; i>=0; i--)
             {
             p = tree->allDownPass[i];
-            if (p->left==NULL && p->calibration==NULL) 
+            if (p->left==NULL && p->calibration==NULL)
                 continue;    /* leave at 0.0 */
             p->nodeDepth = p->anc->nodeDepth - p->length;
             }
@@ -6531,7 +6531,7 @@ int ResetBrlensFromTree (Tree *tree, Tree *vTree)
 
     FreeTreePartitions(tree);
     FreeTreePartitions(vTree);
-    
+
     return (NO_ERROR);
 }
 
@@ -6573,7 +6573,7 @@ int ResetTopologyFromTree (Tree *tree, Tree *top)
     tree->isRooted = top->isRooted;
     tree->nNodes = top->nNodes;
     tree->nIntNodes = top->nIntNodes;
-    
+
     /* set all pointers to NULL */
     for (i=0; i<tree->nNodes; i++)
         {
@@ -6585,7 +6585,7 @@ int ResetTopologyFromTree (Tree *tree, Tree *top)
     for (i=0; i<top->nIntNodes; i++)
         {
         p1 = top->intDownPass[i];
-        
+
         k = p1->index;
         for (j=0; j<tree->nNodes; j++)
             if (tree->nodes[j].index == k)
@@ -6641,7 +6641,7 @@ int ResetTopologyFromPolyTree (Tree *tree, PolyTree *top)
 
     if (tree->isRooted != top->isRooted)
         return (ERROR);
-    
+
     /* set all pointers to NULL */
     for (i=0; i<tree->nNodes; i++)
         {
@@ -6653,7 +6653,7 @@ int ResetTopologyFromPolyTree (Tree *tree, PolyTree *top)
     for (i=0; i<top->nIntNodes; i++)
         {
         p1 = top->intDownPass[i];
-        
+
         k = p1->index;
         for (j=0; j<tree->nNodes; j++)
             if (tree->nodes[j].index == k)
@@ -6741,13 +6741,13 @@ void ResetTreePartitions (Tree *t)
     /* get some handy numbers */
     numTaxa = t->nNodes - t->nIntNodes - (t->isRooted == YES ? 1 : 0);
     nLongsNeeded = (numTaxa - 1) / nBitsInALong + 1;
-    
+
     /* reset bits describing partitions */
     for (i=0; i<t->nNodes; i++)
         {
         assert (t->allDownPass != NULL && t->allDownPass[i] != NULL);
         assert (t->allDownPass[i]->partition != NULL);
-        
+
         p = t->allDownPass[i];
         for (j=0; j<nLongsNeeded; j++)
             p->partition[j] = 0;
@@ -6780,9 +6780,9 @@ int RetrieveRTopology (Tree *t, int *order)
 {
     int         i, numTaxa;
     TreeNode    *p, *q, *r;
-    
+
     numTaxa = t->nNodes - t->nIntNodes - 1;
-    
+
     /* sort the tips in the t->allDownPass array */
     p = t->nodes;
     for (i=0; i<t->nNodes; i++, p++)
@@ -6846,7 +6846,7 @@ int RetrieveRTree (Tree *t, int *order, MrBFlt *brlens)
     TreeNode    *p, *q, *r;
 
     numTaxa = t->nNodes - t->nIntNodes - 1;
-    
+
     /* sort the tips in the t->allDownPass array */
     p = t->nodes;
     for (i=0; i<t->nNodes; i++, p++)
@@ -6905,7 +6905,7 @@ int RetrieveRTree (Tree *t, int *order, MrBFlt *brlens)
 
     /* set the node depths */
     SetNodeDepths (t);
-    
+
     return (NO_ERROR);
 }
 
@@ -6926,7 +6926,7 @@ int RetrieveRTreeWithIndices (Tree *t, int *order, MrBFlt *brlens)
     extern void ShowNodes (TreeNode *, int, int);
 
     numTaxa = t->nNodes - t->nIntNodes - 1;
-    
+
     /* sort the tips in the t->allDownPass array */
     p = t->nodes;
     for (i=0; i<t->nNodes; i++, p++)
@@ -6991,7 +6991,7 @@ int RetrieveRTreeWithIndices (Tree *t, int *order, MrBFlt *brlens)
 
     /* set the node depths */
     SetNodeDepths (t);
-    
+
     return (NO_ERROR);
 }
 
@@ -7008,7 +7008,7 @@ int RetrieveUTopology (Tree *t, int *order)
 {
     int         i, numTips;
     TreeNode    *p, *q, *r;
-    
+
     /* preliminaries */
     numTips = t->nNodes - t->nIntNodes;
     for (i=0; i<t->nNodes; i++)
@@ -7053,7 +7053,7 @@ int RetrieveUTopology (Tree *t, int *order)
 
     /* get downpass */
     GetDownPass (t);
-    
+
     /* relabel interior nodes (root is correctly labeled already) */
     for (i=0; i<t->nIntNodes; i++)
         t->intDownPass[i]->index = i+numTips;
@@ -7074,12 +7074,12 @@ int RetrieveUTree (Tree *t, int *order, MrBFlt *brlens)
 {
     int         i, numTips;
     TreeNode    *p, *q, *r;
-    
+
     /* preliminaries */
     numTips = t->nNodes - t->nIntNodes;
     for (i=0; i<t->nNodes; i++)
         t->nodes[i].left = t->nodes[i].right = t->nodes[i].anc = NULL;
-    
+
     /* sort the tips in the t->allDownPass array */
     p = t->nodes;
     for (i=0; i<t->nNodes; i++, p++)
@@ -7179,7 +7179,7 @@ void SetNodeDepths (Tree *t)
             {
             d1 = p->left->nodeDepth  + p->left->length;
             d2 = p->right->nodeDepth + p->right->length;
-            //assert (!(t->isCalibrated == NO && AreDoublesEqual(d1,d2,0.00001)==NO)); // may not work if we set startval topology of strict clock tree by non clock tree. 
+            //assert (!(t->isCalibrated == NO && AreDoublesEqual(d1,d2,0.00001)==NO)); // may not work if we set startval topology of strict clock tree by non clock tree.
             if (d1 > d2)
                 p->nodeDepth = d1;
             else
@@ -7288,12 +7288,12 @@ int ShowPolyNodes (PolyTree *pt)
                 printf ("%4d ", p->sib->index);
             else
                 printf ("null ");
-                
+
             if (p->anc != NULL)
                 printf ("%4d)", p->anc->index);
             else
                 printf ("null)");
-            
+
             if (p->isLocked == YES)
                 printf ("-- locked -- ");
             else
@@ -7316,7 +7316,7 @@ int ShowTree (Tree *t)
     int             i, j, k, x, nLines, nLevels, levelDepth, from, to;
     char            treeLine[SCREENWIDTH2], labelLine[100];
     TreeNode        *p;
-    
+
     /* get coordinates */
     x = 0;
     nLines = 0;
@@ -7380,7 +7380,7 @@ int ShowTree (Tree *t)
                             to = SCREENWIDTH-1;
                         if (to >= SCREENWIDTH)
                             to = SCREENWIDTH-1;
-                            
+
                         for (k=from; k<to; k++)
                             treeLine[k] = '-';
                         if (p->anc->left == p)
@@ -7466,7 +7466,7 @@ int ShowTree (Tree *t)
         labelLine[19] = '\0';
         MrBayesPrint ("   %s %s\n", treeLine, labelLine);
         }
-    
+
 #   if defined (DEBUG_CONSTRAINTS)
     for (i=0; i<t->nNodes; i++)
         printf ("%d -- %s\n", t->allDownPass[i]->index + 1, t->allDownPass[i]->isLocked == YES ? "locked" : "free");
@@ -7486,7 +7486,7 @@ int StoreRPolyTopology (PolyTree *t, int *order)
 {
     int         i, numTaxa;
     PolyNode    *p, *q;
-    
+
     /* find number of taxa */
     numTaxa = t->nNodes - t->nIntNodes;
 
@@ -7580,7 +7580,7 @@ int StoreRPolyTree (PolyTree *t, int *order, MrBFlt *brlens)
 {
     int         i, j, numTaxa;
     PolyNode    *p, *q;
-    
+
     /* find number of taxa */
     numTaxa = t->nNodes - t->nIntNodes;
 
@@ -7685,7 +7685,7 @@ int StoreRTopology (Tree *t, int *order)
 {
     int         i, numTaxa;
     TreeNode    *p, *q;
-    
+
     /* find number of taxa */
     numTaxa = t->nNodes - t->nIntNodes - 1;
 
@@ -8325,7 +8325,7 @@ int StoreUTree (Tree *t, int *order, MrBFlt *brlens)
         }
 
     /* store the final three branch lengths */
-    /* we need to check the rotation of the tree to 
+    /* we need to check the rotation of the tree to
            store the brlens in the right order (after node index) */
     p = t->root->left;
     if (p->right->index == 2)
@@ -8420,7 +8420,7 @@ void WriteEventTree (TreeNode *p, int chain, Param *param)
             printf (",");
             WriteEventTree(p->right, chain, param);
             if (p->anc != NULL)
-                {               
+                {
                 if (p->anc->anc != NULL)
                     {
                     printf ("):%s", MbPrintNum(p->length));
@@ -8521,9 +8521,9 @@ void WriteEventTreeToPrintString (TreeNode *p, int chain, Param *param, int prin
                 AddToPrintString ("(");
             WriteEventTreeToPrintString (p->left, chain, param, printAll);
             AddToPrintString (",");
-            WriteEventTreeToPrintString (p->right, chain, param, printAll); 
+            WriteEventTreeToPrintString (p->right, chain, param, printAll);
             if (p->anc != NULL)
-                {               
+                {
                 if (p->anc->anc != NULL)
                     {
                     SafeSprintf (&tempStr, &tempStrSize, "):%s", MbPrintNum(p->length));
@@ -8600,7 +8600,7 @@ void WriteEvolTree (TreeNode *p, int chain, Param *param)
             printf (",");
             WriteEvolTree(p->right, chain, param);
             if (p->anc != NULL)
-                {               
+                {
                 if (p->anc->anc != NULL)
                     printf ("):%s", MbPrintNum(length[p->index]));
                 else
@@ -8730,7 +8730,7 @@ void WriteTopologyToFile (FILE *fp, TreeNode *p, int isRooted)
             WriteTopologyToFile (fp, p->left, isRooted);
             if (p->anc != NULL)
                 fprintf (fp, ",");
-            WriteTopologyToFile (fp, p->right, isRooted);   
+            WriteTopologyToFile (fp, p->right, isRooted);
             if (p->anc != NULL)
                 {
                 if (p->anc->anc == NULL && isRooted == NO)
@@ -8757,7 +8757,7 @@ void AddTwoMatrices (int dim, MrBFlt **a, MrBFlt **b, MrBFlt **result)
 
     for (row=0; row<dim; row++)
         {
-        for (col=0; col<dim; col++) 
+        for (col=0; col<dim; col++)
             {
             result[row][col] = a[row][col] + b[row][col];
             }
@@ -8778,22 +8778,22 @@ MrBComplex **AllocateSquareComplexMatrix (int dim)
     MrBComplex     **m;
 
     m = (MrBComplex **) SafeMalloc ((size_t)dim * sizeof(MrBComplex*));
-    if (!m) 
+    if (!m)
         {
         MrBayesPrint ("%s   Error: Problem allocating a square complex matrix.\n", spacer);
         exit (0);
         }
     m[0]=(MrBComplex *) SafeMalloc ((size_t)dim * (size_t)dim *sizeof(MrBComplex));
-    if (!m[0]) 
+    if (!m[0])
         {
         MrBayesPrint ("%s   Error: Problem allocating a square complex matrix.\n", spacer);
         exit (0);
         }
-    for (i=1;i<dim;i++) 
+    for (i=1;i<dim;i++)
         {
         m[i] = m[i-1] + dim;
         }
-        
+
     return (m);
 }
 
@@ -8809,7 +8809,7 @@ MrBFlt **AllocateSquareDoubleMatrix (int dim)
 {
     int         i;
     MrBFlt      **m;
-    
+
     m = (MrBFlt **) SafeMalloc ((size_t)dim * sizeof(MrBFlt*));
     if (!m)
         {
@@ -8841,7 +8841,7 @@ MrBFlt **AllocateSquareDoubleMatrix (int dim)
 int **AllocateSquareIntegerMatrix (int dim)
 {
     int     i, **m;
-    
+
     m = (int **) SafeMalloc ((size_t)dim * sizeof(int*));
     if (!m)
         {
@@ -8868,8 +8868,8 @@ int **AllocateSquareIntegerMatrix (int dim)
 |   AutodGamma
 |
 |   Auto-discrete-gamma distribution of rates over sites, K equal-probable
-|   categories, with the mean for each category used.         
-|   This routine calculates M[], using rho and K (numGammaCats)     
+|   categories, with the mean for each category used.
+|   This routine calculates M[], using rho and K (numGammaCats)
 |
 ---------------------------------------------------------------------------------*/
 int AutodGamma (MrBFlt *M, MrBFlt rho, int K)
@@ -8877,31 +8877,31 @@ int AutodGamma (MrBFlt *M, MrBFlt rho, int K)
     int         i, j, i1, i2;
     MrBFlt      point[MAX_RATE_CATS], x, y, large = 20.0, sum;
 
-    for (i=0; i<K-1; i++) 
+    for (i=0; i<K-1; i++)
         point[i] = PointNormal ((i + 1.0) / K);
-    for (i=0; i<K; i++) 
+    for (i=0; i<K; i++)
         {
-        for (j=0; j<K; j++) 
+        for (j=0; j<K; j++)
             {
             x = (i < K-1 ? point[i]:large);
             y = (j < K-1 ? point[j]:large);
             M[i * K + j] = CdfBinormal (x, y, rho);
             }
         }
-    for (i1=0; i1<2*K-1; i1++) 
+    for (i1=0; i1<2*K-1; i1++)
         {
-        for (i2=0; i2<K*K; i2++) 
+        for (i2=0; i2<K*K; i2++)
             {
-            i = i2 / K; 
+            i = i2 / K;
             j = i2 % K;
             if (AreDoublesEqual(i+j, 2*(K-1.0)-i1, ETA)==NO)
                 continue;
             y = 0;
-            if (i > 0) 
+            if (i > 0)
                 y -= M[(i-1)*K+j];
-            if (j > 0) 
+            if (j > 0)
                 y -= M[i*K+(j-1)];
-            if (i > 0 && j > 0) 
+            if (i > 0 && j > 0)
                 y += M[(i-1)*K+(j-1)];
             M[i*K+j] = (M[i*K+j] + y) * K;
             }
@@ -8918,7 +8918,7 @@ int AutodGamma (MrBFlt *M, MrBFlt rho, int K)
         for (j=0; j<K; j++)
             M[i*K+j] /= sum;
         }
-    
+
 //    MrBayesPrint ("rho = %lf\n", rho);
 //    for (i=0; i<K; i++)
 //        {
@@ -8926,7 +8926,7 @@ int AutodGamma (MrBFlt *M, MrBFlt rho, int K)
 //            MrBayesPrint ("%lf ", M[i*K + j]);
 //        MrBayesPrint ("\n");
 //        }
-    
+
     return (NO_ERROR);
 }
 
@@ -8942,7 +8942,7 @@ void BackSubstitutionRow (int dim, MrBFlt **u, MrBFlt *b)
     MrBFlt          dotProduct;
 
     b[dim-1] /= u[dim-1][dim-1];
-    for (i=dim-2; i>=0; i--) 
+    for (i=dim-2; i>=0; i--)
         {
         dotProduct = 0.0;
         for (j=i+1; j<dim; j++)
@@ -8998,7 +8998,7 @@ void BackSubstitutionRow (int dim, MrBFlt **u, MrBFlt *b)
 |   by Wilkinson and Reinsch, Springer-Verlag.
 |
 |   This function was converted from FORTRAN by D. L. Swofford.
-|   
+|
 ---------------------------------------------------------------------------------*/
 void Balanc (int dim, MrBFlt **a, int *low, int *high, MrBFlt *scale)
 {
@@ -9008,7 +9008,7 @@ void Balanc (int dim, MrBFlt **a, int *low, int *high, MrBFlt *scale)
     b2 = FLT_RADIX * FLT_RADIX;
     k = 0;
     l = dim - 1;
-    
+
     for (j=l; j>=0; j--)
         {
         for (i=0; i<=l; i++)
@@ -9019,7 +9019,7 @@ void Balanc (int dim, MrBFlt **a, int *low, int *high, MrBFlt *scale)
                     goto next_j1;
                 }
             }
-            
+
         /* bug that DLS caught */
         /*m = l;
         Exchange(j, k, l, m, dim, a, scale);
@@ -9054,7 +9054,7 @@ void Balanc (int dim, MrBFlt **a, int *low, int *high, MrBFlt *scale)
 
     for (i=k; i<=l; i++)
         scale[i] = 1.0;
-    
+
     do  {
         noconv = FALSE;
         for (i=k; i<=l; i++)
@@ -9089,21 +9089,21 @@ void Balanc (int dim, MrBFlt **a, int *low, int *high, MrBFlt *scale)
                     {
                     g = 1.0 / f;
                     scale[i] *= f;
-                    noconv = TRUE;              
+                    noconv = TRUE;
                     for (j=k; j<dim; j++)
                         a[i][j] *= g;
                     for (j=0; j<=l; j++)
                         a[j][i] *= f;
                     }
                 }
-            }   
+            }
         }
         while (noconv);
     leave:
         *low = k;
         *high = l;
-    
-#   if 0 
+
+#   if 0
 /* begin f2c version of code:
    balanc.f -- translated by f2c (version 19971204) */
 int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
@@ -9135,15 +9135,15 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
     k = 1;
     l = *n;
     goto L100;
-    
+
     /* .......... in-line procedure for row and column exchange .......... */
     L20:
     scale[m] = (MrBFlt) j;
-    if (j == m) 
+    if (j == m)
         goto L50;
 
     i__1 = l;
-    for (i__ = 1; i__ <= i__1; ++i__) 
+    for (i__ = 1; i__ <= i__1; ++i__)
         {
         f = a[i__ + j * a_dim1];
         a[i__ + j * a_dim1] = a[i__ + m * a_dim1];
@@ -9152,7 +9152,7 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
         }
 
     i__1 = *n;
-    for (i__ = k; i__ <= i__1; ++i__) 
+    for (i__ = k; i__ <= i__1; ++i__)
         {
         f = a[j + i__ * a_dim1];
         a[j + i__ * a_dim1] = a[m + i__ * a_dim1];
@@ -9161,32 +9161,32 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
         }
 
     L50:
-    switch (iexc) 
+    switch (iexc)
         {
-        case 1:  
+        case 1:
             goto L80;
-        case 2:  
+        case 2:
             goto L130;
         }
-        
+
     /* .......... search for rows isolating an eigenvalue and push them down .......... */
     L80:
-    if (l == 1) 
+    if (l == 1)
         goto L280;
     --l;
-    
+
     /* .......... for j=l step -1 until 1 do -- .......... */
     L100:
     i__1 = l;
-    for (jj = 1; jj <= i__1; ++jj) 
+    for (jj = 1; jj <= i__1; ++jj)
         {
         j = l + 1 - jj;
         i__2 = l;
-        for (i__ = 1; i__ <= i__2; ++i__) 
+        for (i__ = 1; i__ <= i__2; ++i__)
             {
-            if (i__ == j) 
+            if (i__ == j)
                 goto L110;
-            if (a[j + i__ * a_dim1] != 0.) 
+            if (a[j + i__ * a_dim1] != 0.)
                 goto L120;
             L110:
             ;
@@ -9205,14 +9205,14 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
 
     L140:
     i__1 = l;
-    for (j = k; j <= i__1; ++j) 
+    for (j = k; j <= i__1; ++j)
         {
         i__2 = l;
-        for (i__ = k; i__ <= i__2; ++i__) 
+        for (i__ = k; i__ <= i__2; ++i__)
             {
-            if (i__ == j) 
+            if (i__ == j)
                 goto L150;
-            if (a[i__ + j * a_dim1] != 0.) 
+            if (a[i__ + j * a_dim1] != 0.)
                 goto L170;
             L150:
             ;
@@ -9223,10 +9223,10 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
         L170:
         ;
         }
-        
+
     /* .......... now balance the submatrix in rows k to l .......... */
     i__1 = l;
-    for (i__ = k; i__ <= i__1; ++i__) 
+    for (i__ = k; i__ <= i__1; ++i__)
         {
         /* L180: */
         scale[i__] = 1.0;
@@ -9236,29 +9236,29 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
     noconv = FALSE;
 
     i__1 = l;
-    for (i__ = k; i__ <= i__1; ++i__) 
+    for (i__ = k; i__ <= i__1; ++i__)
         {
         c__ = 0.0;
         r__ = 0.0;
         i__2 = l;
-        for (j = k; j <= i__2; ++j) 
+        for (j = k; j <= i__2; ++j)
             {
-            if (j == i__) 
+            if (j == i__)
                 goto L200;
             c__ += (d__1 = a[j + i__ * a_dim1], abs(d__1));
             r__ += (d__1 = a[i__ + j * a_dim1], abs(d__1));
             L200:
             ;
             }
-        
+
         /* .......... guard against zero c or r due to underflow .......... */
-        if (c__ == 0. || r__ == 0.) 
+        if (c__ == 0. || r__ == 0.)
             goto L270;
         g = r__ / radix;
         f = 1.0;
         s = c__ + r__;
         L210:
-        if (c__ >= g) 
+        if (c__ >= g)
             goto L220;
         f *= radix;
         c__ *= b2;
@@ -9266,29 +9266,29 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
         L220:
         g = r__ * radix;
         L230:
-        if (c__ < g) 
+        if (c__ < g)
             goto L240;
         f /= radix;
         c__ /= b2;
         goto L230;
-        
+
         /*     .......... now balance .......... */
         L240:
-        if ((c__ + r__) / f >= s * .95) 
+        if ((c__ + r__) / f >= s * .95)
             goto L270;
         g = 1.0 / f;
         scale[i__] *= f;
         noconv = TRUE;
-        
+
         i__2 = *n;
-        for (j = k; j <= i__2; ++j) 
+        for (j = k; j <= i__2; ++j)
             {
             /* L250: */
             a[i__ + j * a_dim1] *= g;
             }
 
         i__2 = l;
-        for (j = 1; j <= i__2; ++j) 
+        for (j = 1; j <= i__2; ++j)
             {
             /* L260: */
             a[j + i__ * a_dim1] *= f;
@@ -9298,18 +9298,18 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
         ;
         }
 
-    if (noconv) 
+    if (noconv)
         goto L190;
 
     L280:
     *low = k;
     *igh = l;
     return 0;
-    
-} 
+
+}
 /* end f2c version of code */
 #   endif
-    
+
 }
 
 
@@ -9317,9 +9317,9 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
 |
 |   BalBak
 |
-|   This subroutine forms the eigenvectors of a real general 
-|   matrix by back transforming those of the corresponding 
-|   balanced matrix determined by  balance. 
+|   This subroutine forms the eigenvectors of a real general
+|   matrix by back transforming those of the corresponding
+|   balanced matrix determined by  balance.
 |
 |   On input:
 |
@@ -9327,7 +9327,7 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
 |
 |    * low and high are integers determined by  balance
 |
-|    * scale contains information determining the permutations 
+|    * scale contains information determining the permutations
 |      and scaling factors used by balance
 |
 |    * m is the number of columns of z to be back transformed
@@ -9343,7 +9343,7 @@ int balanc (int *nm, int *n, MrBFlt *a, int *low, int *igh, MrBFlt *scale)
 |   This routine is a translation of the Algol procedure from
 |   Handbook for Automatic Computation, vol. II, Linear Algebra,
 |   by Wilkinson and Reinsch, Springer-Verlag.
-|   
+|
 ---------------------------------------------------------------------------------*/
 void BalBak (int dim, int low, int high, MrBFlt *scale, int m, MrBFlt **z)
 {
@@ -9404,20 +9404,20 @@ int balbak (int *nm, int *n, int *low, int *igh, MrBFlt *scale, int *m, MrBFlt *
     z__ -= z_offset;
 
     /* function Body */
-    if (*m == 0) 
+    if (*m == 0)
         goto L200;
-    if (*igh == *low) 
+    if (*igh == *low)
         goto L120;
 
     i__1 = *igh;
-    for (i__ = *low; i__ <= i__1; ++i__) 
+    for (i__ = *low; i__ <= i__1; ++i__)
         {
         s = scale[i__];
         /* .......... left hand eigenvectors are back transformed */
         /*            if the foregoing statement is replaced by */
         /*            s=1.0d0/scale(i) ........... */
         i__2 = *m;
-        for (j = 1; j <= i__2; ++j) 
+        for (j = 1; j <= i__2; ++j)
             {
             /* L100: */
             z__[i__ + j * z_dim1] *= s;
@@ -9425,23 +9425,23 @@ int balbak (int *nm, int *n, int *low, int *igh, MrBFlt *scale, int *m, MrBFlt *
 
         /* L110: */
         }
-        
+
     /* .........for i=low-1 step -1 until 1, igh+1 step 1 until n do -- .......... */
     L120:
     i__1 = *n;
-    for (ii = 1; ii <= i__1; ++ii) 
+    for (ii = 1; ii <= i__1; ++ii)
         {
         i__ = ii;
-        if (i__ >= *low && i__ <= *igh) 
+        if (i__ >= *low && i__ <= *igh)
             goto L140;
-    if (i__ < *low) 
+    if (i__ < *low)
         i__ = *low - ii;
     k = (integer) scale[i__];
-    if (k == i__) 
+    if (k == i__)
         goto L140;
 
     i__2 = *m;
-    for (j = 1; j <= i__2; ++j) 
+    for (j = 1; j <= i__2; ++j)
         {
         s = z__[i__ + j * z_dim1];
         z__[i__ + j * z_dim1] = z__[k + j * z_dim1];
@@ -9454,11 +9454,11 @@ int balbak (int *nm, int *n, int *low, int *igh, MrBFlt *scale, int *m, MrBFlt *
 
     L200:
     return 0;
-    
+
 }
 /* end f2c version of code */
 #endif
-        
+
 }
 
 
@@ -9466,7 +9466,7 @@ void BetaBreaks (MrBFlt alpha, MrBFlt beta, MrBFlt *values, int K)
 {
     int             i;
     MrBFlt          r, quantile, lower, upper;
-            
+
     lower = 0.0;
     upper = (1.0 / K);
     r = (upper - lower) * 0.5 + lower;
@@ -9478,7 +9478,7 @@ void BetaBreaks (MrBFlt alpha, MrBFlt beta, MrBFlt *values, int K)
         upper += (1.0/K);
         r += (1.0/K);
         }
-        
+
 #   if 0
     for (i=0; i<K; i++)
         {
@@ -9492,7 +9492,7 @@ MrBFlt BetaCf (MrBFlt a, MrBFlt b, MrBFlt x)
 {
     int         m, m2;
     MrBFlt      aa, c, d, del, h, qab, qam, qap;
-    
+
     qab = a + b;
     qap = a + 1.0;
     qam = a - 1.0;
@@ -9540,7 +9540,7 @@ MrBFlt BetaQuantile (MrBFlt alpha, MrBFlt beta, MrBFlt x)
 {
     int     i, stopIter, direction, nswitches;
     MrBFlt  curPos, curFraction, increment;
-    
+
     i = nswitches = 0;
     curPos = 0.5;
     stopIter = NO;
@@ -9604,7 +9604,7 @@ MrBFlt BetaQuantile (MrBFlt alpha, MrBFlt beta, MrBFlt x)
             stopIter = YES;
         i++;
         }
-        
+
     return (curPos);
 }
 
@@ -9652,7 +9652,7 @@ MrBFlt CdfBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r)
 |   Calculates the cumulative density distribution (CDF) for the normal using:
 |
 |   Hill, I. D.  1973.  The normal integral.  Applied Statistics, 22:424-427.
-|      (AS66)                                                  
+|      (AS66)
 |
 ---------------------------------------------------------------------------------*/
 MrBFlt CdfNormal (MrBFlt x)
@@ -9660,19 +9660,19 @@ MrBFlt CdfNormal (MrBFlt x)
     int             invers = 0;
     MrBFlt          p, limit = 10.0, t = 1.28, y = x*x/2.0;
 
-    if (x < 0.0) 
-        {  
-        invers = 1;  
-        x  *= -1.0; 
+    if (x < 0.0)
+        {
+        invers = 1;
+        x  *= -1.0;
         }
-    if (x > limit)  
+    if (x > limit)
         return (invers ? 0 : 1);
-    if (x < t)  
+    if (x < t)
         p = 0.5 - x * (0.398942280444 - 0.399903438504 * y /
             (y + 5.75885480458 - 29.8213557808 /
             (y + 2.62433121679 + 48.6959930692 /
             (y + 5.92885724438))));
-    else 
+    else
         p = 0.398942280385 * exp(-y) /
             (x - 3.8052e-8 + 1.00000615302 /
             (x + 3.98064794e-4 + 1.98615381364 /
@@ -9680,7 +9680,7 @@ MrBFlt CdfNormal (MrBFlt x)
             (x + 4.8385912808 - 15.1508972451 /
             (x + 0.742380924027 + 30.789933034 /
             (x + 3.99019417011))))));
-            
+
     return (invers ? p : 1-p);
 }
 
@@ -9695,10 +9695,10 @@ MrBFlt CdfNormal (MrBFlt x)
 MrBComplex Complex (MrBFlt a, MrBFlt b)
 {
     MrBComplex c;
-    
+
     c.re = a;
     c.im = b;
-    
+
     return (c);
 }
 
@@ -9713,14 +9713,14 @@ MrBComplex Complex (MrBFlt a, MrBFlt b)
 MrBFlt ComplexAbsoluteValue (MrBComplex a)
 {
     MrBFlt      x, y, answer, temp;
-    
+
     x = fabs(a.re);
     y = fabs(a.im);
     if (AreDoublesEqual(x, 0.0, ETA)==YES)  /* x == 0.0 */
         answer = y;
     else if (AreDoublesEqual(y, 0.0, ETA)==YES) /* y == 0.0 */
         answer = x;
-    else if (x > y) 
+    else if (x > y)
         {
         temp = y / x;
         answer = x * sqrt(1.0 + temp * temp);
@@ -9745,10 +9745,10 @@ MrBFlt ComplexAbsoluteValue (MrBComplex a)
 MrBComplex ComplexAddition (MrBComplex a, MrBComplex b)
 {
     MrBComplex     c;
-    
+
     c.re = a.re + b.re;
     c.im = a.im + b.im;
-    
+
     return (c);
 }
 
@@ -9763,10 +9763,10 @@ MrBComplex ComplexAddition (MrBComplex a, MrBComplex b)
 MrBComplex ComplexConjugate (MrBComplex a)
 {
     MrBComplex     c;
-    
+
     c.re = a.re;
     c.im = -a.im;
-    
+
     return (c);
 }
 
@@ -9782,14 +9782,14 @@ MrBComplex ComplexDivision (MrBComplex a, MrBComplex b)
 {
     MrBComplex     c;
     MrBFlt      r, den;
-    
-    if (fabs(b.re) >= fabs(b.im)) 
+
+    if (fabs(b.re) >= fabs(b.im))
         {
         r = b.im / b.re;
         den = b.re + r * b.im;
         c.re = (a.re + r * a.im) / den;
         c.im = (a.im - r * a.re) / den;
-        } 
+        }
     else
         {
         r = b.re / b.im;
@@ -9797,7 +9797,7 @@ MrBComplex ComplexDivision (MrBComplex a, MrBComplex b)
         c.re = (a.re * r + a.im) / den;
         c.im = (a.im * r - a.re) / den;
         }
-    
+
     return (c);
 }
 
@@ -9838,11 +9838,11 @@ MrBComplex ComplexExponentiation (MrBComplex a)
 
     c.re = exp(a.re);
     if (AreDoublesEqual(a.im,0.0, ETA)==YES) /* == 0 */
-        c.im = 0; 
+        c.im = 0;
     else
-        { 
-        c.im = c.re*sin(a.im); 
-        c.re *= cos(a.im); 
+        {
+        c.im = c.re*sin(a.im);
+        c.re *= cos(a.im);
         }
 
     return (c);
@@ -9853,7 +9853,7 @@ MrBComplex ComplexExponentiation (MrBComplex a)
 |
 |   ComplexInvertMatrix
 |
-|   Inverts a matrix of complex numbers using the LU-decomposition method. 
+|   Inverts a matrix of complex numbers using the LU-decomposition method.
 |   The program has the following variables:
 |
 |      a        -- the matrix to be inverted
@@ -9862,7 +9862,7 @@ MrBComplex ComplexExponentiation (MrBComplex a)
 |      dwork    -- a work vector of doubles
 |      indx     -- a work vector of integers
 |      col      -- carries the results of the back substitution
-|      
+|
 |   The function returns YES (1) or NO (0) if the results are singular.
 |
 ---------------------------------------------------------------------------------*/
@@ -9872,9 +9872,9 @@ int ComplexInvertMatrix (int dim, MrBComplex **a, MrBFlt *dwork, int *indx, MrBC
 
     isSingular = ComplexLUDecompose (dim, a, dwork, indx, (MrBFlt *)NULL);
 
-    if (isSingular == 0) 
+    if (isSingular == 0)
         {
-        for (j=0; j<dim; j++) 
+        for (j=0; j<dim; j++)
             {
             for (i=0; i<dim; i++)
                 col[i] = Complex (0.0, 0.0);
@@ -9899,17 +9899,17 @@ int ComplexInvertMatrix (int dim, MrBComplex **a, MrBFlt *dwork, int *indx, MrBC
 MrBComplex ComplexLog (MrBComplex a)
 {
     MrBComplex     c;
-    
+
     c.re = log(ComplexAbsoluteValue(a));
-    if (AreDoublesEqual(a.re,0.0,ETA)==YES) /* == 0.0 */ 
+    if (AreDoublesEqual(a.re,0.0,ETA)==YES) /* == 0.0 */
         {
         c.im = M_PI_2;
-        } 
-    else 
+        }
+    else
         {
         c.im = atan2(a.im, a.re);
         }
-        
+
     return (c);
 }
 
@@ -9920,28 +9920,28 @@ MrBComplex ComplexLog (MrBComplex a)
 |
 |   Perform back-substitution into a LU-decomposed matrix to obtain
 |   the inverse.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void ComplexLUBackSubstitution (int dim, MrBComplex **a, int *indx, MrBComplex *b)
 {
     int             i, ip, j, ii = -1;
     MrBComplex         sum;
 
-    for (i = 0; i < dim; i++) 
+    for (i = 0; i < dim; i++)
         {
         ip = indx[i];
         sum = b[ip];
         b[ip] = b[i];
-        if (ii >= 0) 
+        if (ii >= 0)
             {
             for (j = ii; j <= i - 1; j++)
                 sum = ComplexSubtraction (sum, ComplexMultiplication (a[i][j], b[j]));
-            } 
+            }
         else if (AreDoublesEqual(sum.re,0.0,ETA)==NO || AreDoublesEqual(sum.im, 0.0, ETA)==NO) /* 2x != 0.0 */
             ii = i;
         b[i] = sum;
         }
-    for (i = dim - 1; i >= 0; i--) 
+    for (i = dim - 1; i >= 0; i--)
         {
         sum = b[i];
         for (j = i + 1; j < dim; j++)
@@ -9955,7 +9955,7 @@ void ComplexLUBackSubstitution (int dim, MrBComplex **a, int *indx, MrBComplex *
 |
 |   ComplexLUDecompose
 |
-|   Replaces the matrix a with its LU-decomposition. 
+|   Replaces the matrix a with its LU-decomposition.
 |   The program has the following variables:
 |
 |      a        -- the matrix
@@ -9964,7 +9964,7 @@ void ComplexLUBackSubstitution (int dim, MrBComplex **a, int *indx, MrBComplex *
 |      indx     -- row permutation according to partitial pivoting sequence
 |      pd       -- 1 if number of row interchanges was even, -1 if number of
 |                  row interchanges was odd. Can be NULL.
-|      
+|
 |   The function returns YES (1) or NO (0) if the results are singular.
 |
 ---------------------------------------------------------------------------------*/
@@ -9977,10 +9977,10 @@ int ComplexLUDecompose (int dim, MrBComplex **a, MrBFlt *vv, int *indx, MrBFlt *
     d = 1.0;
     imax = 0;
 
-    for (i = 0; i < dim; i++) 
+    for (i = 0; i < dim; i++)
         {
         big = 0.0;
-        for (j = 0; j < dim; j++) 
+        for (j = 0; j < dim; j++)
             {
             if ((temp = ComplexAbsoluteValue (a[i][j])) > big)
                 big = temp;
@@ -9993,37 +9993,37 @@ int ComplexLUDecompose (int dim, MrBComplex **a, MrBFlt *vv, int *indx, MrBFlt *
         vv[i] = 1.0 / big;
         }
 
-    for (j = 0; j < dim; j++) 
+    for (j = 0; j < dim; j++)
         {
-        for (i = 0; i < j; i++) 
+        for (i = 0; i < j; i++)
             {
             sum = a[i][j];
-            for (k = 0; k < i; k++) 
+            for (k = 0; k < i; k++)
                 sum = ComplexSubtraction (sum, ComplexMultiplication (a[i][k], a[k][j]));
             a[i][j] = sum;
             }
         big = 0.0;
-        for (i = j; i < dim; i++) 
+        for (i = j; i < dim; i++)
             {
             sum = a[i][j];
             for (k = 0; k < j; k++)
             sum = ComplexSubtraction (sum, ComplexMultiplication (a[i][k], a[k][j]));
             a[i][j] = sum;
             dum = vv[i] * ComplexAbsoluteValue (sum);
-            if (dum >= big) 
+            if (dum >= big)
                 {
                 big = dum;
                 imax = i;
                 }
             }
-        if (j != imax) 
+        if (j != imax)
             {
-            for (k = 0; k < dim; k++) 
+            for (k = 0; k < dim; k++)
                 {
                 cdum = a[imax][k];
                 a[imax][k] = a[j][k];
                 a[j][k] = cdum;
-                }       
+                }
             d = -d;
             vv[imax] = vv[j];
             }
@@ -10040,7 +10040,7 @@ int ComplexLUDecompose (int dim, MrBComplex **a, MrBFlt *vv, int *indx, MrBFlt *
 
     if (pd != NULL)
         *pd = d;
-        
+
     return (0);
 }
 
@@ -10055,10 +10055,10 @@ int ComplexLUDecompose (int dim, MrBComplex **a, MrBFlt *vv, int *indx, MrBFlt *
 MrBComplex ComplexMultiplication (MrBComplex a, MrBComplex b)
 {
     MrBComplex     c;
-    
+
     c.re = a.re * b.re - a.im * b.im;
     c.im = a.im * b.re + a.re * b.im;
-    
+
     return (c);
 }
 
@@ -10074,7 +10074,7 @@ MrBComplex ComplexSquareRoot (MrBComplex a)
 {
     MrBComplex         c;
     MrBFlt          x, y, w, r;
-    
+
     if (AreDoublesEqual(a.re, 0.0, ETA)==YES && AreDoublesEqual(a.im, 0.0, ETA)==YES) /* 2x == 0.0 */
         {
         c.re = 0.0;
@@ -10120,10 +10120,10 @@ MrBComplex ComplexSquareRoot (MrBComplex a)
 MrBComplex ComplexSubtraction (MrBComplex a, MrBComplex b)
 {
     MrBComplex     c;
-    
+
     c.re = a.re - b.re;
     c.im = a.im - b.im;
-    
+
     return (c);
 }
 
@@ -10170,7 +10170,7 @@ void ComputeLandU (int dim, MrBFlt **aMat, MrBFlt **lMat, MrBFlt **uMat)
 {
     int         i, j, k, m, row, col;
 
-    for (j=0; j<dim; j++) 
+    for (j=0; j<dim; j++)
         {
         for (k=0; k<j; k++)
             for (i=k+1; i<j; i++)
@@ -10181,19 +10181,19 @@ void ComputeLandU (int dim, MrBFlt **aMat, MrBFlt **lMat, MrBFlt **uMat)
                 aMat[i][j] = aMat[i][j] - aMat[i][k]*aMat[k][j];
 
         for (m=j+1; m<dim; m++)
-            aMat[m][j] /= aMat[j][j]; 
+            aMat[m][j] /= aMat[j][j];
         }
 
     for (row=0; row<dim; row++)
         {
-        for (col=0; col<dim; col++) 
+        for (col=0; col<dim; col++)
             {
-            if (row <= col) 
+            if (row <= col)
                 {
                 uMat[row][col] = aMat[row][col];
                 lMat[row][col] = (row == col ? 1.0 : 0.0);
                 }
-            else 
+            else
                 {
                 lMat[row][col] = aMat[row][col];
                 uMat[row][col] = 0.0;
@@ -10209,7 +10209,7 @@ void ComputeLandU (int dim, MrBFlt **aMat, MrBFlt **lMat, MrBFlt **uMat)
 |
 |   The method approximates the matrix exponential, f = e^a, using
 |   the algorithm 11.3.1, described in:
-|  
+|
 |   Golub, G. H., and C. F. Van Loan. 1996. Matrix Computations, Third Edition.
 |      The Johns Hopkins University Press, Baltimore, Maryland.
 |
@@ -10238,9 +10238,9 @@ void ComputeMatrixExponential (int dim, MrBFlt **a, int qValue, MrBFlt **f)
     j = MAX (0, LogBase2Plus1 (maxAValue));
 
     DivideByTwos (dim, a, j);
-    
+
     c = 1;
-    for (k=1; k<=qValue; k++) 
+    for (k=1; k<=qValue; k++)
         {
         c = c * (qValue - k + 1.0) / ((2.0 * qValue - k + 1.0) * k);
 
@@ -10255,14 +10255,14 @@ void ComputeMatrixExponential (int dim, MrBFlt **a, int qValue, MrBFlt **f)
         negativeFactor = (k % 2 == 0 ? 1 : -1);
         if (negativeFactor == -1)
             MultiplyMatrixByScalar (dim, cX, negativeFactor, cX);
-        AddTwoMatrices (dim, d, cX, d);      
+        AddTwoMatrices (dim, d, cX, d);
         }
 
     GaussianElimination (dim, d, n, f);
 
     for (k = 0; k < j; k++)
         MultiplyMatrices (dim, f, f, f);
-    
+
     for (i=0; i<dim; i++)
         {
         for (j=0; j<dim; j++)
@@ -10271,7 +10271,7 @@ void ComputeMatrixExponential (int dim, MrBFlt **a, int qValue, MrBFlt **f)
                 f[i][j] = fabs(f[i][j]);
             }
         }
-        
+
     FreeSquareDoubleMatrix (d);
     FreeSquareDoubleMatrix (n);
     FreeSquareDoubleMatrix (x);
@@ -10289,10 +10289,10 @@ void ComputeMatrixExponential (int dim, MrBFlt **a, int qValue, MrBFlt **f)
 void CopyComplexMatrices (int dim, MrBComplex **from, MrBComplex **to)
 {
     int         i, j;
-    
+
     for (i=0; i<dim; i++)
         {
-        for (j=0; j<dim; j++) 
+        for (j=0; j<dim; j++)
             {
             to[i][j].re = from[i][j].re;
             to[i][j].im = from[i][j].im;
@@ -10311,10 +10311,10 @@ void CopyComplexMatrices (int dim, MrBComplex **from, MrBComplex **to)
 void CopyDoubleMatrices (int dim, MrBFlt **from, MrBFlt **to)
 {
     int         i, j;
-    
+
     for (i=0; i<dim; i++)
         {
-        for (j=0; j<dim; j++) 
+        for (j=0; j<dim; j++)
             {
             to[i][j] = from[i][j];
             }
@@ -10329,7 +10329,7 @@ void CopyDoubleMatrices (int dim, MrBFlt **from, MrBFlt **to)
 |   Generate a Dirichlet-distributed random variable. The parameter of the
 |   Dirichlet is contained in the vector alp. The random variable is contained
 |   in the vector z.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void DirichletRandomVariable (MrBFlt *alp, MrBFlt *z, int n, RandLong *seed)
 {
@@ -10360,23 +10360,23 @@ int DiscreteGamma (MrBFlt *rK, MrBFlt alfa, MrBFlt beta, int K, int median)
     int             i;
     MrBFlt          gap05 = 1.0/(2.0*K), t, factor = alfa/beta*K, lnga1;
 
-    if (median) 
+    if (median)
         {
-        for (i=0; i<K; i++) 
+        for (i=0; i<K; i++)
             rK[i] = POINTGAMMA((i*2.0+1.0)*gap05, alfa, beta);
-        for (i=0,t=0; i<K; i++) 
+        for (i=0,t=0; i<K; i++)
             t += rK[i];
-        for (i=0; i<K; i++)     
+        for (i=0; i<K; i++)
             rK[i] *= factor / t;
         }
-    else 
+    else
         {
         lnga1 = LnGamma(alfa+1);
         /* calculate the points in the gamma distribution */
-        for (i=0; i<K-1; i++) 
+        for (i=0; i<K-1; i++)
             rK[i] = POINTGAMMA((i+1.0)/K, alfa, beta);
         /* calculate the cumulative values */
-        for (i=0; i<K-1; i++) 
+        for (i=0; i<K-1; i++)
             rK[i] = IncompleteGamma(rK[i] * beta, alfa + 1.0, lnga1);
         rK[K-1] = 1.0;
         /* calculate the relative values and rescale */
@@ -10474,7 +10474,7 @@ MrBFlt LogNormalPoint (MrBFlt x, MrBFlt mu, MrBFlt sigma)
 |   DivideByTwos
 |
 |   Divides all of the elements of the matrix a by 2^power.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void DivideByTwos (int dim, MrBFlt **a, int power)
 {
@@ -10501,7 +10501,7 @@ MrBFlt D_sign (MrBFlt a, MrBFlt b)
     MrBFlt      x;
 
     x = (a >= 0 ? a : -a);
-    
+
     return (b >= 0 ? x : -x);
 }
 
@@ -10510,10 +10510,10 @@ MrBFlt D_sign (MrBFlt a, MrBFlt b)
 |
 |   Eigens
 |
-|   The matrix of interest is a. The ouptut is the real and imaginary parts of the 
-|   eigenvalues (wr and wi). z contains the real and imaginary parts of the 
+|   The matrix of interest is a. The ouptut is the real and imaginary parts of the
+|   eigenvalues (wr and wi). z contains the real and imaginary parts of the
 |   eigenvectors. iv2 and fv1 are working vectors.
-|      
+|
 ---------------------------------------------------------------------------------*/
 int EigensForRealMatrix (int dim, MrBFlt **a, MrBFlt *wr, MrBFlt *wi, MrBFlt **z, int *iv1, MrBFlt *fv1)
 {
@@ -10566,7 +10566,7 @@ void ElmHes (int dim, int low, int high, MrBFlt **a, int *interchanged)
 {
     int         i, j, m, la, mm1, kp1, mp1;
     MrBFlt      x, y;
-    
+
     la = high - 1;
     kp1 = low + 1;
     if (la < kp1)
@@ -10577,7 +10577,7 @@ void ElmHes (int dim, int low, int high, MrBFlt **a, int *interchanged)
         mm1 = m - 1;
         x = 0.0;
         i = m;
-    
+
         for (j=m; j<=high; j++)
             {
             if (fabs(a[j][mm1]) > fabs(x)) /* change direction of inequality */
@@ -10586,7 +10586,7 @@ void ElmHes (int dim, int low, int high, MrBFlt **a, int *interchanged)
                 i = j;
                 }
             }
-    
+
         interchanged[m] = i;
         if (i != m) /* change "==" to "!=", eliminating goto statement */
             {
@@ -10608,7 +10608,7 @@ void ElmHes (int dim, int low, int high, MrBFlt **a, int *interchanged)
         if (AreDoublesEqual(x, 0.0, ETA)==NO) /* change "==" to "!=", eliminating goto statement */
             {
             mp1 = m + 1;
-        
+
             for (i=mp1; i<=high; i++)
                 {
                 y = a[i][mm1];
@@ -10650,19 +10650,19 @@ int elmhes (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__)
     /* function body */
     la = *igh - 1;
     kp1 = *low + 1;
-    if (la < kp1) 
+    if (la < kp1)
         goto L200;
 
     i__1 = la;
-    for (m = kp1; m <= i__1; ++m) 
+    for (m = kp1; m <= i__1; ++m)
         {
         mm1 = m - 1;
         x = 0.;
         i__ = m;
         i__2 = *igh;
-        for (j = m; j <= i__2; ++j) 
+        for (j = m; j <= i__2; ++j)
             {
-            if ((d__1 = a[j + mm1 * a_dim1], abs(d__1)) <= abs(x)) 
+            if ((d__1 = a[j + mm1 * a_dim1], abs(d__1)) <= abs(x))
                 goto L100;
             x = a[j + mm1 * a_dim1];
             i__ = j;
@@ -10671,12 +10671,12 @@ int elmhes (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__)
         }
 
     int__[m] = i__;
-    if (i__ == m) 
+    if (i__ == m)
         goto L130;
 
     /* .......... interchange rows and columns of a.......... */
     i__2 = *n;
-    for (j = mm1; j <= i__2; ++j) 
+    for (j = mm1; j <= i__2; ++j)
         {
         y = a[i__ + j * a_dim1];
         a[i__ + j * a_dim1] = a[m + j * a_dim1];
@@ -10685,38 +10685,38 @@ int elmhes (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__)
         }
 
     i__2 = *igh;
-    for (j = 1; j <= i__2; ++j) 
+    for (j = 1; j <= i__2; ++j)
         {
         y = a[j + i__ * a_dim1];
         a[j + i__ * a_dim1] = a[j + m * a_dim1];
         a[j + m * a_dim1] = y;
         /* L120: */
         }
-        
+
     /* .......... end interchange .......... */
     L130:
-    if (x == 0.) 
+    if (x == 0.)
         goto L180;
     mp1 = m + 1;
 
     i__2 = *igh;
-    for (i__ = mp1; i__ <= i__2; ++i__) 
+    for (i__ = mp1; i__ <= i__2; ++i__)
         {
         y = a[i__ + mm1 * a_dim1];
-        if (y == 0.) 
+        if (y == 0.)
             goto L160;
         y /= x;
         a[i__ + mm1 * a_dim1] = y;
 
         i__3 = *n;
-        for (j = m; j <= i__3; ++j) 
+        for (j = m; j <= i__3; ++j)
             {
             /* L140: */
             a[i__ + j * a_dim1] -= y * a[m + j * a_dim1];
             }
 
         i__3 = *igh;
-        for (j = 1; j <= i__3; ++j) 
+        for (j = 1; j <= i__3; ++j)
             {
             /* L150: */
             a[j + m * a_dim1] += y * a[j + i__ * a_dim1];
@@ -10732,11 +10732,11 @@ int elmhes (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__)
 
     L200:
     return 0;
-    
+
 }
 /* end f2c version of code */
 #endif
-        
+
 }
 
 
@@ -10772,7 +10772,7 @@ int elmhes (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__)
 |   This routine is a translation of the Algol procedure from
 |   Handbook for Automatic Computation, vol. II, Linear Algebra,
 |   by Wilkinson and Reinsch, Springer-Verlag.
-|   
+|
 ---------------------------------------------------------------------------------*/
 void ElTran (int dim, int low, int high, MrBFlt **a, int *interchanged, MrBFlt **z)
 {
@@ -10800,7 +10800,7 @@ void ElTran (int dim, int low, int high, MrBFlt **a, int *interchanged, MrBFlt *
             z[i][mp] = 1.0;
             }
         }
-    
+
 #if 0
 /* begin f2c version of code:
    eltran.f -- translated by f2c (version 19971204) */
@@ -10815,7 +10815,7 @@ int eltran (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__, MrBFlt *
     static int i__, j, kl, mm, mp, mp1;
 
     /*     .......... initialize z to identity matrix .......... */
-    
+
     /* parameter adjustments */
     z_dim1 = *nm;
     z_offset = z_dim1 + 1;
@@ -10827,10 +10827,10 @@ int eltran (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__, MrBFlt *
 
     /* function Body */
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) 
+    for (j = 1; j <= i__1; ++j)
         {
         i__2 = *n;
-        for (i__ = 1; i__ <= i__2; ++i__) 
+        for (i__ = 1; i__ <= i__2; ++i__)
             {
             /* L60: */
             z__[i__ + j * z_dim1] = 0.0;
@@ -10840,26 +10840,26 @@ int eltran (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__, MrBFlt *
         }
 
     kl = *igh - *low - 1;
-    if (kl < 1) 
+    if (kl < 1)
         goto L200;
 
     /* .......... for mp=igh-1 step -1 until low+1 do -- .......... */
     i__1 = kl;
-    for (mm = 1; mm <= i__1; ++mm) 
+    for (mm = 1; mm <= i__1; ++mm)
         {
         mp = *igh - mm;
         mp1 = mp + 1;
         i__2 = *igh;
-        for (i__ = mp1; i__ <= i__2; ++i__) 
+        for (i__ = mp1; i__ <= i__2; ++i__)
             {
             /* L100: */
             z__[i__ + mp * z_dim1] = a[i__ + (mp - 1) * a_dim1];
             }
         i__ = int__[mp];
-        if (i__ == mp) 
+        if (i__ == mp)
             goto L140;
         i__2 = *igh;
-        for (j = mp; j <= i__2; ++j) 
+        for (j = mp; j <= i__2; ++j)
             {
             z__[mp + j * z_dim1] = z__[i__ + j * z_dim1];
             z__[i__ + j * z_dim1] = 0.;
@@ -10876,7 +10876,7 @@ int eltran (int *nm, int *n, int *low, int *igh, MrBFlt *a, int *int__, MrBFlt *
 }
 /* end f2c version of code */
 #endif
-    
+
 }
 
 
@@ -10898,7 +10898,7 @@ void Exchange (int j, int k, int l, int m, int n, MrBFlt **a, MrBFlt *scale)
             f = a[i][j];
             a[i][j] = a[i][m];
             a[i][m] = f;
-            }   
+            }
         for (i = k; i < n; i++)
             {
             f = a[j][i];
@@ -10914,19 +10914,19 @@ void Exchange (int j, int k, int l, int m, int n, MrBFlt **a, MrBFlt *scale)
 |   Factorial
 |
 |   Returns x!
-|      
+|
 ---------------------------------------------------------------------------------*/
 MrBFlt Factorial (int x)
 {
     int         i;
     MrBFlt      fac;
-    
+
     fac = 1.0;
     for (i=0; i<x; i++)
         {
         fac *= (i+1);
         }
-        
+
     return (fac);
 }
 
@@ -10942,7 +10942,7 @@ void ForwardSubstitutionRow (int dim, MrBFlt **L, MrBFlt *b)
     MrBFlt      dotProduct;
 
     b[0] = b[0] / L[0][0];
-    for (i=1; i<dim; i++) 
+    for (i=1; i<dim; i++)
         {
         dotProduct = 0.0;
         for (j=0; j<i; j++)
@@ -10957,7 +10957,7 @@ void ForwardSubstitutionRow (int dim, MrBFlt **L, MrBFlt *b)
 |   FreeSquareComplexMatrix
 |
 |   Frees a matrix of complex numbers.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void FreeSquareComplexMatrix (MrBComplex **m)
 {
@@ -10971,7 +10971,7 @@ void FreeSquareComplexMatrix (MrBComplex **m)
 |   FreeSquareDoubleMatrix
 |
 |   Frees a matrix of doubles.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void FreeSquareDoubleMatrix (MrBFlt **m)
 {
@@ -10985,7 +10985,7 @@ void FreeSquareDoubleMatrix (MrBFlt **m)
 |   FreeSquareIntegerMatrix
 |
 |   Frees a matrix of integers.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void FreeSquareIntegerMatrix (int **m)
 {
@@ -11000,7 +11000,7 @@ void FreeSquareIntegerMatrix (int **m)
 |
 |   This function generates a gamma-distributed random variable with parameters
 |   a and b. The mean is E(X) = a / b and the variance is Var(X) = a / b^2.
-|      
+|
 ---------------------------------------------------------------------------------*/
 MrBFlt GammaRandomVariable (MrBFlt a, MrBFlt b, RandLong *seed)
 {
@@ -11011,7 +11011,7 @@ MrBFlt GammaRandomVariable (MrBFlt a, MrBFlt b, RandLong *seed)
 /*---------------------------------------------------------------------------------
 |
 |   GaussianElimination
-|      
+|
 ---------------------------------------------------------------------------------*/
 void GaussianElimination (int dim, MrBFlt **a, MrBFlt **bMat, MrBFlt **xMat)
 {
@@ -11029,16 +11029,16 @@ void GaussianElimination (int dim, MrBFlt **a, MrBFlt **bMat, MrBFlt **xMat)
 
     ComputeLandU (dim, a, lMat, uMat);
 
-    for (k=0; k<dim; k++) 
+    for (k=0; k<dim; k++)
         {
-        
+
         for (i=0; i<dim; i++)
             bVec[i] = bMat[i][k];
 
         /* Answer of Ly = b (which is solving for y) is copied into b. */
         ForwardSubstitutionRow (dim, lMat, bVec);
 
-        /* Answer of Ux = y (solving for x and the y was copied into b above) 
+        /* Answer of Ux = y (solving for x and the y was copied into b above)
            is also copied into b. */
         BackSubstitutionRow (dim, uMat, bVec);
 
@@ -11046,7 +11046,7 @@ void GaussianElimination (int dim, MrBFlt **a, MrBFlt **bMat, MrBFlt **xMat)
             xMat[i][k] = bVec[i];
 
         }
-    
+
     FreeSquareDoubleMatrix (lMat);
     FreeSquareDoubleMatrix (uMat);
     free (bVec);
@@ -11099,7 +11099,7 @@ int GetEigens (int dim, MrBFlt **q, MrBFlt *eigenValues, MrBFlt *eigvalsImag, Mr
         for (i=0; i<dim; i++)
             {
               if (fabs(eigvalsImag[i])<1E-20) /* == 0.0 */
-                { 
+                {
                 for (j=0; j<dim; j++)
                     {
                     Ceigvecs[j][i].re = eigvecs[j][i];
@@ -11107,7 +11107,7 @@ int GetEigens (int dim, MrBFlt **q, MrBFlt *eigenValues, MrBFlt *eigvalsImag, Mr
                     }
                 }
             else if (eigvalsImag[i] > 0)
-                { 
+                {
                 for (j=0; j<dim; j++)
                     {
                     Ceigvecs[j][i].re = eigvecs[j][i];
@@ -11115,7 +11115,7 @@ int GetEigens (int dim, MrBFlt **q, MrBFlt *eigenValues, MrBFlt *eigvalsImag, Mr
                     }
                 }
             else if (eigvalsImag[i] < 0)
-                { 
+                {
                 for (j=0; j<dim; j++)
                     {
                     Ceigvecs[j][i].re =  eigvecs[j][i-1];
@@ -11196,7 +11196,7 @@ int GetEigens (int dim, MrBFlt **q, MrBFlt *eigenValues, MrBFlt *eigvalsImag, Mr
 |   Num. Math. 14, 219,231(1970) by Martin, Peters, and Wilkinson.
 |   Handbook for Automatic Computation, vol. II - Linear Algebra,
 |   pp. 357-391 (1971).
-|   
+|
 ---------------------------------------------------------------------------------*/
 int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt **z)
 {
@@ -11205,7 +11205,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
 
     norm = 0.0;
     k = 0;  /* used for array indexing. FORTRAN version: k = 1 */
-    
+
     /* store roots isolated by balance, and compute matrix norm */
     for (i=0; i<dim; i++)
         {
@@ -11243,7 +11243,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 if (fabs(tst2 - tst1) < ETA) /* tst2 == tst1 */
                     break; /* changed to break to remove a goto statement */
                 }
-    
+
             /* form shift */
             x = h[en][en];
             if (l == en) /* changed to break to remove a goto statement */
@@ -11257,7 +11257,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 }
             if (itn == 0)
                 return (en);
-                
+
             /* form exceptional shift */
             if ((its == 10) || (its == 20)) /* changed to remove a goto statement */
                 {
@@ -11271,7 +11271,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 }
             its++;
             itn--;
-            
+
             /* look for two consecutive small sub-diagonal elements */
             for (m=enm2; m>=l; m--)
                 {
@@ -11293,7 +11293,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 if (fabs(tst2 - tst1) < ETA) /* tst2 == tst1 */
                     break; /* changed to break to remove a goto statement */
                 }
-        
+
             mp2 = m + 2;
             for (i = mp2; i <= en; i++)
                 {
@@ -11301,7 +11301,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 if (i != mp2) /* changed "==" to "!=" to remove a goto statement */
                     h[i][i-3] = 0.0;
                 }
-    
+
             /* MrBFlt QR step involving rows l to en and columns m to en */
             for (k=m; k<=na; k++)
                 {
@@ -11320,7 +11320,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                     q /= x;
                     r /= x;
                     }
-    
+
                 /*s = sqrt(p*p+q*q+r*r);
                 sgn = (p<0)?-1:(p>0);
                 s = sgn*sqrt(p*p+q*q+r*r);*/
@@ -11343,9 +11343,9 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                         p = h[k][j] + q * h[k+1][j];
                         h[k][j] -= p * x;
                         h[k+1][j] -= p * y;
-                        } 
+                        }
                     j = MIN(en, k + 3);
-                    
+
                     /* column modification */
                     for (i=0; i<=j; i++)
                         {
@@ -11353,7 +11353,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                         h[i][k] -= p;
                         h[i][k+1] -= p * q;
                         }
-                        
+
                     /* accumulate transformations */
                     for (i=low; i<=high; i++)
                         {
@@ -11373,7 +11373,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                         h[k+2][j] -= p * zz;
                         }
                     j = MIN(en, k + 3);
-                    
+
                     /* column modification */
                     for (i = 0; i <= j; i++)
                         {
@@ -11382,7 +11382,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                         h[i][k+1] -= p * q;
                         h[i][k+2] -= p * r;
                         }
-                        
+
                     /* accumulate transformations */
                     for (i = low; i <= high; i++)
                         {
@@ -11421,7 +11421,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 r = sqrt(p*p + q*q);
                 p /= r;
                 q /= r;
-                
+
                 /* row modification */
                 for (j=na; j<dim; j++)
                     {
@@ -11429,7 +11429,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                     h[na][j] = q * zz + p * h[en][j];
                     h[en][j] = q * h[en][j] - p * zz;
                     }
-                    
+
                 /* column modification */
                 for (i = 0; i <= en; i++)
                     {
@@ -11437,7 +11437,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                     h[i][na] = q * zz + p * h[i][en];
                     h[i][en] = q * h[i][en] - p * zz;
                     }
-                    
+
                 /* accumulate transformations */
                 for (i = low; i <= high; i++)
                     {
@@ -11465,7 +11465,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
             en = na;
             }
         }
-    
+
     if (fabs(norm) < ETA) /* == 0.0 */
         return (0); /* was a goto end of function */
 
@@ -11499,13 +11499,13 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                     w = h[i][i] - p;
                     ra = 0.0;
                     sa = 0.0;
-            
+
                     for (j=m; j<=en; j++)
                         {
                         ra += h[i][j] * h[j][na];
                         sa += h[i][j] * h[j][en];
                         }
-            
+
                     if (wi[i] < 0.0) /* changed direction to remove goto statement */
                         {
                         zz = w;
@@ -11543,7 +11543,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                             else
                                 ComplexDivision2 (-r - y * h[i][na], -s - y * h[i][en], zz, q, &h[i+1][na], &h[i+1][en]);
                             }
-                            
+
                         /* overflow control */
                         tst1 = fabs(h[i][na]);
                         tst2 = fabs(h[i][en]);
@@ -11599,7 +11599,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                                     tst2 = norm + t;
                                     }
                                     while (tst2 > tst1);
-                                }           
+                                }
                             h[i][en] = -r / t;
                             }
                         else
@@ -11615,7 +11615,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                             else
                                 h[i+1][en] = (-s - y * t) / zz;
                             }
-                
+
                         /* overflow control */
                         t = fabs(h[i][en]);
                         if (t > ETA)
@@ -11633,7 +11633,7 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
                 }
             }
         }
-    
+
     for (i=0; i<dim; i++)
         {
         if ((i < low) || (i > high)) /* changed to rid goto statement */
@@ -11658,10 +11658,10 @@ int Hqr2 (int dim, int low, int high, MrBFlt **h, MrBFlt *wr, MrBFlt *wi, MrBFlt
         }
 
     return (0);
-    
+
 #if 0
 int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *wi, MrBFlt *z__, int *ierr)
-    
+
 {
 
     /* system generated locals */
@@ -11697,19 +11697,19 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     *ierr = 0;
     norm = 0.;
     k = 1;
-    
+
     /* .......... store roots isolated by balanc and compute matrix norm .......... */
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) 
+    for (i__ = 1; i__ <= i__1; ++i__)
         {
         i__2 = *n;
-        for (j = k; j <= i__2; ++j) 
+        for (j = k; j <= i__2; ++j)
             {
             /* L40: */
             norm += (d__1 = h__[i__ + j * h_dim1], abs(d__1));
             }
         k = i__;
-        if (i__ >= *low && i__ <= *igh) 
+        if (i__ >= *low && i__ <= *igh)
             goto L50;
         wr[i__] = h__[i__ + i__ * h_dim1];
         wi[i__] = 0.;
@@ -11720,52 +11720,52 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     en = *igh;
     t = 0.;
     itn = *n * 30;
-    
+
     /* ..........search for next eigenvalues.......... */
     L60:
-    if (en < *low) 
+    if (en < *low)
         goto L340;
     its = 0;
     na = en - 1;
     enm2 = na - 1;
-    
+
     /* ..........look for single small sub-diagonal element for l=en step -1 until low do -- .......... */
     L70:
     i__1 = en;
-    for (ll = *low; ll <= i__1; ++ll) 
+    for (ll = *low; ll <= i__1; ++ll)
         {
         l = en + *low - ll;
-        if (l == *low) 
+        if (l == *low)
             goto L100;
         s = (d__1 = h__[l - 1 + (l - 1) * h_dim1], abs(d__1)) + (d__2 = h__[l + l * h_dim1], abs(d__2));
-        if (s == 0.0) 
+        if (s == 0.0)
             s = norm;
         tst1 = s;
         tst2 = tst1 + (d__1 = h__[l + (l - 1) * h_dim1], abs(d__1));
-        if (tst2 == tst1) 
+        if (tst2 == tst1)
             goto L100;
         /* L80: */
         }
-        
+
     /* .......... form shift .......... */
     L100:
     x = h__[en + en * h_dim1];
-    if (l == en) 
+    if (l == en)
         goto L270;
     y = h__[na + na * h_dim1];
     w = h__[en + na * h_dim1] * h__[na + en * h_dim1];
-    if (l == na) 
+    if (l == na)
         goto L280;
-    if (itn == 0) 
+    if (itn == 0)
         goto L1000;
-    if (its != 10 && its != 20) 
+    if (its != 10 && its != 20)
         goto L130;
 
     /* .......... form exceptional shift .......... */
     t += x;
 
     i__1 = en;
-    for (i__ = *low; i__ <= i__1; ++i__) 
+    for (i__ = *low; i__ <= i__1; ++i__)
         {
         /* L120: */
         h__[i__ + i__ * h_dim1] -= x;
@@ -11778,10 +11778,10 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     L130:
     ++its;
     --itn;
-    
+
     /* .......... look for two consecutive small sub-diagonal elements for m=en-2 step -1 until l do -- .......... */
     i__1 = enm2;
-    for (mm = l; mm <= i__1; ++mm) 
+    for (mm = l; mm <= i__1; ++mm)
         {
         m = enm2 + l - mm;
         zz = h__[m + m * h_dim1];
@@ -11794,12 +11794,12 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         p /= s;
         q /= s;
         r__ /= s;
-        if (m == l) 
+        if (m == l)
             goto L150;
-        tst1 = abs(p) * ((d__1 = h__[m - 1 + (m - 1) * h_dim1], abs(d__1)) + 
+        tst1 = abs(p) * ((d__1 = h__[m - 1 + (m - 1) * h_dim1], abs(d__1)) +
         abs(zz) + (d__2 = h__[m + 1 + (m + 1) * h_dim1], abs(d__2)));
         tst2 = tst1 + (d__1 = h__[m + (m - 1) * h_dim1], abs(d__1)) * (abs(q) + abs(r__));
-        if (tst2 == tst1) 
+        if (tst2 == tst1)
             goto L150;
         /* L140: */
         }
@@ -11807,7 +11807,7 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     mp2 = m + 2;
 
     i__1 = en;
-    for (i__ = mp2; i__ <= i__1; ++i__) 
+    for (i__ = mp2; i__ <= i__1; ++i__)
         {
         h__[i__ + (i__ - 2) * h_dim1] = 0.0;
         if (i__ == mp2)
@@ -11816,21 +11816,21 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         L160:
             ;
         }
-        
+
     /*     .......... MrBFlt qr step involving rows l to en and columns m to en .......... */
     i__1 = na;
-    for (k = m; k <= i__1; ++k) 
+    for (k = m; k <= i__1; ++k)
         {
         notlas = k != na;
-        if (k == m) 
+        if (k == m)
             goto L170;
         p = h__[k + (k - 1) * h_dim1];
         q = h__[k + 1 + (k - 1) * h_dim1];
         r__ = 0.;
-        if (notlas) 
+        if (notlas)
             r__ = h__[k + 2 + (k - 1) * h_dim1];
         x = abs(p) + abs(q) + abs(r__);
-        if (x == 0.) 
+        if (x == 0.)
             goto L260;
         p /= x;
         q /= x;
@@ -11838,12 +11838,12 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         L170:
         d__1 = sqrt(p * p + q * q + r__ * r__);
         s = d_sign(&d__1, &p);
-        if (k == m) 
+        if (k == m)
             goto L180;
         h__[k + (k - 1) * h_dim1] = -s * x;
         goto L190;
         L180:
-        if (l != m) 
+        if (l != m)
             {
             h__[k + (k - 1) * h_dim1] = -h__[k + (k - 1) * h_dim1];
             }
@@ -11854,12 +11854,12 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         zz = r__ / s;
         q /= p;
         r__ /= p;
-        if (notlas) 
+        if (notlas)
             goto L225;
-        
+
         /* .......... row modification .......... */
         i__2 = *n;
-        for (j = k; j <= i__2; ++j) 
+        for (j = k; j <= i__2; ++j)
             {
             p = h__[k + j * h_dim1] + q * h__[k + 1 + j * h_dim1];
             h__[k + j * h_dim1] -= p * x;
@@ -11870,20 +11870,20 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         /* computing MIN */
         i__2 = en, i__3 = k + 3;
         j = min(i__2,i__3);
-        
+
         /* .......... column modification .......... */
         i__2 = j;
-        for (i__ = 1; i__ <= i__2; ++i__) 
+        for (i__ = 1; i__ <= i__2; ++i__)
             {
             p = x * h__[i__ + k * h_dim1] + y * h__[i__ + (k + 1) * h_dim1];
             h__[i__ + k * h_dim1] -= p;
             h__[i__ + (k + 1) * h_dim1] -= p * q;
             /* L210: */
             }
-            
+
         /* .......... accumulate transformations .......... */
         i__2 = *igh;
-        for (i__ = *low; i__ <= i__2; ++i__) 
+        for (i__ = *low; i__ <= i__2; ++i__)
             {
             p = x * z__[i__ + k * z_dim1] + y * z__[i__ + (k + 1) * z_dim1];
             z__[i__ + k * z_dim1] -= p;
@@ -11892,10 +11892,10 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             }
         goto L255;
         L225:
-        
+
         /* .......... row modification .......... */
         i__2 = *n;
-        for (j = k; j <= i__2; ++j) 
+        for (j = k; j <= i__2; ++j)
             {
             p = h__[k + j * h_dim1] + q * h__[k + 1 + j * h_dim1] + r__ * h__[k + 2 + j * h_dim1];
             h__[k + j * h_dim1] -= p * x;
@@ -11907,22 +11907,22 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         /* computing MIN */
         i__2 = en, i__3 = k + 3;
         j = min(i__2,i__3);
-        
+
         /* .......... column modification .......... */
         i__2 = j;
-        for (i__ = 1; i__ <= i__2; ++i__) 
+        for (i__ = 1; i__ <= i__2; ++i__)
             {
-            p = x * h__[i__ + k * h_dim1] + y * h__[i__ + (k + 1) * h_dim1] + 
+            p = x * h__[i__ + k * h_dim1] + y * h__[i__ + (k + 1) * h_dim1] +
             zz * h__[i__ + (k + 2) * h_dim1];
             h__[i__ + k * h_dim1] -= p;
             h__[i__ + (k + 1) * h_dim1] -= p * q;
             h__[i__ + (k + 2) * h_dim1] -= p * r__;
             /* L240: */
             }
-        
+
         /* .......... accumulate transformations .......... */
         i__2 = *igh;
-        for (i__ = *low; i__ <= i__2; ++i__) 
+        for (i__ = *low; i__ <= i__2; ++i__)
             {
             p = x * z__[i__ + k * z_dim1] + y * z__[i__ + (k + 1) * z_dim1] + zz * z__[i__ + (k + 2) * z_dim1];
             z__[i__ + k * z_dim1] -= p;
@@ -11935,7 +11935,7 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             ;
         }
     goto L70;
-    
+
     /* .......... one root found .......... */
     L270:
     h__[en + en * h_dim1] = x + t;
@@ -11943,7 +11943,7 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     wi[en] = 0.;
     en = na;
     goto L60;
-    
+
     /* .......... two roots found .......... */
     L280:
     p = (y - x) / 2.;
@@ -11952,14 +11952,14 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     h__[en + en * h_dim1] = x + t;
     x = h__[en + en * h_dim1];
     h__[na + na * h_dim1] = y + t;
-    if (q < 0.) 
+    if (q < 0.)
         goto L320;
-    
+
     /* .......... real pair .......... */
     zz = p + d_sign(&zz, &p);
     wr[na] = x + zz;
     wr[en] = wr[na];
-    if (zz != 0.) 
+    if (zz != 0.)
         {
         wr[en] = x - w / zz;
         }
@@ -11972,30 +11972,30 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     r__ = sqrt(p * p + q * q);
     p /= r__;
     q /= r__;
-    
+
     /* .......... row modification .......... */
     i__1 = *n;
-    for (j = na; j <= i__1; ++j) 
+    for (j = na; j <= i__1; ++j)
         {
         zz = h__[na + j * h_dim1];
         h__[na + j * h_dim1] = q * zz + p * h__[en + j * h_dim1];
         h__[en + j * h_dim1] = q * h__[en + j * h_dim1] - p * zz;
         /* L290: */
         }
-    
+
     /* .......... column modification .......... */
     i__1 = en;
-    for (i__ = 1; i__ <= i__1; ++i__) 
+    for (i__ = 1; i__ <= i__1; ++i__)
         {
         zz = h__[i__ + na * h_dim1];
         h__[i__ + na * h_dim1] = q * zz + p * h__[i__ + en * h_dim1];
         h__[i__ + en * h_dim1] = q * h__[i__ + en * h_dim1] - p * zz;
         /* L300: */
         }
-        
+
     /* .......... accumulate transformations .......... */
     i__1 = *igh;
-    for (i__ = *low; i__ <= i__1; ++i__) 
+    for (i__ = *low; i__ <= i__1; ++i__)
         {
         zz = z__[i__ + na * z_dim1];
         z__[i__ + na * z_dim1] = q * zz + p * z__[i__ + en * z_dim1];
@@ -12003,7 +12003,7 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         /* L310: */
         }
     goto L330;
-    
+
     /* .......... complex pair .......... */
     L320:
     wr[na] = x + p;
@@ -12013,57 +12013,57 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     L330:
     en = enm2;
     goto L60;
-    
+
     /* .......... all roots found.  backsubstitute to find vectors of upper triangular form .......... */
     L340:
-    if (norm == 0.0) 
+    if (norm == 0.0)
         goto L1001;
 
     /* .......... for en=n step -1 until 1 do -- .......... */
     i__1 = *n;
-    for (nn = 1; nn <= i__1; ++nn) 
+    for (nn = 1; nn <= i__1; ++nn)
         {
         en = *n + 1 - nn;
         p = wr[en];
         q = wi[en];
         na = en - 1;
-        if (q < 0.) 
+        if (q < 0.)
             goto L710;
-        else if (q == 0) 
+        else if (q == 0)
             goto L600;
-        else 
+        else
             goto L800;
-            
+
         /* .......... real vector .......... */
         L600:
         m = en;
         h__[en + en * h_dim1] = 1.0;
-        if (na == 0) 
+        if (na == 0)
             goto L800;
-        
+
         /*     .......... for i=en-1 step -1 until 1 do -- .......... */
         i__2 = na;
-        for (ii = 1; ii <= i__2; ++ii) 
+        for (ii = 1; ii <= i__2; ++ii)
             {
             i__ = en - ii;
             w = h__[i__ + i__ * h_dim1] - p;
             r__ = 0.0;
 
             i__3 = en;
-            for (j = m; j <= i__3; ++j) 
+            for (j = m; j <= i__3; ++j)
                 {
                 /* L610: */
                 r__ += h__[i__ + j * h_dim1] * h__[j + en * h_dim1];
                 }
 
-            if (wi[i__] >= 0.0) 
+            if (wi[i__] >= 0.0)
                 goto L630;
             zz = w;
             s = r__;
             goto L700;
             L630:
             m = i__;
-            if (wi[i__] != 0.0) 
+            if (wi[i__] != 0.0)
                 goto L640;
             t = w;
             if (t != 0.0)
@@ -12073,12 +12073,12 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             L632:
             t *= 0.01;
             tst2 = norm + t;
-            if (tst2 > tst1) 
+            if (tst2 > tst1)
                 goto L632;
             L635:
             h__[i__ + en * h_dim1] = -r__ / t;
             goto L680;
-            
+
             /* .......... solve real equations .......... */
             L640:
             x = h__[i__ + (i__ + 1) * h_dim1];
@@ -12086,7 +12086,7 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             q = (wr[i__] - p) * (wr[i__] - p) + wi[i__] * wi[i__];
             t = (x * s - zz * r__) / q;
             h__[i__ + en * h_dim1] = t;
-            if (abs(x) <= abs(zz)) 
+            if (abs(x) <= abs(zz))
                 goto L650;
             h__[i__ + 1 + en * h_dim1] = (-r__ - w * t) / x;
             goto L680;
@@ -12096,14 +12096,14 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             /*     .......... overflow control .......... */
             L680:
             t = (d__1 = h__[i__ + en * h_dim1], abs(d__1));
-            if (t == 0.0) 
+            if (t == 0.0)
                 goto L700;
             tst1 = t;
             tst2 = tst1 + 1.0 / tst1;
-            if (tst2 > tst1) 
+            if (tst2 > tst1)
                 goto L700;
             i__3 = en;
-            for (j = i__; j <= i__3; ++j) 
+            for (j = i__; j <= i__3; ++j)
                 {
                 h__[j + en * h_dim1] /= t;
                 /* L690: */
@@ -12112,17 +12112,17 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             L700:
                 ;
             }
-            
+
         /* .......... end real vector .......... */
         goto L800;
-        
+
         /* .......... complex vector .......... */
         L710:
         m = na;
-        
+
         /* .......... last vector component chosen imaginary so that eigenvector matrix is triangular .......... */
         if ((d__1 = h__[en + na * h_dim1], abs(d__1)) <= (d__2 = h__[na + en *
-        h_dim1], abs(d__2))) 
+        h_dim1], abs(d__2)))
             goto L720;
         h__[na + na * h_dim1] = q / h__[en + na * h_dim1];
         h__[na + en * h_dim1] = -(h__[en + en * h_dim1] - p) / h__[en + na * h_dim1];
@@ -12136,12 +12136,12 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         h__[en + na * h_dim1] = 0.0;
         h__[en + en * h_dim1] = 1.0;
         enm2 = na - 1;
-        if (enm2 == 0) 
+        if (enm2 == 0)
             goto L800;
 
         /*     .......... for i=en-2 step -1 until 1 do -- .......... */
         i__2 = enm2;
-        for (ii = 1; ii <= i__2; ++ii) 
+        for (ii = 1; ii <= i__2; ++ii)
             {
             i__ = na - ii;
             w = h__[i__ + i__ * h_dim1] - p;
@@ -12149,14 +12149,14 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             sa = 0.0;
 
             i__3 = en;
-            for (j = m; j <= i__3; ++j) 
+            for (j = m; j <= i__3; ++j)
                 {
                 ra += h__[i__ + j * h_dim1] * h__[j + na * h_dim1];
                 sa += h__[i__ + j * h_dim1] * h__[j + en * h_dim1];
                 /* L760: */
                 }
 
-            if (wi[i__] >= 0.0) 
+            if (wi[i__] >= 0.0)
                 goto L770;
             zz = w;
             r__ = ra;
@@ -12164,33 +12164,33 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             goto L795;
             L770:
             m = i__;
-            if (wi[i__] != 0.0) 
+            if (wi[i__] != 0.0)
                 goto L780;
             d__1 = -ra;
             d__2 = -sa;
             cdiv_(&d__1, &d__2, &w, &q, &h__[i__ + na * h_dim1], &h__[i__ + en * h_dim1]);
             goto L790;
-            
+
             /*     .......... solve complex equations .......... */
             L780:
             x = h__[i__ + (i__ + 1) * h_dim1];
             y = h__[i__ + 1 + i__ * h_dim1];
             vr = (wr[i__] - p) * (wr[i__] - p) + wi[i__] * wi[i__] - q * q;
             vi = (wr[i__] - p) * 2.0 * q;
-            if (vr != 0.0 || vi != 0.0) 
+            if (vr != 0.0 || vi != 0.0)
                 goto L784;
             tst1 = norm * (abs(w) + abs(q) + abs(x) + abs(y) + abs(zz));
             vr = tst1;
             L783:
             vr *= 0.01;
             tst2 = tst1 + vr;
-            if (tst2 > tst1) 
+            if (tst2 > tst1)
                 goto L783;
             L784:
             d__1 = x * r__ - zz * ra + q * sa;
             d__2 = x * s - zz * sa - q * ra;
             cdiv_(&d__1, &d__2, &vr, &vi, &h__[i__ + na * h_dim1], &h__[i__ + en * h_dim1]);
-            if (abs(x) <= abs(zz) + abs(q)) 
+            if (abs(x) <= abs(zz) + abs(q))
                 goto L785;
             h__[i__ + 1 + na * h_dim1] = (-ra - w * h__[i__ + na * h_dim1] + q * h__[i__ + en * h_dim1]) / x;
             h__[i__ + 1 + en * h_dim1] = (-sa - w * h__[i__ + en * h_dim1] - q * h__[i__ + na * h_dim1]) / x;
@@ -12205,14 +12205,14 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
             /* Computing MAX */
             d__3 = (d__1 = h__[i__ + na * h_dim1], abs(d__1)), d__4 = (d__2 = h__[i__ + en * h_dim1], abs(d__2));
             t = max(d__3,d__4);
-            if (t == 0.0) 
+            if (t == 0.0)
                 goto L795;
             tst1 = t;
             tst2 = tst1 + 1.0 / tst1;
-            if (tst2 > tst1) 
+            if (tst2 > tst1)
                 goto L795;
             i__3 = en;
-            for (j = i__; j <= i__3; ++j) 
+            for (j = i__; j <= i__3; ++j)
                 {
                 h__[j + na * h_dim1] /= t;
                 h__[j + en * h_dim1] /= t;
@@ -12227,12 +12227,12 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         }
     /*     .......... end back substitution vectors of isolated roots .......... */
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) 
+    for (i__ = 1; i__ <= i__1; ++i__)
         {
-        if (i__ >= *low && i__ <= *igh) 
+        if (i__ >= *low && i__ <= *igh)
             goto L840;
         i__2 = *n;
-        for (j = i__; j <= i__2; ++j) 
+        for (j = i__; j <= i__2; ++j)
             {
             /* L820: */
             z__[i__ + j * z_dim1] = h__[i__ + j * h_dim1];
@@ -12240,21 +12240,21 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
         L840:
         ;
         }
-        
+
     /* .......... multiply by transformation matrix to give vectors of original full matrix. */
     /*            for j=n step -1 until low do -- .......... */
     i__1 = *n;
-    for (jj = *low; jj <= i__1; ++jj) 
+    for (jj = *low; jj <= i__1; ++jj)
         {
         j = *n + *low - jj;
         m = min(j,*igh);
 
         i__2 = *igh;
-        for (i__ = *low; i__ <= i__2; ++i__) 
+        for (i__ = *low; i__ <= i__2; ++i__)
             {
             zz = 0.0;
             i__3 = m;
-            for (k = *low; k <= i__3; ++k) 
+            for (k = *low; k <= i__3; ++k)
                 {
                 /* L860: */
                 zz += z__[i__ + k * z_dim1] * h__[k + j * h_dim1];
@@ -12271,7 +12271,7 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
     *ierr = en;
     L1001:
     return 0;
-    
+
 }
 /* end f2c version of code */
 #endif
@@ -12282,8 +12282,8 @@ int hqr2 (int *nm, int *n, int *low, int *igh, MrBFlt *h__, MrBFlt *wr, MrBFlt *
 MrBFlt IncompleteBetaFunction (MrBFlt alpha, MrBFlt beta, MrBFlt x)
 {
     MrBFlt      bt, gm1, gm2, gm3, temp;
-    
-    if (x < 0.0 || x > 1.0) 
+
+    if (x < 0.0 || x > 1.0)
         {
         MrBayesPrint ("%s   Error: Problem in IncompleteBetaFunction.\n", spacer);
         exit (0);
@@ -12313,7 +12313,7 @@ MrBFlt IncompleteBetaFunction (MrBFlt alpha, MrBFlt beta, MrBFlt x)
 |
 |   Returns the incomplete gamma ratio I(x,alpha) where x is the upper
 |   limit of the integration and alpha is the shape parameter.  Returns (-1)
-|   if in error.   
+|   if in error.
 |
 |   Bhattacharjee, G. P.  1970.  The incomplete gamma integral.  Applied
 |      Statistics, 19:285-287 (AS32)
@@ -12324,60 +12324,60 @@ MrBFlt IncompleteGamma (MrBFlt x, MrBFlt alpha, MrBFlt LnGamma_alpha)
     int             i;
     MrBFlt      p = alpha, g = LnGamma_alpha,
                     accurate = 1e-8, overflow = 1e30,
-                    factor, gin = 0.0, rn = 0.0, a = 0.0, b = 0.0, an = 0.0, 
+                    factor, gin = 0.0, rn = 0.0, a = 0.0, b = 0.0, an = 0.0,
                     dif = 0.0, term = 0.0, pn[6];
 
-    if (fabs(x) < ETA) 
+    if (fabs(x) < ETA)
         return (0.0);
-    if (x < 0 || p <= 0) 
+    if (x < 0 || p <= 0)
         return (-1.0);
 
-    factor = exp(p*log(x)-x-g);   
-    if (x>1 && x>=p) 
+    factor = exp(p*log(x)-x-g);
+    if (x>1 && x>=p)
         goto l30;
-    gin = 1.0;  
-    term = 1.0;  
+    gin = 1.0;
+    term = 1.0;
     rn = p;
     l20:
         rn++;
-        term *= x/rn;   
+        term *= x/rn;
         gin += term;
-        if (term > accurate) 
+        if (term > accurate)
             goto l20;
         gin *= factor/p;
         goto l50;
     l30:
-        a = 1.0-p;   
-        b = a+x+1.0;  
+        a = 1.0-p;
+        b = a+x+1.0;
         term = 0.0;
-        pn[0] = 1.0;  
-        pn[1] = x;  
-        pn[2] = x+1;  
+        pn[0] = 1.0;
+        pn[1] = x;
+        pn[2] = x+1;
         pn[3] = x*b;
         gin = pn[2]/pn[3];
     l32:
-        a++;  
-        b += 2.0;  
-        term++;   
+        a++;
+        b += 2.0;
+        term++;
         an = a*term;
-        for (i=0; i<2; i++) 
+        for (i=0; i<2; i++)
             pn[i+4] = b*pn[i+2]-an*pn[i];
-        if (fabs(pn[5]) < ETA) 
+        if (fabs(pn[5]) < ETA)
             goto l35;
-        rn = pn[4]/pn[5];   
+        rn = pn[4]/pn[5];
         dif = fabs(gin-rn);
-        if (dif>accurate) 
+        if (dif>accurate)
             goto l34;
-        if (dif<=accurate*rn) 
+        if (dif<=accurate*rn)
             goto l42;
     l34:
         gin = rn;
     l35:
-        for (i=0; i<4; i++) 
+        for (i=0; i<4; i++)
             pn[i] = pn[i+2];
-        if (fabs(pn[4]) < overflow) 
+        if (fabs(pn[4]) < overflow)
             goto l32;
-        for (i=0; i<4; i++) 
+        for (i=0; i<4; i++)
             pn[i] /= overflow;
         goto l32;
     l42:
@@ -12394,12 +12394,12 @@ MrBFlt IncompleteGamma (MrBFlt x, MrBFlt alpha, MrBFlt LnGamma_alpha)
 |   Calculates aInv = a^{-1} using LU-decomposition. The input matrix a is
 |   destroyed in the process. The program returns an error if the matrix is
 |   singular. col and indx are work vectors.
-|      
+|
 ---------------------------------------------------------------------------------*/
 int InvertMatrix (int dim, MrBFlt **a, MrBFlt *col, int *indx, MrBFlt **aInv)
 {
     int         rc, i, j;
-    
+
     rc = LUDecompose (dim, a, col, indx, (MrBFlt *)NULL);
     if (rc == FALSE)
         {
@@ -12413,7 +12413,7 @@ int InvertMatrix (int dim, MrBFlt **a, MrBFlt *col, int *indx, MrBFlt **aInv)
                 aInv[i][j] = col[i];
             }
         }
-        
+
     return (rc);
 }
 
@@ -12422,7 +12422,7 @@ int InvertMatrix (int dim, MrBFlt **a, MrBFlt *col, int *indx, MrBFlt **aInv)
 |
 |   LBinormal
 |
-|   L(h1,h2,r) = prob(x>h1, y>h2), where x and y are standard binormal, 
+|   L(h1,h2,r) = prob(x>h1, y>h2), where x and y are standard binormal,
 |   with r=corr(x,y),  error < 2e-7.
 |
 |   Drezner Z., and G.O. Wesolowsky (1990) On the computation of the
@@ -12437,20 +12437,20 @@ MrBFlt LBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r)
     MrBFlt      Lh=0.0, r1, r2, r3, rr, aa, ab, h3, h5, h6, h7, h12, temp1, temp2, exp1, exp2;
 
     h12 = (h1 * h1 + h2 * h2) / 2.0;
-    if (fabs(r) >= 0.7) 
+    if (fabs(r) >= 0.7)
         {
-        r2 = 1.0 - r * r;   
+        r2 = 1.0 - r * r;
         r3 = sqrt(r2);
-        if (r < 0) 
+        if (r < 0)
             h2 *= -1;
-        h3 = h1 * h2;   
+        h3 = h1 * h2;
         h7 = exp(-h3 / 2.0);
         if (fabs(r-1.0)>ETA)  /* fabs(r) != 1.0 */
             {
-            h6 = fabs(h1-h2);  
-            h5 = h6 * h6 / 2.0; 
-            h6 /= r3; 
-            aa = 0.5 - h3 / 8;  
+            h6 = fabs(h1-h2);
+            h5 = h6 * h6 / 2.0;
+            h6 /= r3;
+            aa = 0.5 - h3 / 8;
             ab = 3.0 - 2.0 * aa * h5;
             temp1 = -h5 / r2;
             if (temp1 < -100.0)
@@ -12458,10 +12458,10 @@ MrBFlt LBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r)
             else
                 exp1 = exp(temp1);
             Lh = 0.13298076 * h6 * ab * (1.0 - CdfNormal(h6)) - exp1 * (ab + aa * r2) * 0.053051647;
-            for (i=0; i<5; i++) 
+            for (i=0; i<5; i++)
                 {
                 r1 = r3 * x[i];
-                rr = r1 * r1;   
+                rr = r1 * r1;
                 r2 = sqrt(1.0 - rr);
                 temp1 = -h5 / rr;
                 if (temp1 < -100.0)
@@ -12476,19 +12476,19 @@ MrBFlt LBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r)
                 Lh -= w[i] * exp1 * (exp2 / r2 / h7 - 1.0 - aa * rr);
                 }
             }
-        if (r > 0) 
+        if (r > 0)
             Lh = Lh * r3 * h7 + (1.0 - CdfNormal(MAX(h1, h2)));
-        else if (r<0) 
+        else if (r<0)
             Lh = (h1 < h2 ? CdfNormal(h2) - CdfNormal(h1) : 0) - Lh * r3 * h7;
         }
-    else 
+    else
         {
         h3 = h1 * h2;
-        if (fabs(r)>ETA) 
+        if (fabs(r)>ETA)
             {
-            for (i=0; i<5; i++) 
+            for (i=0; i<5; i++)
                 {
-                r1 = r * x[i]; 
+                r1 = r * x[i];
                 r2 = 1.0 - r1 * r1;
                 temp1 = (r1 * h3 - h12) / r2;
                 if (temp1 < -100.0)
@@ -12538,23 +12538,23 @@ MrBFlt  LnFactorial (int value)
 |   Pike, M. C. and I. D. Hill.  1966.  Algorithm 291: Logarithm of the gamma
 |      function.  Communications of the Association for Computing
 |      Machinery, 9:684.
-|      
+|
 ---------------------------------------------------------------------------------*/
 MrBFlt LnGamma (MrBFlt alp)
 {
     MrBFlt      x = alp, f = 0.0, z;
-    
-    if (x < 7) 
+
+    if (x < 7)
         {
         f = 1.0;
         z = x-1.0;
-        while (++z < 7.0)  
+        while (++z < 7.0)
             f *= z;
-        x = z;   
+        x = z;
         f = -log(f);
         }
     z = 1.0 / (x*x);
-    return  (f + (x-0.5)*log(x) - x + 0.918938533204673 + 
+    return  (f + (x-0.5)*log(x) - x + 0.918938533204673 +
             (((-0.000595238095238*z+0.000793650793651)*z-0.002777777777778)*z +0.083333333333333)/x);
 }
 
@@ -12661,7 +12661,7 @@ MrBFlt LnPriorProbOffsetExponential_Param_Offset_Mean (MrBFlt val, MrBFlt *param
 MrBFlt LnPriorProbOffsetGamma (MrBFlt val, MrBFlt *params)
 {
     MrBFlt x, alpha, beta;
-    
+
     x     = val - params[0];
     alpha = params[1];
     beta  = params[2];
@@ -12726,7 +12726,7 @@ MrBFlt LnPriorProbTruncatedNormal (MrBFlt val, MrBFlt *params)
     z = (val - params[0]) / params[1];
     z_0 = (0.0 - params[0]) / params[1];
     normConst = CdfNormal(z_0);
-    
+
     return - log(params[1] * sqrt(2.0 * M_PI)) - z * z / 2.0 - log(1.0 - normConst);
 }
 
@@ -12813,7 +12813,7 @@ MrBFlt LnProbRatioLognormal (MrBFlt newX, MrBFlt oldX, MrBFlt *params)
 
 /* Calculate probability ratio of realizations for log normal random variable; parameters mean and sd */
 MrBFlt LnProbRatioLognormal_Param_Mean_Sd (MrBFlt newX, MrBFlt oldX, MrBFlt *params)
-{    
+{
     MrBFlt newZ, oldZ, mean_log, sd_log;
 
     sd_log      = sqrt (log((params[1]*params[1])/(params[0]*params[0]) + 1));
@@ -12977,11 +12977,11 @@ MrBFlt LnProbTruncGamma (MrBFlt alpha, MrBFlt beta, MrBFlt x, MrBFlt min, MrBFlt
 MrBFlt LnProbLogNormal (MrBFlt exp, MrBFlt sd, MrBFlt x)
 {
     MrBFlt lnProb, z;
-    
+
     z = (log(x) - exp) / sd;
-    
+
     lnProb = - log (x * sd * sqrt (2.0 * M_PI)) - (z * z / 2.0);
-    
+
     return lnProb;
 }
 
@@ -12990,10 +12990,10 @@ MrBFlt LnProbLogNormal (MrBFlt exp, MrBFlt sd, MrBFlt x)
 MrBFlt LnRatioLogNormal (MrBFlt exp, MrBFlt sd, MrBFlt xNew, MrBFlt xOld)
 {
     MrBFlt  newZ, oldZ;
-    
+
     newZ = (log(xNew) - exp) / sd;
     oldZ = (log(xOld) - exp) / sd;
-    
+
     return (oldZ * oldZ - newZ * newZ) / 2.0 + log(xOld) - log(xNew);
 }
 
@@ -13003,14 +13003,14 @@ MrBFlt LnRatioLogNormal (MrBFlt exp, MrBFlt sd, MrBFlt xNew, MrBFlt xOld)
 MrBFlt LnProbTK02LogNormal (MrBFlt mean, MrBFlt var, MrBFlt x)
 {
     MrBFlt  z, lnProb, mu, sigma;
-    
+
     sigma = sqrt(log(1.0 + (var / (mean*mean))));
     mu    = log(mean) - sigma * sigma / 2.0;
-    
+
     z = (log(x) - mu) / sigma;
-    
+
     lnProb = - log (x * sigma * sqrt (2.0 * M_PI)) - (z * z / 2.0);
-    
+
     return lnProb;
 }
 
@@ -13035,18 +13035,18 @@ MrBFlt LnRatioTK02LogNormal (MrBFlt mean, MrBFlt var, MrBFlt xNew, MrBFlt xOld)
 |   LogBase2Plus1
 |
 |   This function is called from ComputeMatrixExponential.
-|      
+|
 ---------------------------------------------------------------------------------*/
 int LogBase2Plus1 (MrBFlt x)
 {
     int     j = 0;
 
-    while (x > 1.0 - 1.0e-07) 
+    while (x > 1.0 - 1.0e-07)
         {
         x /= 2.0;
         j++;
         }
-        
+
     return (j);
 }
 
@@ -13056,17 +13056,17 @@ int LogBase2Plus1 (MrBFlt x)
 |   LogNormalRandomVariable
 |
 |   Draw a random variable from a lognormal distribution.
-|      
+|
 ---------------------------------------------------------------------------------*/
 MrBFlt LogNormalRandomVariable (MrBFlt mean, MrBFlt sd, RandLong *seed)
 {
     MrBFlt      x;
-    
+
     x = PointNormal(RandomNumber(seed));
 
     x*= sd;
     x += mean;
-    
+
     return exp(x);
 }
 
@@ -13076,7 +13076,7 @@ MrBFlt LogNormalRandomVariable (MrBFlt mean, MrBFlt sd, RandLong *seed)
 |   LUBackSubstitution
 |
 |   Back substitute into an LU-decomposed matrix.
-|      
+|
 ---------------------------------------------------------------------------------*/
 void LUBackSubstitution (int dim, MrBFlt **a, int *indx, MrBFlt *b)
 {
@@ -13112,7 +13112,7 @@ void LUBackSubstitution (int dim, MrBFlt **a, int *indx, MrBFlt *b)
 |   LUDecompose
 |
 |   Calculate the LU-decomposition of the matrix a. The matrix a is replaced.
-|      
+|
 ---------------------------------------------------------------------------------*/
 int LUDecompose (int dim, MrBFlt **a, MrBFlt *vv, int *indx, MrBFlt *pd)
 {
@@ -13165,7 +13165,7 @@ int LUDecompose (int dim, MrBFlt **a, MrBFlt *vv, int *indx, MrBFlt *pd)
                 dum = a[imax][k];
                 a[imax][k] = a[j][k];
                 a[j][k] = dum;
-                }   
+                }
             d = -d;
             vv[imax] = vv[j];
             }
@@ -13181,7 +13181,7 @@ int LUDecompose (int dim, MrBFlt **a, MrBFlt *vv, int *indx, MrBFlt *pd)
         }
     if (pd != NULL)
         *pd = d;
-        
+
     return (NO_ERROR);
 }
 
@@ -13202,10 +13202,10 @@ void MultiplyMatrices (int dim, MrBFlt **a, MrBFlt **b, MrBFlt **result)
 
     for (i=0; i<dim; i++)
         {
-        for (j=0; j<dim; j++) 
+        for (j=0; j<dim; j++)
             {
             temp[i][j] = 0.0;
-            for (k=0; k<dim; k++) 
+            for (k=0; k<dim; k++)
                 {
                 temp[i][j] += a[i][k] * b[k][j];
                 }
@@ -13213,12 +13213,12 @@ void MultiplyMatrices (int dim, MrBFlt **a, MrBFlt **b, MrBFlt **result)
         }
     for (i=0; i<dim; i++)
         {
-        for (j=0; j<dim; j++) 
+        for (j=0; j<dim; j++)
             {
             result[i][j] = temp[i][j];
             }
         }
-        
+
     FreeSquareDoubleMatrix (temp);
 }
 
@@ -13272,7 +13272,7 @@ int MultiplyMatrixNTimes (int dim, MrBFlt **Mat, int power, MrBFlt **Result)
         while ((1 << numSquares) < power)
             numSquares++;
         numRemaining = power - (1 << numSquares);
-        
+
         /* now, multiply matrix by power of 2's */
         CopyDoubleMatrices (dim, Mat, TempIn);
         for (k=0; k<numSquares; k++)
@@ -13280,17 +13280,17 @@ int MultiplyMatrixNTimes (int dim, MrBFlt **Mat, int power, MrBFlt **Result)
             MultiplyMatrices (dim, TempIn, TempIn, TempOut);
             CopyDoubleMatrices (dim, TempOut, TempIn);
             }
-            
+
         /* TempIn is Mat^numSquares. Now, multiply it by Mat numRemaining times */
         for (k=0; k<numRemaining; k++)
             {
             MultiplyMatrices (dim, TempIn, Mat, TempOut);
             CopyDoubleMatrices (dim, TempOut, TempIn);
             }
-            
+
         /* copy result */
         CopyDoubleMatrices (dim, TempIn, Result);
-        
+
         FreeSquareDoubleMatrix (TempIn);
         FreeSquareDoubleMatrix (TempOut);
         }
@@ -13303,61 +13303,61 @@ int MultiplyMatrixNTimes (int dim, MrBFlt **Mat, int power, MrBFlt **Result)
 |
 |   PointChi2
 |
-|   Returns z so that Prob(x < z) = prob where x is Chi2 distributed with df=v. 
+|   Returns z so that Prob(x < z) = prob where x is Chi2 distributed with df=v.
 |   Returns -1 if in error.   0.000002 < prob < 0.999998.
 |
 ---------------------------------------------------------------------------------*/
 MrBFlt PointChi2 (MrBFlt prob, MrBFlt v)
 {
     MrBFlt      e = 0.5e-6, aa = 0.6931471805, p = prob, g,
-                    xx, c, ch, a = 0.0, q = 0.0, p1 = 0.0, p2 = 0.0, t = 0.0, 
+                    xx, c, ch, a = 0.0, q = 0.0, p1 = 0.0, p2 = 0.0, t = 0.0,
                     x = 0.0, b = 0.0, s1, s2, s3, s4, s5, s6,
                     tmp;
 
-    if (p < 0.000002 || p > 0.999998 || v <= 0.0) 
+    if (p < 0.000002 || p > 0.999998 || v <= 0.0)
         return (-1.0);
     g = LnGamma (v/2.0);
-    xx = v/2.0;   
+    xx = v/2.0;
     c = xx - 1.0;
-    if (v >= -1.24*log(p)) 
+    if (v >= -1.24*log(p))
         goto l1;
     ch = pow((p*xx*exp(g+xx*aa)), 1.0/xx);
-    if (ch-e<0) 
+    if (ch-e<0)
         return (ch);
     goto l4;
     l1:
-        if (v > 0.32) 
+        if (v > 0.32)
             goto l3;
-        ch = 0.4;   
+        ch = 0.4;
         a = log(1.0-p);
     l2:
-        q = ch;  
-        p1 = 1.0+ch*(4.67+ch);  
+        q = ch;
+        p1 = 1.0+ch*(4.67+ch);
         p2 = ch*(6.73+ch*(6.66+ch));
         t = -0.5+(4.67+2.0*ch)/p1 - (6.73+ch*(13.32+3.0*ch))/p2;
         ch -= (1.0-exp(a+g+0.5*ch+c*aa)*p2/p1)/t;
-        if (fabs(q/ch-1.0)-0.01 <= 0.0) 
+        if (fabs(q/ch-1.0)-0.01 <= 0.0)
             goto l4;
-        else                       
+        else
             goto l2;
-    l3: 
+    l3:
         x = PointNormal (p);
-        p1 = 0.222222/v;   
+        p1 = 0.222222/v;
         tmp = (x*sqrt(p1)+1.0-p1);
         ch = v*tmp*tmp*tmp;
-        if (ch > 2.2*v+6.0)  
+        if (ch > 2.2*v+6.0)
             ch = -2.0*(log(1.0-p)-c*log(0.5*ch)+g);
     l4:
-        q = ch;   
+        q = ch;
         p1 = 0.5*ch;
-        if ((t = IncompleteGamma (p1, xx, g)) < 0.0) 
+        if ((t = IncompleteGamma (p1, xx, g)) < 0.0)
             {
             MrBayesPrint ("%s   Error: Problem in PointChi2", spacer);
             return (-1.0);
             }
         p2 = p-t;
-        t = p2*exp(xx*aa+g+p1-c*log(ch));   
-        b = t/ch;  
+        t = p2*exp(xx*aa+g+p1-c*log(ch));
+        b = t/ch;
         a = 0.5*t-b*c;
         s1 = (210.0+a*(140.0+a*(105.0+a*(84.0+a*(70.0+60.0*a))))) / 420.0;
         s2 = (420.0+a*(735.0+a*(966.0+a*(1141.0+1278.0*a))))/2520.0;
@@ -13366,7 +13366,7 @@ MrBFlt PointChi2 (MrBFlt prob, MrBFlt v)
         s5 = (84.0+264.0*a+c*(175.0+606.0*a)) / 2520.0;
         s6 = (120.0+c*(346.0+127.0*c)) / 5040.0;
         ch += t*(1+0.5*t*s1-b*c*(s1-b*(s2-b*(s3-b*(s4-b*(s5-b*s6))))));
-        if (fabs(q/ch-1.0) > e) 
+        if (fabs(q/ch-1.0) > e)
             goto l4;
         return (ch);
 }
@@ -13398,11 +13398,11 @@ MrBFlt PointNormal (MrBFlt prob)
                     y, z = 0, p = prob, p1;
 
     p1 = (p<0.5 ? p : 1-p);
-    if (p1<1e-20) 
+    if (p1<1e-20)
        return (-9999);
-    y = sqrt (log(1/(p1*p1)));   
+    y = sqrt (log(1/(p1*p1)));
     z = y + ((((y*a4+a3)*y+a2)*y+a1)*y+a0) / ((((y*b4+b3)*y+b2)*y+b1)*y+b0);
-    
+
     return (p<0.5 ? -z : z);
 }
 
@@ -13419,10 +13419,10 @@ void PrintComplexVector (int dim, MrBComplex *vec)
     int     i;
 
     MrBayesPrint ("{");
-    for (i = 0; i < (dim - 1); i++) 
+    for (i = 0; i < (dim - 1); i++)
         {
         MrBayesPrint ("%lf + %lfi, ", vec[i].re, vec[i].im);
-        if (i == 1) 
+        if (i == 1)
             MrBayesPrint("\n    ");
         }
     MrBayesPrint ("%lf + %lfi}\n", vec[dim - 1].re, vec[dim - 1].im);
@@ -13441,23 +13441,23 @@ void PrintSquareComplexMatrix (int dim, MrBComplex **m)
     int     row, col;
 
     MrBayesPrint ("{");
-    for (row = 0; row < (dim - 1); row++) 
+    for (row = 0; row < (dim - 1); row++)
         {
         MrBayesPrint ("{");
-        for (col = 0; col < (dim - 1); col++) 
+        for (col = 0; col < (dim - 1); col++)
             {
             MrBayesPrint ("%lf + %lfi, ", m[row][col].re, m[row][col].im);
-            if (col == 1) 
+            if (col == 1)
                 MrBayesPrint ("\n    ");
             }
-        MrBayesPrint ("%lf + %lfi},\n", 
+        MrBayesPrint ("%lf + %lfi},\n",
         m[row][dim - 1].re, m[row][dim - 1].im);
         }
     MrBayesPrint ("{");
-    for (col = 0; col < (dim - 1); col++) 
+    for (col = 0; col < (dim - 1); col++)
         {
         MrBayesPrint ("%lf + %lfi, ", m[dim - 1][col].re, m[dim - 1][col].im);
-        if (col == 1) 
+        if (col == 1)
             MrBayesPrint ("\n    ");
         }
     MrBayesPrint ("%lf + %lfi}}", m[dim - 1][dim - 1].re, m[dim - 1][dim - 1].im);
@@ -13475,8 +13475,8 @@ void PrintSquareComplexMatrix (int dim, MrBComplex **m)
 void PrintSquareDoubleMatrix (int dim, MrBFlt **matrix)
 {
     int         i, j;
-    
-    for (i=0; i<dim; i++) 
+
+    for (i=0; i<dim; i++)
         {
         for (j=0; j<dim; j++)
             MrBayesPrint ("%1.6lf ", matrix[i][j]);
@@ -13495,8 +13495,8 @@ void PrintSquareDoubleMatrix (int dim, MrBFlt **matrix)
 void PrintSquareIntegerMatrix (int dim, int **matrix)
 {
     int         i, j;
-    
-    for (i=0; i<dim; i++) 
+
+    for (i=0; i<dim; i++)
         {
         for (j=0; j<dim; j++)
             MrBayesPrint ("%d ", matrix[i][j]);
@@ -13515,10 +13515,10 @@ void PrintSquareIntegerMatrix (int dim, int **matrix)
 MrBComplex ProductOfRealAndComplex (MrBFlt a, MrBComplex b)
 {
     MrBComplex     c;
-    
+
     c.re = a * b.re;
     c.im = a * b.im;
-    
+
     return (c);
 }
 
@@ -13532,7 +13532,7 @@ MrBComplex ProductOfRealAndComplex (MrBFlt a, MrBComplex b)
 MrBFlt  PsiExp (MrBFlt alpha)
 {
     MrBFlt      digamma, y, r, s, c, s3, s4, s5, d1;
-    
+
     s = 1.0e-05;
     c = 8.5;
     s3 = 8.333333333333333333333333e-02;
@@ -13544,13 +13544,13 @@ MrBFlt  PsiExp (MrBFlt alpha)
     y = alpha;
     if (y <= 0.0)
         return (0.0);
-    
+
     if (y <= s)
         {
         digamma = d1 - 1.0 / y;
         return (exp (digamma));
         }
-    
+
     while (y < c)
         {
         digamma -= 1.0 / y;
@@ -13561,7 +13561,7 @@ MrBFlt  PsiExp (MrBFlt alpha)
     digamma += (log (y) - 0.5 * r);
     r *= r;
     digamma -= r * (s3 - r * (s4 - r * s5));
-    
+
     return (exp (digamma));
 }
 
@@ -13597,7 +13597,7 @@ MrBFlt  PsiGammaLnRatio (MrBFlt alpha, MrBFlt numerator, MrBFlt denominator)
     beta = PsiExp (alpha);
 
     lnRatio = (alpha - 1.0) * (log (numerator) - log (denominator)) - beta * (numerator - denominator);
-    
+
     return (lnRatio);
 }
 
@@ -13623,7 +13623,7 @@ MrBFlt QuantileGamma (MrBFlt x, MrBFlt alfa, MrBFlt beta)
     MrBFlt      quantile;
 
     quantile = POINTGAMMA(x, alfa, beta);
-    
+
     return (quantile);
 }
 
@@ -13660,17 +13660,17 @@ MrBFlt RandomNumber (RandLong *seed)
 MrBFlt RndGamma (MrBFlt s, RandLong *seed)
 {
     MrBFlt  r=0.0;
-    
-    if (s <= 0.0)    
+
+    if (s <= 0.0)
         puts ("Gamma parameter less than zero\n");
 
-    else if (s < 1.0)  
+    else if (s < 1.0)
         r = RndGamma1 (s, seed);
-    else if (s > 1.0)  
+    else if (s > 1.0)
         r = RndGamma2 (s, seed);
     else    /* 0-log() == -1 * log(), but =- looks confusing */
         r -= log(RandomNumber(seed));
-        
+
     return (r);
 }
 
@@ -13684,8 +13684,8 @@ MrBFlt RndGamma1 (MrBFlt s, RandLong *seed)
 {
     MrBFlt          r, x=0.0, tiny=1e-37, w;
     static MrBFlt   a, p, uf, ss=10.0, d;
-    
-    if (fabs(s-ss)>ETA) /* s != ss */ 
+
+    if (fabs(s-ss)>ETA) /* s != ss */
         {
         a  = 1.0 - s;
         p  = a / (a + s * exp(-a));
@@ -13693,7 +13693,7 @@ MrBFlt RndGamma1 (MrBFlt s, RandLong *seed)
         d  = a * log(a);
         ss = s;
         }
-    for (;;) 
+    for (;;)
         {
         r = RandomNumber(seed);
         if (r > p)
@@ -13706,15 +13706,15 @@ MrBFlt RndGamma1 (MrBFlt s, RandLong *seed)
             x = a * pow(r / p, 1.0 / s);
             w = x;
             }
-        else            
+        else
             return (0.0);
         r = RandomNumber(seed);
         if (1.0 - r <= w && r > 0.0)
-        if (r*(w + 1.0) >= 1.0 || -log(r) <= w)  
+        if (r*(w + 1.0) >= 1.0 || -log(r) <= w)
             continue;
         break;
         }
-        
+
     return (x);
 }
 
@@ -13728,27 +13728,27 @@ MrBFlt RndGamma2 (MrBFlt s, RandLong *seed)
 {
     MrBFlt          r , d, f, g, x;
     static MrBFlt   b, h, ss=0.0;
-    
+
     if (fabs(s-ss)>ETA) /* s != ss */
         {
         b  = s - 1.0;
         h  = sqrt(3.0 * s - 0.75);
         ss = s;
         }
-    for (;;) 
+    for (;;)
         {
         r = RandomNumber(seed);
         g = r - r * r;
         f = (r - 0.5) * h / sqrt(g);
         x = b + f;
-        if (x <= 0.0) 
+        if (x <= 0.0)
             continue;
         r = RandomNumber(seed);
         d = 64 * r * r * g * g * g;
-        if (d * x < x - 2.0 * f * f || log(d) < 2.0 * (b * log(x / b) - f))  
+        if (d * x < x - 2.0 * f * f || log(d) < 2.0 * (b * log(x / b) - f))
             break;
         }
-        
+
     return (x);
 }
 
@@ -13757,17 +13757,17 @@ MrBFlt RndGamma2 (MrBFlt s, RandLong *seed)
 |
 |   SetQvalue
 |
-|   The Pade method for calculating the matrix exponential, tMat = e^{qMat * v}, 
+|   The Pade method for calculating the matrix exponential, tMat = e^{qMat * v},
 |   has an error, e(p,q), that can be controlled by setting p and q to appropriate
 |   values. The error is:
 |
 |      e(p,q) = 2^(3-(p+q)) * ((p!*q!) / (p+q)! * (p+q+1)!)
 |
-|   Setting p = q will minimize the error for a given amount of work. This function 
+|   Setting p = q will minimize the error for a given amount of work. This function
 |   assumes that p = q. The function takes in as a parameter the desired tolerance
 |   for the accuracy of the matrix exponentiation, and returns qV = p = q, that
 |   will achieve the tolerance. The Pade approximation method is described in:
-|  
+|
 |   Golub, G. H., and C. F. Van Loan. 1996. Matrix Computations, Third Edition.
 |      The Johns Hopkins University Press, Baltimore, Maryland.
 |
@@ -13778,7 +13778,7 @@ int SetQvalue (MrBFlt tol)
 {
     int         qV;
     MrBFlt      x;
-    
+
     /*
     x = pow(2.0, 3.0 - (0 + 0)) * Factorial(0) * Factorial (0) / (Factorial(0+0) * Factorial (0+0+1));
     */
@@ -13789,7 +13789,7 @@ int SetQvalue (MrBFlt tol)
         qV++;
         x = pow(2.0, 3.0 - (qV + qV)) * Factorial(qV) * Factorial (qV) / (Factorial(qV+qV) * Factorial (qV+qV+1));
         }
-        
+
     return (qV);
 }
 
@@ -13815,16 +13815,16 @@ void SetToIdentity (int dim, MrBFlt **matrix)
 |
 |   Tha
 |
-|   Calculate Owen's (1956) T(h,a) function, -inf <= h, a <= inf, 
-|   where h = h1/h2, a = a1/a2, from the program of: 
+|   Calculate Owen's (1956) T(h,a) function, -inf <= h, a <= inf,
+|   where h = h1/h2, a = a1/a2, from the program of:
 |
-|   Young, J. C. and C. E. Minder.  1974.  Algorithm AS 76.  An integral  
-|      useful in calculating non-central t and bivariate normal  
-|      probabilities.  Appl. Statist., 23:455-457.  [Correction: Appl.  
+|   Young, J. C. and C. E. Minder.  1974.  Algorithm AS 76.  An integral
+|      useful in calculating non-central t and bivariate normal
+|      probabilities.  Appl. Statist., 23:455-457.  [Correction: Appl.
 |      Statist., 28:113 (1979).  Remarks: Appl. Statist. 27:379 (1978),
-|      28: 113 (1979), 34:100-101 (1985), 38:580-582 (1988)]  
+|      28: 113 (1979), 34:100-101 (1985), 38:580-582 (1988)]
 |
-|   See also: 
+|   See also:
 |
 |   Johnson, N. L.  and S. Kotz.  1972.  Distributions in statistics:
 |      multivariate distributions.  Wiley and Sons.  New York.  pp. 93-100.
@@ -13838,58 +13838,58 @@ MrBFlt Tha (MrBFlt h1, MrBFlt h2, MrBFlt a1, MrBFlt a2)
                     pai2 = 6.283185307, tv1 = 1e-35, tv2 = 15.0, tv3 = 15.0, tv4 = 1e-5,
                     a, h, rt, t, x1, x2, r1, r2, s, k, sign = 1.0;
 
-    if (fabs(h2) < tv1) 
+    if (fabs(h2) < tv1)
         return (0.0);
     h = h1 / h2;
-    if (fabs(a2) < tv1) 
+    if (fabs(a2) < tv1)
         {
         t = CdfNormal(h);
-        if (h >= 0.0) 
+        if (h >= 0.0)
             t = (1.0 - t) / 2.0;
-        else      
+        else
             t /= 2.0;
         return (t*(a1 >= 0.0 ? 1.0 : -1.0));
         }
     a = a1 / a2;
-    if (a < 0.0) 
-        sign = -1.0;  
-    a = fabs(a);  
-    h = fabs(h);   
+    if (a < 0.0)
+        sign = -1.0;
+    a = fabs(a);
+    h = fabs(h);
     k = h*a;
-    if (h > tv2 || a < tv1) 
+    if (h > tv2 || a < tv1)
         return (0.0);
-    if (h < tv1) 
+    if (h < tv1)
         return (atan(a)/pai2*sign);
     if (h < 0.3 && a > 7.0) /* (Boys RJ, 1989) */
-        {             
+        {
         x1 = exp(-k*k/2.0)/k;
         x2 = (CdfNormal(k)-0.5)*sqrt(pai2);
         t = 0.25 - (x1+x2)/pai2*h + ((1.0+2.0/(k*k))*x1+x2)/(6.0*pai2)*h*h*h;
         return (MAX(t,0)*sign);
         }
-    t = -h*h / 2.0;  
-    x2 = a;  
+    t = -h*h / 2.0;
+    x2 = a;
     s = a*a;
-    if (log(1.0+s)-t*s >= tv3) 
+    if (log(1.0+s)-t*s >= tv3)
         {
-        x1 = a/2;  
+        x1 = a/2;
         s /= 4.0;
     for (;;) /* truncation point by Newton iteration */
-        {        
+        {
         x2 = x1 + (t*s+tv3-log(s+1.0)) / (2.0*x1*(1.0/(s+1.0)-t));
         s = x2*x2;
-        if (fabs(x2-x1) < tv4) 
+        if (fabs(x2-x1) < tv4)
             break;
         x1 = x2;
         }
     }
     for (i=0,rt=0; i<ng; i++) /* Gauss quadrature */
-        {          
+        {
         r1 = 1.0+s*SQUARE(0.5+U[i]);
         r2 = 1.0+s*SQUARE(0.5-U[i]);
         rt+= R[i]*(exp(t*r1)/r1 + exp(t*r2)/r2);
         }
-        
+
     return (MAX(rt*x2/pai2,0)*sign);
 }
 
@@ -13918,7 +13918,7 @@ void TiProbsUsingEigens (int dim, MrBFlt *cijk, MrBFlt *eigenVals, MrBFlt v, MrB
             tMat[i][j] = (sum < 0.0) ? 0.0 : sum;
             }
         }
-        
+
 #   if 0
     for (i=0; i<dim; i++)
         {
@@ -13933,7 +13933,7 @@ void TiProbsUsingEigens (int dim, MrBFlt *cijk, MrBFlt *eigenVals, MrBFlt v, MrB
             }
         }
 #   endif
-    
+
     if (fMat != NULL && sMat != NULL)
         {
         ptr = cijk;
@@ -13961,7 +13961,7 @@ void TiProbsUsingEigens (int dim, MrBFlt *cijk, MrBFlt *eigenVals, MrBFlt v, MrB
 |
 |   The method approximates the matrix exponential, tMat = e^{qMat * v}, using
 |   the Pade approximation method, described in:
-|  
+|
 |   Golub, G. H., and C. F. Van Loan. 1996. Matrix Computations, Third Edition.
 |      The Johns Hopkins University Press, Baltimore, Maryland.
 |
@@ -13972,17 +13972,17 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
 {
     int         qValue;
     MrBFlt      **a, tol;
-    
+
     tol = 0.0000001;
-    
+
     a = AllocateSquareDoubleMatrix (dim);
-    
+
     MultiplyMatrixByScalar (dim, qMat, v * r, a);
 
     qValue = SetQvalue (tol);
 
     ComputeMatrixExponential (dim, a, qValue, tMat);
-    
+
     FreeSquareDoubleMatrix (a);
 
     if (fMat != NULL && sMat != NULL)
@@ -13991,4 +13991,3 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
         MultiplyMatrices (dim, qMat, fMat, sMat);
         }
 }
-

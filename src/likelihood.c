@@ -8408,18 +8408,10 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
 |       vector for a particular alphadir value
 |
 -----------------------------------------------------------------*/
-int LnProbAllocation (TreeNode *p, int division, int chain)
+int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 {
-    int         i, j, newestTableIndex, numSeatedAtTable, numChars,
-                *allocationVector;
-    MrBFlt      alphaDir, totalProb;
-    ModelInfo   *m;
-
-    m = &modelSettings[division];
-
-    numChars = m->numChars;
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
-    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
+    int         i, j, newestTableIndex, numSeatedAtTable;
+    MrBFlt      totalProb;
 
     /* Initialize counter to keep track of highest current table number */
     newestTableIndex = 0;
@@ -8462,7 +8454,7 @@ int LnProbAllocation (TreeNode *p, int division, int chain)
 |       for a particular column of the latent matrix
 |
 -----------------------------------------------------------------*/
-int LnProbLatentCluster (int numChar, int *latentColumn, int *allocationVector, int allocationValue)
+int LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars, int *allocationVector, int chain)
 {
     int         i, j, numIntmedStates=0, numCharsInCluster=0;
     MrBFlt      columnProb;
@@ -8525,7 +8517,7 @@ int LnProbLatentMatrix (TreeNode *p, int division, int chain)
         /* Grab current column/cluster/process */
         for (j=0; j<numTaxa; j++)
             currColumn[j] = latentMatrix[pos(i,j,numTaxa)];
-        currProb = LnProbLatentCluster(numChar, currColumn, allocationVector, i);
+        currProb = LnProbLatentCluster(currColumn, i, numChar, allocationVector, chain);
         totalProb = totalProb * currProb;
         }
 

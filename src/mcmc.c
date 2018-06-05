@@ -18222,32 +18222,32 @@ int SetLikeFunctions (void)
                 else
                     m->Likelihood = &Likelihood_ParsStd;
                 }
-
-            else if (m->corrModelId == YES)
-                {
-                m->CondLikeDown   = &CondLikeDown_StdCorr;
-                m->CondLikeRoot   = &CondLikeRoot_StdCorr;
-                m->CondLikeScaler = &CondLikeScaler_Std;
-                m->Likelihood     = &Likelihood_StdCorr;
-                m->TiProbs        = &TiProbs_StdCorr;
-                m->CondLikeUp     = &CondLikeUp_StdCorr;
-                m->StateCode      = &StateCode_Std;
-                m->PrintAncStates = &PrintAncStates_Std;
-                m->PrintSiteRates = &PrintSiteRates_Std;
-                }
-
             else
                 {
-                m->CondLikeDown   = &CondLikeDown_Std;
-                m->CondLikeRoot   = &CondLikeRoot_Std;
-                m->CondLikeScaler = &CondLikeScaler_Std;
-                m->Likelihood     = &Likelihood_Std;
-                m->TiProbs        = &TiProbs_Std;
-                m->CondLikeUp     = &CondLikeUp_Std;
-                m->StateCode      = &StateCode_Std;
-                m->PrintAncStates = &PrintAncStates_Std;
-                m->PrintSiteRates = &PrintSiteRates_Std;
-                }
+                if (m->corrModelId == YES)
+                    {
+                    m->CondLikeDown   = &CondLikeDown_StdCorr;
+                    m->CondLikeRoot   = &CondLikeRoot_StdCorr;
+                    m->CondLikeScaler = &CondLikeScaler_Std;
+                    m->Likelihood     = &Likelihood_StdCorr;
+                    m->TiProbs        = &TiProbs_StdCorr;
+                    m->CondLikeUp     = &CondLikeUp_StdCorr;
+                    m->StateCode      = &StateCode_Std;
+                    m->PrintAncStates = &PrintAncStates_Std;
+                    m->PrintSiteRates = &PrintSiteRates_Std;
+                    }
+                else
+                    {
+                    m->CondLikeDown   = &CondLikeDown_Std;
+                    m->CondLikeRoot   = &CondLikeRoot_Std;
+                    m->CondLikeScaler = &CondLikeScaler_Std;
+                    m->Likelihood     = &Likelihood_Std;
+                    m->TiProbs        = &TiProbs_Std;
+                    m->CondLikeUp     = &CondLikeUp_Std;
+                    m->StateCode      = &StateCode_Std;
+                    m->PrintAncStates = &PrintAncStates_Std;
+                    m->PrintSiteRates = &PrintSiteRates_Std;
+                    }
             }
         else if (m->dataType == CONTINUOUS)
             {

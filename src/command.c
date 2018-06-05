@@ -320,8 +320,8 @@ CmdType     commands[] =
             { 30,           "Pairs", YES,           DoPairs,  1,                                                                                             {92},    32768,        "Defines nucleotide pairs (doublets) for stem models",  IN_CMD, SHOW },
             { 31,       "Partition",  NO,       DoPartition,  1,                                                                                             {16},        4,                              "Assigns a character partition",  IN_CMD, SHOW },
             { 32,            "Plot",  NO,            DoPlot,  6,                                                                        {106,107,108,109,224,225},       36,                        "Plots parameters from MCMC analysis",  IN_CMD, SHOW },
-            { 33,           "Prset",  NO,           DoPrset, 45,  {35,36,37,38,39,41,42,43,44,54,64,67,68,69,70,71,77,100,101,102,103,104,110,111,117,120,121,133,
-                                                                                         168,172,173,174,183,184,185,218,241,246,247,251,254,269,271,272,279,280},        4,                         "Sets the priors for the parameters",  IN_CMD, SHOW },
+            { 33,           "Prset",  NO,           DoPrset, 47,  {35,36,37,38,39,41,42,43,44,54,64,67,68,69,70,71,77,100,101,102,103,104,110,111,117,120,121,133,
+                                                                                     168,172,173,174,183,184,185,218,241,246,247,251,254,269,271,272,279,280,281},        4,                         "Sets the priors for the parameters",  IN_CMD, SHOW },
             { 34,         "Propset",  NO,         DoPropset,  1,                                                                                            {186},        4,          "Sets proposal probabilities and tuning parameters",  IN_CMD, SHOW },
             { 35,            "Quit",  NO,            DoQuit,  0,                                                                                             {-1},       32,                                          "Quits the program",  IN_CMD, SHOW },
             { 36,          "Report",  NO,          DoReport,  9,                                                            {122,123,124,125,134,135,136,192,217},        4,                 "Controls how model parameters are reported",  IN_CMD, SHOW },
@@ -10506,6 +10506,7 @@ int GetUserHelp (char *helpTkn)
             MrBayesPrint ("                Nosingletonabsence/Nosingletonpresence  %s                       \n", mp->codingString);
             MrBayesPrint ("   Parsmodel    No/Yes                                  %s                       \n", mp->parsModel);
         /*  MrBayesPrint ("   Augment      No/Yes                                  %s                       \n", mp->augmentData); */
+            MrBayesPrint ("   Corrmodel    No/Yes                                  %s                       \n", mp->corrModel);
             MrBayesPrint ("                                                                                 \n");
             MrBayesPrint ("   ------------------------------------------------------------------            \n");
             }
@@ -14599,9 +14600,9 @@ void SetUpParms (void)
     PARAM (275, "Beagleresource", DoSetParm,         "\0");
     PARAM (276, "Nlnormcat",      DoLsetParm,        "\0");
     PARAM (277, "Nmixtcat",       DoLsetParm,        "\0");
-    PARAM (278, "Correlationmodel", DoLsetParm,      "Yes|No|\0");
-    PARAM (279, "Rhopr",          DoPrsetParm,       "Exp|Fixed|\0");
-    PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exp|Fixed|\0");
+    PARAM (278, "Corrmodel",      DoLsetParm,        "Yes|No|\0");
+    PARAM (279, "Rhopr",          DoPrsetParm,       "Exponential|Fixed|\0");
+    PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|\0");
 
 

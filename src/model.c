@@ -219,7 +219,7 @@ int AddDummyChars (void)
                 m->numDummyChars += 2;
             if (mp->coding & NOSINGLETONS)
                 m->numDummyChars += 2*numLocalTaxa;
-            if (strcmp(mp->corrModel,"Yes"))
+            if (!strcmp(mp->corrModel,"Yes"))
                 m->numDummyChars = 0;
             numStdChars += (m->numChars + m->numDummyChars);
             }
@@ -616,8 +616,10 @@ int AllocateNormalParams (void)
     /* Count the number of param values and subvalues */
     nOfParams = 0;
     nOfIntParams = 0;
+
     for (k=0; k<numParams; k++)
         {
+        MrBayesPrint ("%s\n",params[k]);
         nOfParams += params[k].nValues;
         nOfParams += params[k].nSubValues;
         nOfIntParams += params[k].nIntValues;
@@ -2664,7 +2666,7 @@ int CompressData (void)
     memAllocs[ALLOC_ORIGCHAR] = YES;
 
     /* Only fill in the compressed matrix if we're not using the correlation model */
-    if (strcmp(mp->corrModel,"No"))
+    if (!strcmp(mp->corrModel,"No"))
         {
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
@@ -6682,12 +6684,12 @@ int DoPrsetParm (char *parmName, char *tkn)
                         if (!strcmp(modelParams[i].rhoPr,"Exponential"))
                             {
                             sscanf (tkn, "%lf", &tempD);
-                            if (modelParams[i].rhoExp > 0.0)
+                            modelParams[i].rhoExp = tempD;
+                            if (modelParams[i].rhoExp < 0.0)
                                 {
                                 MrBayesPrint ("%s   Exponential distribution rate parameter must be positive\n", spacer);
                                 return (ERROR);
                                 }
-                            modelParams[i].rhoExp = tempD;
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Setting Rhopr to Exponential(%1.2lf)\n", spacer, modelParams[i].rhoExp);
                             else
@@ -6697,6 +6699,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                         else if (!strcmp(modelParams[i].rhoPr,"Fixed"))
                             {
                             sscanf (tkn, "%lf", &tempD);
+                            modelParams[i].rhoFix = tempD;
                             if (modelParams[i].rhoFix > MAX_RHO_PARAM)
                                 {
                                 MrBayesPrint ("%s   Rho parameter cannot be greater than %1.2lf\n", spacer, MAX_RHO_PARAM);
@@ -6707,7 +6710,6 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 MrBayesPrint ("%s   Rho parameter cannot be less than %1.2lf\n", spacer, MIN_RHO_PARAM);
                                 return (ERROR);
                                 }
-                            modelParams[i].rhoFix = tempD;
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Setting Rhopr to Fixed(%1.2lf)\n", spacer, modelParams[i].rhoFix);
                             else
@@ -6773,12 +6775,12 @@ int DoPrsetParm (char *parmName, char *tkn)
                         if (!strcmp(modelParams[i].alphaDirPr,"Exponential"))
                             {
                             sscanf (tkn, "%lf", &tempD);
-                            if (modelParams[i].alphaDirExp > 0.0)
+                            modelParams[i].alphaDirExp = tempD;
+                            if (modelParams[i].alphaDirExp < 0.0)
                                 {
                                 MrBayesPrint ("%s   Exponential distribution rate parameter must be positive\n", spacer);
                                 return (ERROR);
                                 }
-                            modelParams[i].alphaDirExp = tempD;
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Setting Alphadirpr to Exponential(%1.2lf)\n", spacer, modelParams[i].alphaDirExp);
                             else
@@ -6788,12 +6790,12 @@ int DoPrsetParm (char *parmName, char *tkn)
                         else if (!strcmp(modelParams[i].alphaDirPr,"Fixed"))
                             {
                             sscanf (tkn, "%lf", &tempD);
+                            modelParams[i].alphaDirFix = tempD;
                             if (modelParams[i].alphaDirFix < MIN_ALPHADIR_PARAM)
                                 {
                                 MrBayesPrint ("%s   Alpha_dir parameter cannot be less than %1.2lf\n", spacer, MIN_ALPHADIR_PARAM);
                                 return (ERROR);
                                 }
-                            modelParams[i].alphaDirFix = tempD;
                             if (nApplied == 0 && numCurrentDivisions == 1)
                                 MrBayesPrint ("%s   Setting Alphadirpr to Fixed(%1.2lf)\n", spacer, modelParams[i].alphaDirFix);
                             else
@@ -6806,6 +6808,39 @@ int DoPrsetParm (char *parmName, char *tkn)
             else if (expecting == Expecting(RIGHTPAR))
                 {
                 expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
+                }
+            else
+                return (ERROR);
+            }
+        /* set Corrpr (corrPr) **************************************************************/
+        else if (!strcmp(parmName, "Corrpr"))
+            {
+            if (expecting == Expecting(EQUALSIGN))
+                expecting = Expecting(ALPHA);
+            else if (expecting == Expecting(ALPHA))
+                {
+                if (IsArgValid(tkn, tempStr) == NO_ERROR)
+                    {
+                    nApplied = NumActiveParts ();
+                    for (i=0; i<numCurrentDivisions; i++)
+                        {
+                        if (activeParts[i] == YES || nApplied == 0)
+                            {
+                            strcpy(modelParams[i].corrPr, tempStr);
+
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s   Setting Corrpr to %s\n", spacer, modelParams[i].corrPr);
+                            else
+                                MrBayesPrint ("%s   Setting Corrpr to %s for partition %d\n", spacer, modelParams[i].corrPr, i+1);
+                            }
+                        }
+                    expecting  = Expecting(PARAMETER) | Expecting(SEMICOLON);
+                    }
+                else
+                    {
+                    MrBayesPrint ("%s   Invalid Corrpr argument\n", spacer);
+                    return (ERROR);
+                    }
                 }
             else
                 return (ERROR);
@@ -15480,9 +15515,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so rho does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part1].corrModel, "Yes"))
             *isApplic1 = NO; /* part1 is not under the correlation model so rho does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part2].corrModel, "Yes"))
             *isApplic2 = NO; /* part2 is not under the correlation model so rho does not apply */
 
         /* Check if the prior is the same for both. */
@@ -15520,9 +15555,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so alphadir does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part1].corrModel, "Yes"))
             *isApplic1 = NO; /* part1 is not under the correlation model so alphadir does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part2].corrModel, "Yes"))
             *isApplic2 = NO; /* part2 is not under the correlation model so alphadir does not apply */
 
         /* Check if the prior is the same for both. */
@@ -15560,9 +15595,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so allocation vector does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part1].corrModel, "Yes"))
             *isApplic1 = NO; /* part1 is not under the correlation model so allocation vector does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part2].corrModel, "Yes"))
             *isApplic2 = NO; /* part2 is not under the correlation model so allocation vector does not apply */
 
         /* Check if the prior is the same for both. */
@@ -15594,9 +15629,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so latent matrix does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part1].corrModel, "Yes"))
             *isApplic1 = NO; /* part1 is not under the correlation model so latent matrix does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes") != 0)
+        if (strcmp(modelParams[part2].corrModel, "Yes"))
             *isApplic2 = NO; /* part2 is not under the correlation model so latent matrix does not apply */
 
         /* Check if the prior is the same for both. */
@@ -23320,7 +23355,7 @@ int ShowModel (void)
                     {
                     if (modelParams[i].dataType == STANDARD)
                         {
-                          if (strcmp(modelParams[i].corrModel,"Yes"))
+                          if (!strcmp(modelParams[i].corrModel,"Yes"))
                               {
                               MrBayesPrint ("%s         # States  = Correlated binary characters\n", spacer);
                               if (!strcmp(modelParams[i].rhoPr,"Fixed"))

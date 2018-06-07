@@ -18224,7 +18224,7 @@ int SetLikeFunctions (void)
                 }
             else
                 {
-                if (m->corrModelId == YES)
+                if (m->mcModelId == YES)
                     {
                     m->CondLikeDown   = &CondLikeDown_StdCorr;
                     m->CondLikeRoot   = &CondLikeRoot_StdCorr;
@@ -18248,6 +18248,7 @@ int SetLikeFunctions (void)
                     m->PrintAncStates = &PrintAncStates_Std;
                     m->PrintSiteRates = &PrintSiteRates_Std;
                     }
+                }
             }
         else if (m->dataType == CONTINUOUS)
             {

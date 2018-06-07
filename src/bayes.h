@@ -1007,7 +1007,7 @@ typedef struct model
     MrBFlt      tRatioFix;
     MrBFlt      tRatioDir[2];
 
-    char        corrModel[100];    /* use covarion model? (yes/no)                 */
+    char        mcModel[100];      /* use correlation model? (yes/no)              */
     char        rhoPr[100];        /* prior for inverse correlation factor         */
     MrBFlt      rhoFix;
     MrBFlt      rhoExp;
@@ -1237,7 +1237,7 @@ typedef struct modelinfo
     int         nst;                        /* # substitution types                     */
     int         aaModelId;                  /* amino acid model type                    */
     int         parsModelId;                /* is parsimony model used YES/NO           */
-    int         corrModelId;                /* is correlation model used YES/NO         */
+    int         mcModelId;                  /* is correlation model used YES/NO         */
 
     /* Specific model information */
     int         numRateCats;                /* number of rate cats (1 if inapplic.)     */

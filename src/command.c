@@ -10460,7 +10460,7 @@ int GetUserHelp (char *helpTkn)
     /*  MrBayesPrint ("   Augment   -- This allows the chain to consider the missing entries of         \n");
         MrBayesPrint ("                the data matrix as random variables. A Gibbs sampler is          \n");
         MrBayesPrint ("                used to sample states.                                           \n"); */
-        MrBayesPrint ("   Corrmodel -- Used to set whether the correlation model for standard characters\n");
+        MrBayesPrint ("   Mcmodel   -- Used to set whether the correlation model for standard characters\n");
         MrBayesPrint ("                should be used. Options are \"Yes\" and \"No\" with the default  \n");
         MrBayesPrint ("                set as \"No\".                                                   \n");
         MrBayesPrint ("                                                                                 \n");
@@ -10506,7 +10506,7 @@ int GetUserHelp (char *helpTkn)
             MrBayesPrint ("                Nosingletonabsence/Nosingletonpresence  %s                       \n", mp->codingString);
             MrBayesPrint ("   Parsmodel    No/Yes                                  %s                       \n", mp->parsModel);
         /*  MrBayesPrint ("   Augment      No/Yes                                  %s                       \n", mp->augmentData); */
-            MrBayesPrint ("   Corrmodel    No/Yes                                  %s                       \n", mp->corrModel);
+            MrBayesPrint ("   Mcmodel      No/Yes                                  %s                       \n", mp->mcModel);
             MrBayesPrint ("                                                                                 \n");
             MrBayesPrint ("   ------------------------------------------------------------------            \n");
             }
@@ -14600,7 +14600,7 @@ void SetUpParms (void)
     PARAM (275, "Beagleresource", DoSetParm,         "\0");
     PARAM (276, "Nlnormcat",      DoLsetParm,        "\0");
     PARAM (277, "Nmixtcat",       DoLsetParm,        "\0");
-    PARAM (278, "Corrmodel",      DoLsetParm,        "Yes|No|\0");
+    PARAM (278, "Mcmodel",        DoLsetParm,        "Yes|No|\0");
     PARAM (279, "Rhopr",          DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|\0");

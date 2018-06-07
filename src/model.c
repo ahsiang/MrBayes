@@ -219,7 +219,7 @@ int AddDummyChars (void)
                 m->numDummyChars += 2;
             if (mp->coding & NOSINGLETONS)
                 m->numDummyChars += 2*numLocalTaxa;
-            if (!strcmp(mp->corrModel,"Yes"))
+            if (!strcmp(mp->mcModel,"Yes"))
                 m->numDummyChars = 0;
             numStdChars += (m->numChars + m->numDummyChars);
             }
@@ -2666,7 +2666,7 @@ int CompressData (void)
     memAllocs[ALLOC_ORIGCHAR] = YES;
 
     /* Only fill in the compressed matrix if we're not using the correlation model */
-    if (!strcmp(mp->corrModel,"No"))
+    if (!strcmp(mp->mcModel,"No"))
         {
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
@@ -3801,8 +3801,8 @@ int DoLsetParm (char *parmName, char *tkn)
             else
                 return (ERROR);
             }
-        /* set Corrmodel (corrModel) *******************************************************/
-        else if (!strcmp(parmName, "Corrmodel"))
+        /* set Mcmodel (mcModel) *******************************************************/
+        else if (!strcmp(parmName, "Mcmodel"))
             {
             if (expecting == Expecting(EQUALSIGN))
                 expecting = Expecting(ALPHA);
@@ -3815,17 +3815,17 @@ int DoLsetParm (char *parmName, char *tkn)
                         {
                         if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
                             {
-                            strcpy(modelParams[i].corrModel, tempStr);
+                            strcpy(modelParams[i].mcModel, tempStr);
                             if (nApplied == 0 && numCurrentDivisions == 1)
-                                MrBayesPrint ("%s   Setting Corrmodel to %s\n", spacer, modelParams[i].corrModel);
+                                MrBayesPrint ("%s   Setting Mcmodel to %s\n", spacer, modelParams[i].mcModel);
                             else
-                                MrBayesPrint ("%s   Setting Corrmodel to %s for partition %d\n", spacer, modelParams[i].corrModel, i+1);
+                                MrBayesPrint ("%s   Setting Mcmodel to %s for partition %d\n", spacer, modelParams[i].mcModel, i+1);
                             }
                         }
                     }
                 else
                     {
-                    MrBayesPrint ("%s   Invalid Corrmodel argument\n", spacer);
+                    MrBayesPrint ("%s   Invalid Mcmodel argument\n", spacer);
                     return (ERROR);
                     }
                 expecting = Expecting(PARAMETER) | Expecting(SEMICOLON);
@@ -15515,9 +15515,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so rho does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes"))
+        if (!strcmp(modelParams[part1].mcModel, "No"))
             *isApplic1 = NO; /* part1 is not under the correlation model so rho does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes"))
+        if (!strcmp(modelParams[part2].mcModel, "No"))
             *isApplic2 = NO; /* part2 is not under the correlation model so rho does not apply */
 
         /* Check if the prior is the same for both. */
@@ -15555,9 +15555,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so alphadir does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes"))
+        if (!strcmp(modelParams[part1].mcModel, "No"))
             *isApplic1 = NO; /* part1 is not under the correlation model so alphadir does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes"))
+        if (!strcmp(modelParams[part2].mcModel, "No"))
             *isApplic2 = NO; /* part2 is not under the correlation model so alphadir does not apply */
 
         /* Check if the prior is the same for both. */
@@ -15595,9 +15595,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so allocation vector does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes"))
+        if (!strcmp(modelParams[part1].mcModel, "No"))
             *isApplic1 = NO; /* part1 is not under the correlation model so allocation vector does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes"))
+        if (!strcmp(modelParams[part2].mcModel, "No"))
             *isApplic2 = NO; /* part2 is not under the correlation model so allocation vector does not apply */
 
         /* Check if the prior is the same for both. */
@@ -15629,9 +15629,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not standard data so latent matrix does not apply */
 
         /* Check that both partitions have the correlation model set */
-        if (strcmp(modelParams[part1].corrModel, "Yes"))
+        if (!strcmp(modelParams[part1].mcModel, "No"))
             *isApplic1 = NO; /* part1 is not under the correlation model so latent matrix does not apply */
-        if (strcmp(modelParams[part2].corrModel, "Yes"))
+        if (!strcmp(modelParams[part2].mcModel, "No"))
             *isApplic2 = NO; /* part2 is not under the correlation model so latent matrix does not apply */
 
         /* Check if the prior is the same for both. */
@@ -18508,10 +18508,10 @@ int SetModelInfo (void)
             m->parsModelId = NO;
 
         /* correlation model? */
-        if (!strcmp(mp->corrModel, "Yes"))
-            m->corrModelId = YES;
+        if (!strcmp(mp->mcModel, "Yes"))
+            m->mcModelId = YES;
         else
-            m->corrModelId = NO;
+            m->mcModelId = NO;
 
         /* number of rate categories */
         if (activeParams[P_SHAPE][i] > 0)
@@ -18981,7 +18981,7 @@ int SetModelParams (void)
             {
             /* Set up allocationVector for correlation model DPMM ***********************************************************/
             p->paramType = P_ALLOCATIONVECTOR;
-            p->nValues = m->numChars;
+            p->nIntValues = m->numChars;
             p->nSubValues = 0;
             p->min = 0;
             p->max = POS_INFINITY;
@@ -19030,18 +19030,18 @@ int SetModelParams (void)
                     if (numSitesOfPat[j] > m->numLatCols)
                         m->numLatCols = numSitesOfPat[j];
                     }
-                p->nValues = m->numLatCols * numTaxa;
+                p->nIntValues = m->numLatCols * numTaxa;
                 }
             else
                 {
                 p->paramId = LATENTMATRIX_UNCORR;
                 m->numLatCols = m->numChars;
-                p->nValues = m->numLatCols * numTaxa;
+                p->nIntValues = m->numLatCols * numTaxa;
                 }
 
             p->printParam = YES;
 
-            /* report alloctionVector */
+            /* report latentMatrix */
             SafeStrcat (&p->paramHeader,"latentMatrix");
             SafeStrcat (&p->paramHeader, partString);
             }
@@ -23297,7 +23297,7 @@ int ShowModel (void)
                     {
                     /* what type of characters are sampled? */
                     MrBayesPrint ("%s         Coding    = %s\n", spacer, modelParams[i].codingString);
-                    MrBayesPrint ("%s         Corrmodel = %s\n", spacer, modelParams[i].corrModel);
+                    MrBayesPrint ("%s         Mcmodel   = %s\n", spacer, modelParams[i].mcModel);
                     }
 
                 /* is there rate variation in a single site across the tree? */
@@ -23355,7 +23355,7 @@ int ShowModel (void)
                     {
                     if (modelParams[i].dataType == STANDARD)
                         {
-                          if (!strcmp(modelParams[i].corrModel,"Yes"))
+                          if (!strcmp(modelParams[i].mcModel,"Yes"))
                               {
                               MrBayesPrint ("%s         # States  = Correlated binary characters\n", spacer);
                               if (!strcmp(modelParams[i].rhoPr,"Fixed"))

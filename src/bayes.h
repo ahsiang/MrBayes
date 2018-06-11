@@ -1681,6 +1681,7 @@ extern int              numParams;                              /* number of par
 extern int              numDivisions;                           /* number of current divisions                   */
 extern int              numPrintParams;                         /* number of substitution model parameters to print */
 extern int              numPrintTreeParams;                     /* number of tree model parameters to print      */
+extern int              *numSitesAlloc;                         /* pattern allocation by site                    */
 extern CLFlt            *numSitesOfPat;                         /* no. sites of each pattern                     */
 extern int              numSpecies;                             /* number of species in current speciespartition */
 extern int              numTaxa;                                /* number of taxa in character matrix            */

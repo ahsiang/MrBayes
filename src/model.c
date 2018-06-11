@@ -115,6 +115,7 @@ Param           *printParams;                           /* vector of subst model
 ShowmovesParams showmovesParams;                        /* holds parameters for Showmoves command           */
 Param           *treePrintparams;                       /* vector of tree parameters to print               */
 int             setUpAnalysisSuccess;                   /* Set to YES if analysis is set without error      */
+int             *numSitesAlloc;                         /* pattern allocation by site                       */
 
 /* globals used to describe and change the current model; allocated in AllocCharacters and SetPartition  */
 int         *numVars;                                   /* number of variables in setting arrays         */
@@ -215,12 +216,15 @@ int AddDummyChars (void)
 
         if (mp->dataType == STANDARD && !strcmp(mp->parsModel,"No"))
             {
-            if (mp->coding & VARIABLE)
-                m->numDummyChars += 2;
-            if (mp->coding & NOSINGLETONS)
-                m->numDummyChars += 2*numLocalTaxa;
             if (!strcmp(mp->mcModel,"Yes"))
                 m->numDummyChars = 0;
+            else
+                {
+                if (mp->coding & VARIABLE)
+                    m->numDummyChars += 2;
+                if (mp->coding & NOSINGLETONS)
+                    m->numDummyChars += 2*numLocalTaxa;
+                }
             numStdChars += (m->numChars + m->numDummyChars);
             }
 
@@ -2334,62 +2338,43 @@ void CodingToString(int coding, char* string)
 
 /*------------------------------------------------------------------------
 |
-|   CorrPreprocess: Preprocess data matrix for correlation model
+|   CorrPreprocess: Preprocess data matrix for correlation model (set all
+|   first taxon states to 0,
 |
 -------------------------------------------------------------------------*/
 int CorrPreprocess (void)
 {
-    int         i, j, k, d;
-    ModelInfo   *m;
-
-    #   if defined DEBUG_CORRPREPROCESS
-    if (PrintMatrix() == ERROR)
-        return (ERROR);
-    getchar();
-    #   endif
+    int             i, j, d, *tempMatrix;
 
     for (d=0; d<numCurrentDivisions; d++)
         {
-        m = &modelSettings[d];
+        /* Allocate space for temporary preprocessed matrix */
+        tempMatrix = SafeCalloc (numChar * numTaxa, sizeof(BitsLong));
 
-        /* Allocate space for processed matrix */
-        if (memAllocs[ALLOC_COMPMATRIX] == YES)
-            {
-            free (compMatrix);
-            compMatrix = NULL;
-            memAllocs[ALLOC_COMPMATRIX] = NO;
-            }
-        compMatrix = (BitsLong *) SafeCalloc (m->numChars * numTaxa, sizeof(BitsLong));
-        if (!compMatrix)
-            {
-            MrBayesPrint ("%s   Problem allocating preprocessed compMatrix (%d)\n", spacer, m->numChars * numTaxa * sizeof(BitsLong));
-            return (ERROR);
-            }
-        memAllocs[ALLOC_COMPMATRIX] = YES;
-
-        /* Allocate space for vector keeping track of original states of first taxon... */
-        int firstTaxonStates[m->numChars];
+        /* Initialize vector keeping track of original states of first taxon... */
+        int firstTaxonStates[numChar];
 
         /* ...and copy over states */
-        for (i=0; i<m->numChars; i++)
-            firstTaxonStates[i] = matrix[pos(0,i,m->numChars)];
+        for (i=0; i<numChar; i++)
+            firstTaxonStates[i] = matrix[pos(0,i,numChar)];
 
         /* Copy original data over, flipping bits such that the first taxon has all state 0 */
-        for (j=0; j<numTaxa; j++)
-            for (k=0; k<m->numChars; k++)
+        for (i=0; i<numTaxa; i++)
+            for (j=0; j<numChar; j++)
                 {
-                if (firstTaxonStates[k] == 1) /* Case where all bits need to be flipped */
-                    compMatrix[pos(j,k,m->numChars)] = ~(matrix[pos(j,k,m->numChars)]);
+                if (firstTaxonStates[j] == 2) /* Case where all bits need to be flipped */
+                    {
+                    if (matrix[pos(i,j,numChar)] == 1)
+                        tempMatrix[pos(i,j,numChar)] = 2;
+                    else
+                        tempMatrix[pos(i,j,numChar)] = 1;
+                    }
                 else /* Case where no bits need to be flipped */
-                    compMatrix[pos(j,k,m->numChars)] = matrix[pos(j,k,m->numChars)];
+                    tempMatrix[pos(i,j,numChar)] = matrix[pos(i,j,numChar)];
                 }
+        /* Set matrix to tempMatrix */
+        matrix = tempMatrix;
         }
-
-    #   if defined (DEBUG_CORRPREPROCESS)
-    if (PrintCompMatrix() == ERROR)
-        return (ERROR);
-    getchar();
-    #   endif
 
     return (NO_ERROR);
 }
@@ -2402,7 +2387,7 @@ int CorrPreprocess (void)
 int CompressData (void)
 {
     int             a, c, d, i, j, k, t, col[3], isSame, newRow, newColumn,
-                    *isTaken, *tempSitesOfPat, *tempChar;
+                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter;
     BitsLong        *tempMatrix;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -2481,6 +2466,13 @@ int CompressData (void)
         /* set pointers to the model params and settings for this division */
         m = &modelSettings[d];
         mp = &modelParams[d];
+
+        /* Preprocess matrix and initialize allocation counter if correlation model is set */
+        if (!strcmp(mp->mcModel,"Yes"))
+            CorrPreprocess();
+
+        allocCounter = 0;
+        numSitesAlloc = SafeCalloc (numChar, sizeof(int));
 
         /* set column offset for this division in compressed matrix */
         m->compMatrixStart = newColumn;
@@ -2576,7 +2568,10 @@ int CompressData (void)
                             break;
                         }
                     if (isSame == YES)
+                        {
+                        numSitesAlloc[c] = numSitesAlloc[i];
                         break;
+                        }
                     }
                 }
 
@@ -2603,6 +2598,10 @@ int CompressData (void)
                 newColumn+=m->nCharsPerSite;
                 m->numChars++;
                 numCompressedChars++;
+
+                /* Update allocation patterns */
+                numSitesAlloc[c] = allocCounter;
+                allocCounter++;
                 }
             else
                 {
@@ -2651,6 +2650,10 @@ int CompressData (void)
         }
     memAllocs[ALLOC_NUMSITESOFPAT] = YES;
 
+    /* Fill in numSitesOfPat */
+    for (i=0; i<numCompressedChars; i++)
+        numSitesOfPat[i] = (CLFlt) tempSitesOfPat[i];
+
     if (memAllocs[ALLOC_ORIGCHAR] == YES)
         {
         free (origChar);
@@ -2665,7 +2668,11 @@ int CompressData (void)
         }
     memAllocs[ALLOC_ORIGCHAR] = YES;
 
-    /* Only fill in the compressed matrix if we're not using the correlation model */
+    /* Fill in origChar */
+    for (i=0; i<compMatrixRowSize; i++)
+        origChar[i] = tempChar[i];
+
+    /* Only use the compressed matrix if we're not using the correlation model */
     if (!strcmp(mp->mcModel,"No"))
         {
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
@@ -2682,34 +2689,40 @@ int CompressData (void)
             }
         memAllocs[ALLOC_COMPMATRIX] = YES;
 
-        /* ... and copy the data there */
+        /* Copy compMatrix data into allocated matrix */
         for (i=0; i<numLocalTaxa; i++)
             for (j=0; j<compMatrixRowSize; j++)
                 compMatrix[pos(i,j,compMatrixRowSize)] = tempMatrix[pos(i,j,numLocalChar)];
-
-        for (i=0; i<numCompressedChars; i++)
-            numSitesOfPat[i] = (CLFlt) tempSitesOfPat[i];
-
-        for (i=0; i<compMatrixRowSize; i++)
-            origChar[i] = tempChar[i];
         }
 
-    /* If we are using the correlation model, preprocess the matrix and do not compress it */
-    /* We still call it compMatrix though, so that we don't have to change a bunch of downstream code */
-    /* We're doing this at the end here because we still need to run CompressData to get numSitesOfPat */
+    /* If we are using the correlation model, copy over the preprocessed matrix to compMatrix */
+    /* We still call it compMatrix so that we don't have to change a bunch of downstream code */
+    /* We're doing this at the end here because we still need to run CompressData to get numSitesAlloc */
     else
         {
-        m->numChars = m->numUncompressedChars;
+        m->numChars = numChar;
         m->compMatrixStart = 0;
         m->compMatrixStop = m->numChars;
-        /* Preprocess matrix */
+        m->compCharStart = 0;
+
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
             free (compMatrix);
             compMatrix = NULL;
             memAllocs[ALLOC_COMPMATRIX] = NO;
             }
-        CorrPreprocess();
+        compMatrix = (BitsLong *) SafeCalloc (numChar * numLocalTaxa, sizeof(BitsLong));
+        if (!compMatrix)
+            {
+            MrBayesPrint ("%s   Problem allocating compMatrix (%d)\n", spacer, numChar * numLocalTaxa * sizeof(BitsLong));
+            goto errorExit;
+            }
+        memAllocs[ALLOC_COMPMATRIX] = YES;
+
+        /* Copy preproccesed matrix data into allocated compMatrix */
+        for (i=0; i<numLocalTaxa; i++)
+            for (j=0; j<numChar; j++)
+                compMatrix[pos(i,j,numChar)] = matrix[pos(i,j,numLocalChar)];
         }
 
     #   if defined (DEBUG_COMPRESSDATA)
@@ -11265,9 +11278,9 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     int maxTable = 0;
                     for (j=0; j<m->numChars; j++)
-                        intValue[j] = numSitesOfPat[j];
+                        intValue[j] = numSitesAlloc[j];
                         if (numSitesOfPat[j] > maxTable)
-                            maxTable = numSitesOfPat[j];
+                            maxTable = numSitesAlloc[j];
                     m->numLatCols = maxTable + 1;
                     }
                 }
@@ -15953,6 +15966,11 @@ int PrintCompMatrix (void)
         if (mp->dataType == CONTINUOUS)
             k /= 4;
 
+        /* If correlation model is set, make sure that compMatrixRowSize is
+        equal to total number of characters */
+        if (!strcmp(mp->mcModel,"Yes"))
+            compMatrixRowSize = numChar;
+
         for (c=m->compMatrixStart; c<m->compMatrixStop; c+=k)
             {
             for (i=0; i<numLocalTaxa; i++)
@@ -18341,6 +18359,10 @@ int SetModelInfo (void)
         m->mixedvar = NULL;
         m->mixedBrchRates = NULL;
         m->clockRate = NULL;
+        m->rho = NULL;
+        m->alphaDir = NULL;
+        m->allocationVector = NULL;
+        m->latentMatrix = NULL;
 
         m->CondLikeDown = NULL;
         m->CondLikeRoot = NULL;
@@ -23926,6 +23948,14 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
         else if (j == P_ALPHADIR)
             {
             MrBayesPrint ("%s      Alphadir          ", spacer);
+            }
+        else if (j == P_ALLOCATIONVECTOR)
+            {
+            MrBayesPrint ("%s      Allocationvector  ", spacer);
+            }
+        else if (j == P_LATENTMATRIX)
+            {
+            MrBayesPrint ("%s      Latentmatrix      ", spacer);
             }
         else if (j == P_OMEGA)
             {

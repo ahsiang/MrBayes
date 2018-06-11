@@ -16223,14 +16223,19 @@ int RunChain (RandLong *seed)
                 MrBayesPrint ("\n%s   Initial log likelihoods and log prior probs for run %d:\n", spacer, chn / chainParams.numChains + 1);
             }
         TouchAllTrees (chn);
+        MrBayesPrint("1\n");
         TouchAllCijks (chn);
+        MrBayesPrint("2\n");
         curLnL[chn] = LogLike(chn);
+        MrBayesPrint("3\n");
         curLnPr[chn] = LogPrior(chn);
+        MrBayesPrint("4\n");
         for (i=0; i<numCurrentDivisions; i++)
             {
             if (modelSettings[i].gibbsGamma == YES)
                 curLnL[chn] += GibbsSampleGamma (chn, i, seed);
             }
+        MrBayesPrint("5\n");
         MrBayesPrint ("%s      Chain %d -- %.6lf -- %.6lf\n", spacer, (chn % chainParams.numChains) + 1, curLnL[chn], curLnPr[chn]);
         }
     MrBayesPrint("\n");

@@ -2007,7 +2007,7 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             i, c, k, nStates, *leftStates, *rightStates,
+    int             i, j, c, k, nStates, *leftStates, *rightStates,
                     numLatCols, *allocationVector;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     ModelInfo       *m;
@@ -2024,6 +2024,17 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             numLatCols = allocationVector[i];
         }
     numLatCols++;
+
+    /* Get latent matrix */
+    int *latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
+
+    for (i=0; i<numTaxa; i++)
+        {
+        MrBayesPrint("\n");
+        for (j=0; j<numLatCols; j++)
+            MrBayesPrint("%d ",latentMatrix[pos(i,j,numLatCols)]);
+        }
+    MrBayesPrint("\n\n");
 
     /* Flip conditional likelihood space */
     FlipCondLikeSpace (m, chain, p->index);
@@ -2053,17 +2064,17 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     Each gamma cat block consist of numChars conditional likelihood vectors, each of these vectors has three elements corresponding to a group of characters in the data matrix
     sitting at the same table in the DPP correlation model. */
 
-    /* calculate ancestral probabilities if both left and right are internal nodes */
     tiPL = pL;
     tiPR = pR;
 
     if (p->left->left == NULL)
         {
         if (p->right->left == NULL)
+            {
         /* Calculate ancestral probabilities if both left and right are tips */
             for (k=0; k<m->numRateCats; k++)
                 {
-                for (c=0; c<m->numChars; c++)
+                for (c=0; c<numLatCols; c++)
                     {
                     tiPL = pL + leftStates[c];
                     tiPR = pR + rightStates[c];
@@ -2078,7 +2089,9 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 pL += 9;
                 pR += 9;
                 }
+            }
         else
+            {
             /* Calculate ancestral probabilities if left is a tip and right is not */
             for (k=0; k<m->numRateCats; k++)
                 {
@@ -2099,6 +2112,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 pL += 9;
                 pR += 9;
                 }
+            }
         }
     else
         {
@@ -7953,7 +7967,6 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         like += catLike * catFreq;
         clP[k] += nStates;
         }
-    /* TODO: warning: variable 'c' is uninitialized when used here */
     //pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
     pUnobserved += 2 * like * exp(lnScaler[0]); /* take advantage of model symmetry */
 
@@ -9887,7 +9900,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
 {
     int         i, j, k, index;
     MrBFlt      t, a, b, u, u_inv, x, y, z, *rho, *catRate,
-                baseRate, theRate, *pis[3], length;
+                baseRate, theRate, pis[3], length;
     CLFlt       *tiP;
     ModelInfo   *m;
 
@@ -9897,7 +9910,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
     tiP = m->tiProbs[m->tiProbsIndex[chain][p->index]];
 
     /* get inverse correlation factor */
-    rho = GetParamSubVals(m->rho, chain, state[chain]);
+    rho = GetParamVals(m->rho, chain, state[chain]);
 
     /* get base rate */
     baseRate = GetRate (division, chain);
@@ -9913,8 +9926,8 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
 
     /* compute pis */
     /* TODO: error: invalid operands to binary expression ('double' and 'MrBFlt *' (aka 'double *')) */
-    *pis[0] = *pis[2] = 1.0 / (2.0 + *rho);  /* alpha */
-    *pis[1] = 1.0 - (2.0 * *pis[0]);         /* beta */
+    pis[0] = pis[2] = 1.0 / (2.0 + *rho);  /* alpha */
+    pis[1] = 1.0 - (2.0 * pis[0]);         /* beta */
 
     /* find length */
     if (m->cppEvents != NULL)
@@ -9964,7 +9977,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
             for (i=0; i<3; i++)
                 for (j=0; j<3; j++)
                     /* TODO: error: pointer cannot be cast to type 'CLFlt' (aka 'float') */
-                    tiP[index++] = *pis[j];
+                    tiP[index++] = pis[j];
             }
         else
             {
@@ -9973,8 +9986,8 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
                 {
                 for (j=0; j<3; j++)
                     {
-                    a = *pis[0];
-                    b = *pis[1];
+                    a = pis[0];
+                    b = pis[1];
                     u = exp(-b * t);
                     u_inv = 1 / u;
                     x = exp(-2 * a * t);

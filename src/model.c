@@ -2704,6 +2704,7 @@ int CompressData (void)
         m->compMatrixStart = 0;
         m->compMatrixStop = m->numChars;
         m->compCharStart = 0;
+        compMatrixRowSize = m->numChars;
 
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
@@ -11290,30 +11291,30 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 /* Fill in latentmatrix *************************************************************************************/
                 if (p->paramId == LATENTMATRIX_UNCORR)
                     {
-                    for (i=0; i<m->numChars; i++)
+                    for (i=0; i<numTaxa; i++)
                         {
-                        for (j=0; j<numTaxa; j++)
+                        for (j=0; j<m->numChars; j++)
                             {
-                            if (compMatrix[pos(i,j,m->numChars)] == 0)
-                                intValue[pos(i,j,m->numChars)] = 0;
-                            else if (compMatrix[pos(i,j,m->numChars)] == 1)
-                                intValue[pos(i,j,m->numChars)] = 2;
+                            if (compMatrix[pos(i,j,m->numChars)] == 1)
+                                intValue[pos(i,j,m->numChars)] = 1;
+                            else if (compMatrix[pos(i,j,m->numChars)] == 2)
+                                intValue[pos(i,j,m->numChars)] = 4;
                             }
                         }
                     }
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
                     int currTable = 0;
-                    for (i=0; i<m->numChars; i++)
+                    for (i=0; i<numTaxa; i++)
                         {
                         if (numSitesOfPat[i] == currTable)
                             {
-                            for (j=0; j<numTaxa; j++)
+                            for (j=0; j<m->numLatCols; j++)
                                 {
-                                if (compMatrix[pos(i,j,numTaxa)] == 0)
-                                    intValue[pos(currTable,j,numTaxa)] = 0;
-                                else if (compMatrix[pos(j,i,m->numLatCols)] == 1)
-                                    intValue[pos(currTable,j,numTaxa)] = 2;
+                                if (compMatrix[pos(i,j,m->numLatCols)] == 1)
+                                    intValue[pos(currTable,j,m->numLatCols)] = 1;
+                                else if (compMatrix[pos(j,i,m->numLatCols)] == 2)
+                                    intValue[pos(currTable,j,m->numLatCols)] = 4;
                                 }
                             currTable++;
                             }
@@ -16206,8 +16207,16 @@ int ProcessStdChars (RandLong *seed)
             else
                 {
                 /* this is an ordinary character */
-                m->cType[c] = charInfo[origChar[c + m->compMatrixStart]].ctype;
-                m->nStates[c] = charInfo[origChar[c + m->compMatrixStart]].numStates;
+                if (!strcmp(mp->mcModel,"Yes"))
+                    {
+                    m->cType[c] = charInfo[origChar[c + m->compMatrixStart]].ctype;
+                    m->nStates[c] = 3;
+                    }
+                else
+                    {
+                    m->cType[c] = charInfo[origChar[c + m->compMatrixStart]].ctype;
+                    m->nStates[c] = charInfo[origChar[c + m->compMatrixStart]].numStates;
+                    }
                 }
 
             /* check ctype settings */
@@ -19050,7 +19059,7 @@ int SetModelParams (void)
                 for (j=0; j<m->numChars; j++)
                     {
                     if (numSitesOfPat[j] > m->numLatCols)
-                        m->numLatCols = numSitesOfPat[j];
+                        m->numLatCols = numSitesAlloc[j];
                     }
                 p->nIntValues = m->numLatCols * numTaxa;
                 }

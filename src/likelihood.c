@@ -40,6 +40,7 @@
 #include "mbbeagle.h"
 #include "model.h"
 #include "utils.h"
+#include "sumpt.h"
 
 #define LIKE_EPSILON                1.0e-300
 
@@ -1946,6 +1947,14 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
     clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
     clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
 
+    DoShowMcmcTrees();
+
+    for (int i=0; i<2*numChar; i++)
+        MrBayesPrint("CondLikes: %f\n",m->condLikes[m->condLikeIndex[chain][p->left->index]][i]);
+
+    MrBayesPrint("left index: %d\n",p->left->index);
+    MrBayesPrint("right index: %d\n",p->right->index);
+
     /* find transition probabilities */
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
@@ -2007,34 +2016,18 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             i, j, c, k, nStates, *leftStates, *rightStates,
-                    numLatCols, *allocationVector;
+    int             c, k, nStates,  *rightStates, *leftStates,
+                    numLatCols, *allocationVector, *latentMatrix;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     ModelInfo       *m;
 
     m = &modelSettings[division];
     nStates = 3;
 
-    /* Get number of latent matrix columns */
+    /* Get allocationVector, latentMatrix, and number of latent matrix columns */
     allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
-    numLatCols = 0;
-    for (i=0; i<m->numChars; i++)
-        {
-        if (allocationVector[i] > numLatCols)
-            numLatCols = allocationVector[i];
-        }
-    numLatCols++;
-
-    /* Get latent matrix */
-    int *latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-
-    for (i=0; i<numTaxa; i++)
-        {
-        MrBayesPrint("\n");
-        for (j=0; j<numLatCols; j++)
-            MrBayesPrint("%d ",latentMatrix[pos(i,j,numLatCols)]);
-        }
-    MrBayesPrint("\n\n");
+    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
+    numLatCols = m->numLatCols;
 
     /* Flip conditional likelihood space */
     FlipCondLikeSpace (m, chain, p->index);
@@ -2050,13 +2043,11 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 
     /* Find appropriate rows in latentMatrix */
     if (p->left->left == NULL)
-        //leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * m->numChars;
-        leftStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->left->index * numLatCols;
+        leftStates = latentMatrix + p->left->index * numLatCols;
     else
         leftStates = NULL;
     if (p->right->left == NULL)
-        //rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * m->numChars;
-        rightStates = GetParamIntVals(m->latentMatrix, chain, state[chain]) + p->right->index * numLatCols;
+        rightStates = latentMatrix + p->right->index * numLatCols;
     else
         rightStates = NULL;
 
@@ -2095,7 +2086,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             /* Calculate ancestral probabilities if left is a tip and right is not */
             for (k=0; k<m->numRateCats; k++)
                 {
-                for (c=0; c<m->numChars; c++)
+                for (c=0; c<numLatCols; c++)
                     {
                     tiPL = pL + leftStates[c];
                     *(clP++) = (*tiPL)
@@ -2121,7 +2112,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             /* Calculate ancestral probabilities if right is a tip and left is not */
             for (k=0; k<m->numRateCats; k++)
                 {
-                for (c=0; c<m->numChars; c++)
+                for (c=0; c<numLatCols; c++)
                     {
                     tiPR = pR + rightStates[c];
                     *(clP++) = (*tiPR)
@@ -2140,10 +2131,11 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 }
             }
         else
+            {
             /* Calculate ancestral probabilities if both right and left are internal nodes */
             for (k=0; k<m->numRateCats; k++)
                 {
-                for (c=0; c<m->numChars; c++)
+                for (c=0; c<numLatCols; c++)
                     {
                     *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
                               *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
@@ -2157,6 +2149,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 tiPL += 9;
                 tiPR += 9;
                 }
+            }
         }
 
     return NO_ERROR;
@@ -4779,7 +4772,7 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
     for (k=h=0; k<m->numRateCats; k++)
         {
         /* calculate ancestral probabilities */
-        for (c=0; c<m->numChars; c++)
+        for (c=0; c<m->numLatCols; c++)
             {
             nStates = m->nStates[c];
 
@@ -7924,8 +7917,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     /* TODO: warning: incompatible pointer types assigning to 'CLFlt *' (aka 'float *') from 'MrBFlt *' (aka 'double *') */
     nSitesOfPat = GetParamIntVals(m->allocationVector, chain, state[chain]);
 
-    /* TODO: get actual number of tables in the current state of the model */
-    numReps = m->numChars * 3; /* 3 is the number of states in the rate matrix */
+    numReps = m->numLatCols * 3; /* 3 is the number of states in the rate matrix */
 
     /* find conditional likelihood pointers */
     clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
@@ -7937,7 +7929,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         }
 
     /* get inverse correlation factor */
-    rho = *GetParamSubVals(m->rho, chain, state[chain]);
+    rho = *GetParamVals(m->rho, chain, state[chain]);
 
     /* find base frequencies */
     bs[0] = bs[2] = 1 / (2 + rho);

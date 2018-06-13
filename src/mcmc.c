@@ -5721,7 +5721,7 @@ int InitAugmentedModels (void)
 int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes, useBeagle,
-                clIndex, tiIndex, scalerIndex, indexStep;
+                clIndex, tiIndex, scalerIndex, indexStep, nChars;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -6297,7 +6297,14 @@ int InitChainCondLikes (void)
                 for (t=0; t<m->numRateCats;t++)
                     {
                     charBits = m->parsSets[i];
-                    for (c=0; c<m->numChars; c++)
+                    /* Set number of characters to loop through if correlation model is set */
+                    /* If we are using the Mc model, tip conditional likelihoods should be filled in using latent matrix */
+                    if (m->mcModelId == YES)
+                        nChars = m->numLatCols;
+                    else
+                        nChars = m->numChars;
+                    /* Loop through nChars to fill in tip conditional likelihoods */
+                    for (c=0; c<nChars; c++)
                         {
                         if (m->nStates[c] == 2)
                             numReps = m->numBetaCats;
@@ -6781,7 +6788,7 @@ int InitInvCondLikes (void)
 int InitParsSets (void)
 {
     int             c, i, j, k, d, nParsStatesForCont, nIntNodes, nNodes,
-                    nuc1, nuc2, nuc3, codingNucCode, allNucCode;
+                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, *latentMatrix;
     BitsLong        allAmbig, x, x1, x2, x3, *longPtr, bitsLongOne;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -6855,6 +6862,10 @@ int InitParsSets (void)
         m = &modelSettings[d];
         mp = &modelParams[d];
 
+        /* Get latent matrix if mcModel is set */
+        if (m->mcModelId == YES)
+            latentMatrix = GetParamIntVals(m->latentMatrix,d,state[d]);
+
         if (mp->dataType == CONTINUOUS)
             {
             /* Note: This is only a placeholder since continuous characters are not implemented yet.
@@ -6882,7 +6893,10 @@ int InitParsSets (void)
                 {
                 for (c=0, j=m->compMatrixStart; j<m->compMatrixStop; j++, c++)
                     {
-                    x = compMatrix[pos(i,j,compMatrixRowSize)];
+                    if (m->mcModelId == YES)
+                        x = latentMatrix[pos(i,j,m->numLatCols)];
+                    else
+                        x = compMatrix[pos(i,j,compMatrixRowSize)];
 
                     if (x == MISSING || x == GAP)
                         m->parsSets[i][c] = allAmbig;

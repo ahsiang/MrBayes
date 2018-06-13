@@ -1292,7 +1292,7 @@ typedef struct modelinfo
     int         compCharStart;              /* start char among compressed chars        */
     int         compCharStop;               /* stop char among compressed chars         */
     int         parsMatrixStart;            /* start column in parsimony matrix         */
-    int         parsMatrixStop;             /* stop collumn in parsimony matrix         */
+    int         parsMatrixStop;             /* stop column in parsimony matrix         */
     int         nParsIntsPerSite;           /* # parsimony ints per character           */
     int         nCharsPerSite;              /* number chars per site (eg 3 for codon)   */
     int         rateProbStart;              /* start of rate probs (for adgamma)        */

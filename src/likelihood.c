@@ -5818,13 +5818,26 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
 
     m = &modelSettings[division];
 
+    if (m->mcModelId == YES)
+        numChar = m->numLatCols;
+    else
+        numChar = m->numChars;
+
+    //MrBayesPrint("numLatCols: %d\n",m->numLatCols);
+    //MrBayesPrint("numChar: %d\n",numChar);
+
     numReps=0;
-    for (c=0; c<m->numChars; c++)
+    for (c=0; c<numChar; c++)
         {
+        //MrBayesPrint("nStates: %d\n",m->nStates[c]);
+
         if (m->nStates[c] == 2)
             numReps += m->numBetaCats * 2;
         else
-            numReps += m->nStates[c];
+            if (m->mcModelId == YES)
+                numReps += 3;
+            else
+                numReps += m->nStates[c];
         }
 
     /* find conditional likelihood pointers */
@@ -5843,7 +5856,7 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 
     /* rescale */
-    for (c=0; c<m->numChars; c++)
+    for (c=0; c<numChar; c++)
         {
         scaler = 0.0;
         nStates = m->nStates[c];
@@ -7905,7 +7918,7 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
 {
-    int             c, j, k, nRateCats, nStates, numReps, *nSitesOfPat;
+    int             c, j, k, nRateCats, nStates, numReps, *nSitesOfPat, *latentMatrix;
     MrBFlt          catLike, catFreq, rateFreq, like, bs[3], rho,
                     pUnobserved, pObserved;
     CLFlt           *clPtr, **clP, *lnScaler;
@@ -7913,9 +7926,9 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
 
     m = &modelSettings[division];
 
-    /* Get number of site patterns */
-    /* TODO: warning: incompatible pointer types assigning to 'CLFlt *' (aka 'float *') from 'MrBFlt *' (aka 'double *') */
+    /* Get number of site patterns (allocation vector) and latent matrix */
     nSitesOfPat = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
     numReps = m->numLatCols * 3; /* 3 is the number of states in the rate matrix */
 
@@ -7932,8 +7945,8 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     rho = *GetParamVals(m->rho, chain, state[chain]);
 
     /* find base frequencies */
-    bs[0] = bs[2] = 1 / (2 + rho);
-    bs[1] = 1 - 2 * bs[0];
+    bs[0] = bs[2] = 1.0 / (2 + rho);
+    bs[1] = 1.0 - 2 * bs[0];
 
     /* set number of states */
     nStates = 3;
@@ -7966,7 +7979,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     if (pObserved < LIKE_EPSILON)
         pObserved = LIKE_EPSILON;
 
-    for (c=m->numDummyChars; c<m->numChars; c++) /* numDummyChars = 1 */
+    for (c=m->numDummyChars; c<m->numLatCols; c++) /* numDummyChars = 1 */
         {
         like = 0.0;
 
@@ -7990,12 +8003,16 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         else
             {
-            (*lnL) += (lnScaler[c] + log(2.0 * like) * nSitesOfPat[c]);
+            //(*lnL) += (lnScaler[c] + log(2.0 * like) * nSitesOfPat[c]);
+            (*lnL) += (lnScaler[c] + log(2.0 * like));
             }
         }
 
     /* correct for absent characters */
     (*lnL) -=  log(pObserved) * (m->numUncompressedChars);
+
+    /* Account for likelihood of emitting observed states from current latent matrix */
+    (*lnL) += LnProbLatentMatrix(nSitesOfPat, latentMatrix, m->numChars, chain);
 
     return NO_ERROR;
 }
@@ -8488,31 +8505,21 @@ int LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars, i
 /*-----------------------------------------------------------------
 |
 |   LnProbLatentMatrix: Calculate probability of observed states
-|       given the latext matrix
+|       given the latent matrix
 |
 -----------------------------------------------------------------*/
-int LnProbLatentMatrix (TreeNode *p, int division, int chain)
+int LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar, int chain)
 {
-    int         i, j, k, numProcesses, *allocationVector,
-                *latentMatrix, numChar;
+    int         i, j, k, numProcesses;
     MrBFlt      currProb, totalProb;
-    ModelInfo   *m;
-
-    m = &modelSettings[division];
-
-    numChar = m->numChars;
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
-    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
     totalProb = 1.0;
 
     /* Get number of independent processes (i.e., number of columns) in latent matrix */
     numProcesses = 1;
     for (k=0; k<numChar; k++)
-        {
         if (allocationVector[k] > numProcesses)
             numProcesses = allocationVector[k];
-        }
 
     int currColumn[numTaxa];
 
@@ -8523,6 +8530,7 @@ int LnProbLatentMatrix (TreeNode *p, int division, int chain)
         for (j=0; j<numTaxa; j++)
             currColumn[j] = latentMatrix[pos(i,j,numTaxa)];
         currProb = LnProbLatentCluster(currColumn, i, numChar, allocationVector, chain);
+        //MrBayesPrint("currProb: %f\n",currProb);
         totalProb = totalProb * currProb;
         }
 
@@ -8544,14 +8552,21 @@ int RemoveNodeScalers (TreeNode *p, int division, int chain)
     m = &modelSettings[division];
     assert (m->unscaledNodes[chain][p->index] == 0);
 
+    /* Set numChar depending on if mcModel is set */
+    if (m->mcModelId == YES)
+        numChar = m->numLatCols;
+    else
+        numChar = m->numChars;
+
     /* find scalers */
     scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
 
+    //MrBayesPrint("siteScalerIndex: %d\n",m->siteScalerIndex[chain]);
     /* find site scalers */
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 
     /* remove scalers */
-    for (c=0; c<m->numChars; c++)
+    for (c=0; c<numChar; c++)
         lnScaler[c] -= scP[c];
 
     return NO_ERROR;

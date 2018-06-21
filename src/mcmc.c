@@ -7531,10 +7531,11 @@ MrBFlt LogDirPrior (Tree *t, ModelParams *mp, int PV)
 
 MrBFlt LogPrior (int chain)
 {
-    int             i, j, c, n, nStates, *nEvents, sumEvents, *ist, nRates, nParts[6];
+    int             i, j, c, n, nStates, *nEvents, sumEvents, *ist, nRates, nParts[6],
+                    *allocationVector, *latentMatrix;
     const int       *rateCat;
     MrBFlt          *st, *sst, lnPrior, sum, x, clockRate, theta, popSize, growth, *alphaDir, newProp[190],
-                    sF, *sR, *eR, *fR,  freq, pInvar, lambda, sigma, nu, igrvar, **rateMultiplier;
+                    sF, *sR, *eR, *fR,  freq, pInvar, lambda, sigma, nu, igrvar, **rateMultiplier, aDir;
     char            *sS;
     CLFlt           *nSitesOfPat;
     Param           *p;
@@ -7591,6 +7592,24 @@ MrBFlt LogPrior (int chain)
             /* Correlation model rho parameter */
             if (p->paramId == RHO_EXP)
                 lnPrior += log(mp->rhoExp) - mp->rhoExp * st[0];
+            }
+        else if (p->paramType == P_ALLOCATIONVECTOR)
+            {
+            /* Correlation model allocation vector parameter */
+            allocationVector = GetParamIntVals(p, chain, state[chain]);
+            if (p->paramId == ALPHADIR_EXP)
+                aDir = mp->alphaDirExp;
+            else
+                aDir = mp->alphaDirFix;
+            lnPrior += LnProbAllocation(allocationVector, m->numChars, aDir);
+            }
+        else if (p->paramType == P_LATENTMATRIX)
+            {
+            /* Correlation model latent matrix parameter */
+            allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+            latentMatrix = GetParamIntVals(p, chain, state[chain]);
+            numChar = m->numChars;
+            lnPrior += LnProbLatentMatrix(allocationVector, latentMatrix, numChar, chain);
             }
         else if (p->paramType == P_REVMAT)
             {
@@ -16237,19 +16256,14 @@ int RunChain (RandLong *seed)
                 MrBayesPrint ("\n%s   Initial log likelihoods and log prior probs for run %d:\n", spacer, chn / chainParams.numChains + 1);
             }
         TouchAllTrees (chn);
-        MrBayesPrint("1\n");
         TouchAllCijks (chn);
-        MrBayesPrint("2\n");
         curLnL[chn] = LogLike(chn);
-        MrBayesPrint("3\n");
         curLnPr[chn] = LogPrior(chn);
-        MrBayesPrint("4\n");
         for (i=0; i<numCurrentDivisions; i++)
             {
             if (modelSettings[i].gibbsGamma == YES)
                 curLnL[chn] += GibbsSampleGamma (chn, i, seed);
             }
-        MrBayesPrint("5\n");
         MrBayesPrint ("%s      Chain %d -- %.6lf -- %.6lf\n", spacer, (chn % chainParams.numChains) + 1, curLnL[chn], curLnPr[chn]);
         }
     MrBayesPrint("\n");

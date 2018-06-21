@@ -445,10 +445,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* Change allocation vector by picking random character and re-seating it */
 
-    int         i, j, *oldAllocationVector, *newAllocationVector, randCharIndex,
-                oldTableIndex, numTables, barrierIndex, charIndexRandomBuddy,
-                newTableIndex, *latentMatrix, oldGroupLeader, index1, index2, currIndex;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable, *nSitesOfPat;
+    int         i, j, k, l, randCharIndex, oldTable, numTables, newNumTables,
+                charIndexRandomBuddy, newTable, *latentMatrix,
+                *newLatentStates, endStateIndex, *rescaledAllocationVector, currIdx;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -460,137 +460,178 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
 
     /* Get rate parameter of alphadir prior */
-    lambda = mp->alphaDirExp;
+    lambda = 1.0 / mp->alphaDirExp;
 
     /* Get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;
 
     /* Get new and old allocation vectors */
-    oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
-    newAllocationVector = GetParamIntVals(param, chain, state[chain]);
+    int *oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
+    //int *oldAllocationVector = GetParamIntVals(param, chain, state[chain]);
+    int *newAllocationVector = oldAllocationVector;
+
+
+    MrBayesPrint("Old allocation vector: ");
+    for (i=0; i<m->numChars; i++)
+        MrBayesPrint("%d ",oldAllocationVector[i]);
+    MrBayesPrint("\n");
+
 
     /* Propose new allocation vector */
     /* Pick random character from old allocation vector */
     randCharIndex = (int) (RandomNumber(seed) * m->numChars);
 
     /* Get index of table that randomly selected character is seated at */
-    oldTableIndex = newAllocationVector[randCharIndex];
+    oldTable = oldAllocationVector[randCharIndex];
+    MrBayesPrint("oldTable: %d\n",oldTable);
 
     /* Get number of tables */
     numTables = 1;
     for (i=0; i<m->numChars; i++)
-        {
-        if (oldAllocationVector[i] > numTables)
-            numTables = oldAllocationVector[i];
-        }
+        if (oldAllocationVector[i] >= numTables)
+            numTables++;
+
+    /* Get number of characters seated at each table */
+    int numSeatedAtTable[numTables];
+    for (i=0; i<numTables; i++)
+        numSeatedAtTable[i] = 0;
+    for (i=0; i<m->numChars; i++)
+        numSeatedAtTable[oldAllocationVector[i]] += 1;
+
+
+    MrBayesPrint("numSeatedAtTable: ");
+    for (i=0; i<numTables; i++)
+        MrBayesPrint("%d ",numSeatedAtTable[i]);
+    MrBayesPrint("\n");
+
 
     /* Decide if character should be seated at new table and then reseat it accordingly */
     /* Note that there are smarter ways of doing this... */
     probNewTable = alphaDir / (alphaDir + m->numChars - 1);
     if (RandomNumber(seed) < probNewTable) /* Seated at new table case */
         {
-        newAllocationVector[randCharIndex] = numTables + 1;
-        /* For now, we won't change the latent pattern */
-        /* Change nSitesOfPat vector to reflect the change in allocation */
-        nSitesOfPat = GetParamVals(param, chain, state[chain]);
-        /* Make sure new table has weight 1 for the first character that is the new character */
-        nSitesOfPat[randCharIndex] = 1.0;
-        /* Make sure old table has weight 1 for the first character after removal of this character */
-        for (i=0; i<m->numChars; i++)
+        newTable = -1;
+        /* If there is only one character that table, the new table is essentially
+        the same as the old table, and we do not reseat. Otherwise we do, like so... */
+        if (numSeatedAtTable[oldAllocationVector[oldTable]] != 1)
             {
-            if (newAllocationVector[i] == oldTableIndex)
-                break;
+            MrBayesPrint("Seated at new table\n");
+            newAllocationVector[randCharIndex] = numTables;
+            newTable = numTables;
+            numTables++;
             }
-        nSitesOfPat[i] = 1.0;
         }
     else /* Seated at existing table case */
         {
+        MrBayesPrint("Seated at existing table\n");
         /* Pick random character to sit next to */
         charIndexRandomBuddy = (int) (RandomNumber(seed) * m->numChars - 1);
         /* In case original character is chosen, choose the last character */
         if (charIndexRandomBuddy == randCharIndex)
             charIndexRandomBuddy = m->numChars - 1;
         /* Get index of table that newly selected buddy is seated at */
-        newTableIndex = newAllocationVector[charIndexRandomBuddy];
-
-        /* Change nSitesOfPat and latent matrix to reflect change in allocation vector */
-        /* First get these parameters */
-        nSitesOfPat = GetParamVals(param, chain, state[chain]);
-        latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-
-        /* Set weight to 0.0 for all characters at the new table before adding the newcomer,
-        in case our character will be the first one at this table */
-        for (i=0; i<m->numChars; i++)
-            {
-            if (newAllocationVector[i] == oldTableIndex)
-                break;
-            }
-        oldGroupLeader = i;
-        nSitesOfPat[oldGroupLeader] = 0.0;
-
-        /* Seat character at new table */
-        newAllocationVector[randCharIndex] = newTableIndex;
-        nSitesOfPat[randCharIndex] = 0.0;
-
-        /* Make sure latent pattern is correct for the new table */
-        index1 = oldGroupLeader;
-        index2 = randCharIndex;
-        for(i=0; i<numTaxa; i++)
-            {
-            latentMatrix[index2] = latentMatrix[index1];
-            index1 += m->numChars;
-            index2 += m->numChars;
-            }
-
-        /* Make sure first character at new table has weight 1.0 */
-        for (i=0; i<m->numChars; i++)
-            {
-            if (newAllocationVector[i] == newTableIndex)
-                break;
-            }
-        nSitesOfPat[i] = 1.0;
-        /* If there are characters left at the old table, make sure the first one has weight 1.0 */
-        for (i=0; i<m->numChars; i++)
-            {
-            if (newAllocationVector[i] == oldTableIndex)
-                break;
-            }
-        if (i < m->numChars)
-            nSitesOfPat[i] = 1.0;
+        newTable = oldAllocationVector[charIndexRandomBuddy];
+        newAllocationVector[randCharIndex] = newTable;
+        MrBayesPrint("newTable: %d\n",newTable);
         }
 
-    /* Rescale allocation vector to follow growth function */
-    barrierIndex = -1;
+
+    MrBayesPrint("New allocation vector (unscaled): ");
     for (i=0; i<m->numChars; i++)
+        MrBayesPrint("%d ",newAllocationVector[i]);
+    MrBayesPrint("\n");
+
+
+    /* Rescale allocation vector to fit growth function */
+    rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
+
+
+    MrBayesPrint("New allocation vector (scaled):   ");
+    for (i=0; i<m->numChars; i++)
+        MrBayesPrint("%d ",newAllocationVector[i]);
+    MrBayesPrint("\n\n");
+
+
+    /* Change latent matrix to reflect change in allocation vector */
+    /* First get these parameters */
+    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
+
+    /*
+    MrBayesPrint("numLatCols: %d\n", m->numLatCols);
+    MrBayesPrint("Latent Matrix:\n");
+    for (i=0; i<numTaxa; i++)
         {
-        currIndex = newAllocationVector[i];
-        if (currIndex == barrierIndex + 1)
-            barrierIndex = currIndex;
-        else
+        for (j=0; j<m->numLatCols; j++)
             {
-            if (currIndex > barrierIndex + 1)
+            MrBayesPrint("%c ",WhichStand(latentMatrix[pos(i,j,m->numLatCols)]));
+            }
+        MrBayesPrint("\n");
+        }
+    MrBayesPrint("\n");
+    */
+
+    /* Get new numTables */
+    newNumTables = 1;
+    for (i=0; i<m->numChars; i++)
+        if (newAllocationVector[i] >= newNumTables)
+            newNumTables++;
+    /* Update numLatCols */
+    m->numLatCols = newNumTables;
+
+    /* Get numSeatedAtTable */
+    int newNumSeatedAtTable[newNumTables];
+    for (i=0; i<newNumTables; i++)
+        newNumSeatedAtTable[i] = 0;
+    for (i=0; i<m->numChars; i++)
+        newNumSeatedAtTable[newAllocationVector[i]] += 1;
+
+    /* Make sure latent pattern is correct for the new table */
+    /* Initialize empty latent matrix to hold new states */
+    int newLatentMatrix[numTaxa * newNumTables];
+
+    /* Make sure latent pattern is correct for the new table */
+    for (i=0; i<newNumTables; i++)
+        {
+        int numAtTable = newNumSeatedAtTable[i];
+        int tempIndices[numAtTable];
+        int idx = 0;
+        /* Get column indices for characters seated at current table */
+        for (j=0; j<m->numChars; j++)
+            {
+            if (newAllocationVector[j] == i)
                 {
-                for (j=i; j<m->numChars; j++)
-                    {
-                    if (newAllocationVector[j] == currIndex)
-                        newAllocationVector[j] = barrierIndex + 1;
-                    else
-                        if (newAllocationVector[j] > barrierIndex)
-                            newAllocationVector[j]++;
-                    }
+                tempIndices[idx] = j;
+                idx++;
                 }
-            break;
+            }
+        int tempData[numTaxa * numAtTable];
+        for (j=0; j<numAtTable; j++)
+            {
+            currIdx = tempIndices[j];
+            for (k=0; k<numTaxa; k++)
+                {
+                tempData[pos(j,k,numTaxa)] = compMatrix[pos(currIdx,k,numTaxa)];
+                }
+                /* Find end state index */
+                int originalLatentStates[numTaxa]; // First get latent states of original cluster
+                for (l=0; l<numTaxa; l++)
+                    originalLatentStates[i] = latentMatrix[pos(i,l,numTaxa)];
+                for (l=0; l<numTaxa; l++)
+                    /* Find index of first end state */
+                    if (originalLatentStates[i] == 1) // Equivalent to end state 0
+                        {
+                        endStateIndex = i;
+                        break;
+                        }
+            newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
+            for (k=0; k<numTaxa; k++)
+                newLatentMatrix[pos(currIdx,k,numTaxa)] = newLatentStates[k];
             }
         }
 
-    /* Get new numLatCols */
-    int maxTable = 0;
-    for (i=0; i<m->numChars; i++)
-        {
-        if (newAllocationVector[i] > maxTable)
-            maxTable = newAllocationVector[i];
-        }
-    m->numLatCols = maxTable + 1;
+    /* copy new allocation vector and latent matrix back */
+    *GetParamIntVals(param, chain, state[chain]) = *newAllocationVector;
+    *GetParamIntVals(m->latentMatrix, chain, state[chain]) = *newLatentMatrix;
 
     /* get proposal ratio */
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, lambda);
@@ -599,6 +640,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* get prior ratio */
     *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, lambda);
     *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, lambda);
+
+    /* Update flags */
+    for (i=0; i<param->nRelParts; i++)
+        TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
 
     /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
 
@@ -6064,7 +6109,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             hasIntmedState[i] = 0;
             for (j=0; j<numTaxa; j++)
                 {
-                if (clusters[pos(i,j,numTaxa)] == 1)
+                if (clusters[pos(i,j,numTaxa)] == 2) // Latent state 1
                     {
                     numColWithIntmed++;
                     hasIntmedState[i] = 1;
@@ -6102,7 +6147,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             {
             oldLatentStates[i] = clustersWithIntmed[pos(randClustIndex,i,numTaxa)];
             /* Also count number of intermediate states present in selected cluster */
-            if (oldLatentStates[i] == 1)
+            if (oldLatentStates[i] == 2) // Latent state 1
                 numIntmedStates++;
             }
 
@@ -6112,7 +6157,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         idx = 0;
         for (i=0; i<numTaxa; i++)
             {
-            if (oldLatentStates[i] == 1)
+            if (oldLatentStates[i] == 2) // Latent state 1
                 {
                 intmedIndices[idx] = i;
                 idx++;
@@ -6129,9 +6174,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         /* Need to resolve other latent states. All former 0's and 2's become 1's... */
         for (i=0; i<numTaxa; i++)
             {
-            if (oldLatentStates[i] == 0 || oldLatentStates[i] == 2)
+            if (oldLatentStates[i] == 1 || oldLatentStates[i] == 4)
                 {
-                newLatentStates[i] = 1;
+                newLatentStates[i] = 2;
                 numNewIntmedStates++;
                 }
             /* For former 1's, the new state depends on the state that was selected
@@ -6174,12 +6219,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
                                 numOpposite++;
                             }
                         if (numSame == numCharsInCluster)
-                            newLatentStates[i] = 0; /* Case where states are equal */
+                            newLatentStates[i] = 1; /* Case where states are equal */
                         else if (numOpposite == numCharsInCluster)
-                            newLatentStates[i] = 2; /* Case where states are opposites of one another */
+                            newLatentStates[i] = 4; /* Case where states are opposites of one another */
                         else
                             {
-                            newLatentStates[i] = 1; /* Otherwise just another intermediate state */
+                            newLatentStates[i] = 2; /* Otherwise just another intermediate state */
                             numNewIntmedStates++;
                             }
                         }
@@ -6205,6 +6250,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             probBackwardsMove = (1 / numColWithIntmed) * (1 / numNewIntmedStates);
             *lnProposalRatio = probForwardMove - probBackwardsMove;
             }
+        /* Update flags */
+        for (i=0; i<param->nRelParts; i++)
+            TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
         }
 
     /* If there are no clusters with more than two characters, then all characters are independent,
@@ -15564,6 +15612,10 @@ int Move_Rho_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio,
        before we even call this function. */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
+
+    /* Set update flags for transition probabilities */
+    for (i=0; i<param->nRelParts; i++)
+        modelSettings[param->relParts[i]].upDateCijk = YES;
 
     return (NO_ERROR);
 }

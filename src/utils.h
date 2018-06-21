@@ -286,4 +286,9 @@ MrBFlt    LogNormalPoint (MrBFlt x, MrBFlt mu, MrBFlt sigma);
 /* qsort utility function */
 int       cmpMrBFlt(const void *a, const void *b);
 
+/* correlation model utility functions */
+int       *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTable);
+int       *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, int oldTable);
+
+
 #endif  /* __UTILS_H__ */

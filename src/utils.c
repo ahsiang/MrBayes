@@ -13991,3 +13991,113 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
         MultiplyMatrices (dim, qMat, fMat, sMat);
         }
 }
+
+
+/*---------------------------------------------------------------------------------
+|
+|   ConvertDataToLatentStates
+|
+|   Converts a subset of data to latent states, given an index corresponding to
+|   the end state.
+|
+---------------------------------------------------------------------------------*/
+int *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTable)
+{
+    /* TODO: Only works for binary data! */
+
+    int         i, j, endState[numAtTable], *newLatentStates,
+                tempRow[numAtTable], tempRowOpp[numAtTable], numSame,
+                numOpp;
+
+    /* Find end state */
+    for (i=0; i<numAtTable; i++)
+        endState[i] = dataSubset[pos(i,endStateIndex,numTaxa)];
+
+    newLatentStates = malloc(numTaxa * sizeof(int));
+
+    /* Loop through rows of dataSubset to find latent states */
+    for (i=0; i<numTaxa; i++)
+        {
+        numSame = 0;
+        numOpp = 0;
+        for (j=0; j<numAtTable; j++)
+            {
+            tempRow[j] = dataSubset[pos(j,i,numTaxa)];
+            if (dataSubset[pos(j,i,numTaxa)] == 1)
+                tempRowOpp[j] = 2;
+            else
+                tempRowOpp[j] = 1;
+            }
+        /* Set new latent states */
+        for (j=0; j<numAtTable; j++)
+            {
+            if (tempRow[j] == endState[j])
+                numSame++;
+            if (tempRow[j] == tempRowOpp[j])
+                numOpp++;
+            }
+        if (numSame == numAtTable)
+            newLatentStates[i] = 1; // Latent state 0
+        else if (numOpp == numAtTable)
+            newLatentStates[i] = 4; // Latent state 2
+        else
+            newLatentStates[i] = 2; // Latent state 1
+        }
+
+    return (newLatentStates);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   RescaleAllocationVector
+|
+|   Rescales allocation vector to follow growth function.
+|
+---------------------------------------------------------------------------------*/
+int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, int oldTable)
+{
+    int         i, j, barrier = -1;
+
+    for (i=0; i<numChar; i++)
+        {
+        if (allocationVector[i] == barrier + 1)
+            {
+            allocationVector[i] = barrier + 1;
+            barrier++;
+            }
+        else
+            {
+            if (allocationVector[i] > barrier + 1)
+                {
+                allocationVector[i] = barrier + 1;
+                barrier++;
+                for (j=i+1; j<numChar; j++)
+                    {
+                    if ((allocationVector[j] == newTable) || (allocationVector[j] == oldTable))
+                        {
+                        if (newTable > oldTable)
+                            allocationVector[j] = oldTable;
+                        else if (oldTable < newTable)
+                            allocationVector[j] = newTable;
+                        else
+                            continue;
+                        }
+                    else
+                        if ((allocationVector[j] >= barrier + 1) || (allocationVector[j] == oldTable))
+                            {
+                            allocationVector[j] = barrier + 1;
+                            barrier++;
+                            }
+                        else
+                            continue;
+                    }
+                break;
+                }
+            else
+                continue;
+            }
+        }
+
+    return (allocationVector);
+}

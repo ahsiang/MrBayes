@@ -1129,7 +1129,10 @@ int ChangeNumChains (int from, int to)
         if (p->paramType == P_CPPEVENTS)
             nCppEventParams++;
         }
+    MrBayesPrint("Reallocation of zero size error\n");
+    MrBayesPrint("nCpp: %d\n",nCppEventParams);
     cppEventParams = (Param *) SafeCalloc (nCppEventParams, sizeof(Param));
+
     for (i=0; i<nCppEventParams; i++)
         {
         cppEventParams[i].paramType = P_CPPEVENTS;
@@ -1582,7 +1585,8 @@ int ChangeNumRuns (int from, int to)
         {
         mvt = moves[i]->moveType;
         moves[i]->tuningParam = (MrBFlt **) SafeRealloc ((void *) moves[i]->tuningParam, (size_t)numGlobalChains * sizeof (MrBFlt *));
-        moves[i]->tuningParam[0] = (MrBFlt *) SafeRealloc ((void *) moves[i]->tuningParam[0], (size_t)numGlobalChains * (size_t)(mvt->numTuningParams) * sizeof (MrBFlt));
+        if (mvt->numTuningParams > 0) /* TODO: Check that this is ok */
+            moves[i]->tuningParam[0] = (MrBFlt *) SafeRealloc ((void *) moves[i]->tuningParam[0], (size_t)numGlobalChains * (size_t)(mvt->numTuningParams) * sizeof (MrBFlt));
         for (j=1; j<numGlobalChains; j++)
             moves[i]->tuningParam[j] = moves[i]->tuningParam[0] + j * mvt->numTuningParams;
         moves[i]->relProposalProb = (MrBFlt *) SafeRealloc ((void *) moves[i]->relProposalProb, 4 * (size_t)numGlobalChains * sizeof (MrBFlt));
@@ -19067,7 +19071,7 @@ int SetModelParams (void)
                 {
                 p->paramId = LATENTMATRIX_UNCORR;
                 m->numLatCols = m->numChars;
-                p->nIntValues = m->numLatCols * numTaxa;
+                p->nIntValues = m->numChars * numTaxa;
                 }
 
             p->printParam = YES;

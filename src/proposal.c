@@ -445,9 +445,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* Change allocation vector by picking random character and re-seating it */
 
-    int         i, j, k, l, randCharIndex, oldTable, numTables, newNumTables,
-                charIndexRandomBuddy, newTable, *latentMatrix,
-                *newLatentStates, endStateIndex, *rescaledAllocationVector, currIdx;
+    int         i, j, k, randCharIndex, oldTable, numTables, newNumTables,
+                *oldAllocationVector, *newLatentMatrix, charIndexRandomBuddy,
+                newTable, *latentMatrix, *newAllocationVector, *newLatentStates,
+                endStateIndex, *rescaledAllocationVector, currIdx;
     MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable;
     ModelParams *mp;
     ModelInfo   *m;
@@ -466,16 +467,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     minA = MIN_ALPHADIR_PARAM;
 
     /* Get new and old allocation vectors */
-    int *oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
-    //int *oldAllocationVector = GetParamIntVals(param, chain, state[chain]);
-    int *newAllocationVector = oldAllocationVector;
-
-
-    MrBayesPrint("Old allocation vector: ");
-    for (i=0; i<m->numChars; i++)
-        MrBayesPrint("%d ",oldAllocationVector[i]);
-    MrBayesPrint("\n");
-
+    //oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
+    oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
+    newAllocationVector = GetParamIntVals(param, chain, state[chain]);
 
     /* Propose new allocation vector */
     /* Pick random character from old allocation vector */
@@ -483,7 +477,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Get index of table that randomly selected character is seated at */
     oldTable = oldAllocationVector[randCharIndex];
-    MrBayesPrint("oldTable: %d\n",oldTable);
 
     /* Get number of tables */
     numTables = 1;
@@ -498,13 +491,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     for (i=0; i<m->numChars; i++)
         numSeatedAtTable[oldAllocationVector[i]] += 1;
 
-
-    MrBayesPrint("numSeatedAtTable: ");
-    for (i=0; i<numTables; i++)
-        MrBayesPrint("%d ",numSeatedAtTable[i]);
-    MrBayesPrint("\n");
-
-
     /* Decide if character should be seated at new table and then reseat it accordingly */
     /* Note that there are smarter ways of doing this... */
     probNewTable = alphaDir / (alphaDir + m->numChars - 1);
@@ -515,7 +501,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         the same as the old table, and we do not reseat. Otherwise we do, like so... */
         if (numSeatedAtTable[oldAllocationVector[oldTable]] != 1)
             {
-            MrBayesPrint("Seated at new table\n");
             newAllocationVector[randCharIndex] = numTables;
             newTable = numTables;
             numTables++;
@@ -523,7 +508,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         }
     else /* Seated at existing table case */
         {
-        MrBayesPrint("Seated at existing table\n");
         /* Pick random character to sit next to */
         charIndexRandomBuddy = (int) (RandomNumber(seed) * m->numChars - 1);
         /* In case original character is chosen, choose the last character */
@@ -532,43 +516,14 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         /* Get index of table that newly selected buddy is seated at */
         newTable = oldAllocationVector[charIndexRandomBuddy];
         newAllocationVector[randCharIndex] = newTable;
-        MrBayesPrint("newTable: %d\n",newTable);
         }
-
-
-    MrBayesPrint("New allocation vector (unscaled): ");
-    for (i=0; i<m->numChars; i++)
-        MrBayesPrint("%d ",newAllocationVector[i]);
-    MrBayesPrint("\n");
-
 
     /* Rescale allocation vector to fit growth function */
     rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
 
-
-    MrBayesPrint("New allocation vector (scaled):   ");
-    for (i=0; i<m->numChars; i++)
-        MrBayesPrint("%d ",newAllocationVector[i]);
-    MrBayesPrint("\n\n");
-
-
     /* Change latent matrix to reflect change in allocation vector */
     /* First get these parameters */
-    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-
-    /*
-    MrBayesPrint("numLatCols: %d\n", m->numLatCols);
-    MrBayesPrint("Latent Matrix:\n");
-    for (i=0; i<numTaxa; i++)
-        {
-        for (j=0; j<m->numLatCols; j++)
-            {
-            MrBayesPrint("%c ",WhichStand(latentMatrix[pos(i,j,m->numLatCols)]));
-            }
-        MrBayesPrint("\n");
-        }
-    MrBayesPrint("\n");
-    */
+    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
 
     /* Get new numTables */
     newNumTables = 1;
@@ -587,7 +542,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Make sure latent pattern is correct for the new table */
     /* Initialize empty latent matrix to hold new states */
-    int newLatentMatrix[numTaxa * newNumTables];
+    newLatentMatrix = (int *) SafeCalloc ((size_t)numTaxa * newNumTables, sizeof(int));
 
     /* Make sure latent pattern is correct for the new table */
     for (i=0; i<newNumTables; i++)
@@ -604,34 +559,36 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
                 idx++;
                 }
             }
+        /* Get original data from relevant columns */
         int tempData[numTaxa * numAtTable];
         for (j=0; j<numAtTable; j++)
             {
             currIdx = tempIndices[j];
             for (k=0; k<numTaxa; k++)
-                {
-                tempData[pos(j,k,numTaxa)] = compMatrix[pos(currIdx,k,numTaxa)];
-                }
-                /* Find end state index */
-                int originalLatentStates[numTaxa]; // First get latent states of original cluster
-                for (l=0; l<numTaxa; l++)
-                    originalLatentStates[i] = latentMatrix[pos(i,l,numTaxa)];
-                for (l=0; l<numTaxa; l++)
-                    /* Find index of first end state */
-                    if (originalLatentStates[i] == 1) // Equivalent to end state 0
-                        {
-                        endStateIndex = i;
-                        break;
-                        }
-            newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
-            for (k=0; k<numTaxa; k++)
-                newLatentMatrix[pos(currIdx,k,numTaxa)] = newLatentStates[k];
+                tempData[pos(k,j,numAtTable)] = compMatrix[pos(k,currIdx,m->numChars)];
             }
+        /* Find index of first end state in original latent states */
+        for (j=0; j<numTaxa; j++)
+            if (latentMatrix[pos(j,i,m->numLatCols)] == 1) //Equivalent to end state 0
+                {
+                endStateIndex = j;
+                break;
+                }
+        /* Get new latent states from tempData and fill in column of newLatentMatrix */
+        newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
+        for (j=0; j<numTaxa; j++)
+            newLatentMatrix[pos(j,i,m->numLatCols)] = newLatentStates[j];
         }
 
-    /* copy new allocation vector and latent matrix back */
-    *GetParamIntVals(param, chain, state[chain]) = *newAllocationVector;
-    *GetParamIntVals(m->latentMatrix, chain, state[chain]) = *newLatentMatrix;
+    /* Copy new allocation vector and latent matrix back */
+    for (i=0; i<m->numChars; i++) // Allocation vector
+        {
+        newAllocationVector[i] = rescaledAllocationVector[i];
+        oldAllocationVector[i] = rescaledAllocationVector[i];
+        }
+    for (i=0; i<numTaxa; i++) // Latent matrix
+        for (j=0; j<m->numLatCols; j++)
+            latentMatrix[pos(i,j,m->numLatCols)] = newLatentMatrix[pos(i,j,m->numLatCols)];
 
     /* get proposal ratio */
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, lambda);
@@ -6044,7 +6001,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     numChars = m->numChars;
 
     /* Get allocation vector */
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain] ^ 1);
 
     /* Get new and old latent matrices */
     oldLatentMatrix = GetParamIntVals(param, chain, state[chain] ^ 1);
@@ -6058,10 +6015,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     /* Loop through allocation vector to make counts */
     for (i=0; i<numChars; i++)
+        {
         allocationCount[allocationVector[i]]++;
         /* Also keep track of max count */
         if (allocationCount[allocationVector[i]] > maxCount)
             maxCount = allocationCount[allocationVector[i]];
+        }
 
     /* Get numLatCols and numValues */
     //numLatCols = maxCount + 1;
@@ -6237,7 +6196,10 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
             /* Recode states of selected column in newLatentMatrix */
             for (o=0; o<numTaxa; o++)
-                newLatentMatrix[pos(clusterIntmedIndices[randClustIndex],n,numTaxa)] = newLatentStates[n];
+                newLatentMatrix[pos(clusterIntmedIndices[randClustIndex],o,numTaxa)] = newLatentStates[o];
+
+            /* Copy newLatentMatrix back */
+            *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
 
             /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
             probOldLatentStates = LnProbLatentCluster(oldLatentStates, randClustIndex, numChars, allocationVector, chain);

@@ -19034,7 +19034,8 @@ int SetModelParams (void)
             else
                 p->paramId = ALLOCATIONVECTOR_UNCORR;
 
-            p->printParam = YES;
+            p->printParam = NO;
+            /* TODO: Printing for allocation vector and latent matrix */
 
             /* report alloctionVector */
             SafeStrcat (&p->paramHeader,"allocationVector");
@@ -19074,7 +19075,7 @@ int SetModelParams (void)
                 p->nIntValues = m->numChars * numTaxa;
                 }
 
-            p->printParam = YES;
+            p->printParam = NO;
 
             /* report latentMatrix */
             SafeStrcat (&p->paramHeader,"latentMatrix");

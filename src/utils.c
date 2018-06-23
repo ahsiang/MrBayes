@@ -14011,9 +14011,9 @@ int *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTabl
 
     /* Find end state */
     for (i=0; i<numAtTable; i++)
-        endState[i] = dataSubset[pos(i,endStateIndex,numTaxa)];
+        endState[i] = dataSubset[pos(endStateIndex,i,numAtTable)];
 
-    newLatentStates = malloc(numTaxa * sizeof(int));
+    newLatentStates = (int *) SafeCalloc ((size_t)numTaxa, sizeof(int));
 
     /* Loop through rows of dataSubset to find latent states */
     for (i=0; i<numTaxa; i++)
@@ -14022,18 +14022,19 @@ int *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTabl
         numOpp = 0;
         for (j=0; j<numAtTable; j++)
             {
-            tempRow[j] = dataSubset[pos(j,i,numTaxa)];
-            if (dataSubset[pos(j,i,numTaxa)] == 1)
+            tempRow[j] = dataSubset[pos(i,j,numAtTable)];
+            if (tempRow[j] == 1)
                 tempRowOpp[j] = 2;
             else
                 tempRowOpp[j] = 1;
             }
+
         /* Set new latent states */
         for (j=0; j<numAtTable; j++)
             {
             if (tempRow[j] == endState[j])
                 numSame++;
-            if (tempRow[j] == tempRowOpp[j])
+            else
                 numOpp++;
             }
         if (numSame == numAtTable)
@@ -14057,7 +14058,7 @@ int *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTabl
 ---------------------------------------------------------------------------------*/
 int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, int oldTable)
 {
-    int         i, j, barrier = -1;
+    int         i, j, barrier=-1;
 
     for (i=0; i<numChar; i++)
         {

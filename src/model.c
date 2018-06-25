@@ -19046,6 +19046,7 @@ int SetModelParams (void)
             /* Set up latentMatrix for correlation model DPMM ***********************************************************/
             p->paramType = P_LATENTMATRIX;
             p->nSubValues = 0;
+            p->nIntValues = m->numChars * numTaxa; // Maximum size of latent matrix
             p->min = 0;
             p->max = 2;
             for (i=0; i<numCurrentDivisions; i++)
@@ -19066,13 +19067,13 @@ int SetModelParams (void)
                     if (numSitesOfPat[j] > m->numLatCols)
                         m->numLatCols = numSitesAlloc[j];
                     }
-                p->nIntValues = m->numLatCols * numTaxa;
+                //p->nIntValues = m->numLatCols * numTaxa;
                 }
             else
                 {
                 p->paramId = LATENTMATRIX_UNCORR;
                 m->numLatCols = m->numChars;
-                p->nIntValues = m->numChars * numTaxa;
+                //p->nIntValues = m->numChars * numTaxa;
                 }
 
             p->printParam = NO;

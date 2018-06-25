@@ -447,7 +447,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     int         i, j, k, randCharIndex, oldTable, numTables, newNumTables,
                 *oldAllocationVector, *newLatentMatrix, charIndexRandomBuddy,
-                newTable, *latentMatrix, *newAllocationVector, *newLatentStates,
+                newTable, *oldLatentMatrix, *newAllocationVector, *newLatentStates,
                 endStateIndex, *rescaledAllocationVector, currIdx;
     MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable;
     ModelParams *mp;
@@ -523,7 +523,8 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Change latent matrix to reflect change in allocation vector */
     /* First get these parameters */
-    latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
+    oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
+    newLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
     /* Get new numTables */
     newNumTables = 1;
@@ -539,10 +540,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         newNumSeatedAtTable[i] = 0;
     for (i=0; i<m->numChars; i++)
         newNumSeatedAtTable[newAllocationVector[i]] += 1;
-
-    /* Make sure latent pattern is correct for the new table */
-    /* Initialize empty latent matrix to hold new states */
-    newLatentMatrix = (int *) SafeCalloc ((size_t)numTaxa * newNumTables, sizeof(int));
 
     /* Make sure latent pattern is correct for the new table */
     for (i=0; i<newNumTables; i++)
@@ -569,7 +566,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         /* Find index of first end state in original latent states */
         for (j=0; j<numTaxa; j++)
-            if (latentMatrix[pos(j,i,m->numLatCols)] == 1) //Equivalent to end state 0
+            if (oldLatentMatrix[pos(j,i,m->numLatCols)] == 1) //Equivalent to end state 0
                 {
                 endStateIndex = j;
                 break;
@@ -580,15 +577,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             newLatentMatrix[pos(j,i,m->numLatCols)] = newLatentStates[j];
         }
 
-    /* Copy new allocation vector and latent matrix back */
+    /* Copy new allocation vector back */
     for (i=0; i<m->numChars; i++) // Allocation vector
-        {
         newAllocationVector[i] = rescaledAllocationVector[i];
-        oldAllocationVector[i] = rescaledAllocationVector[i];
-        }
-    for (i=0; i<numTaxa; i++) // Latent matrix
-        for (j=0; j<m->numLatCols; j++)
-            latentMatrix[pos(i,j,m->numLatCols)] = newLatentMatrix[pos(i,j,m->numLatCols)];
 
     /* get proposal ratio */
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, lambda);
@@ -5989,11 +5980,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Change latent matrix for correlation model by randomly selecting an intermediate state
        and changing it to an end state */
 
-    int         i, j, k, l, n, o, p, *allocationVector, numChars, *oldLatentMatrix,
-                *newLatentMatrix, numIntmedStates=0, maxCount=1, randClustIndex, idx,
-                numLatCols, numValues, numCorrClusters, randIntmedIndex, numCharsInCluster,
-                numSame, numOpposite, ciIdx;
-    MrBFlt      probOldLatentStates, probNewLatentStates, probForwardMove, probBackwardsMove;
+    int         i, j, k, l, *allocationVector, numChars, *oldLatentMatrix,
+                *newLatentMatrix, numIntmedStates=0, maxCount=1, randClustIndex,
+                idx, numLatCols, numValues, numCorrClusters, randIntmedIndex,
+                numCharsInCluster, numOpposite, ciIdx;
+    MrBFlt      probOldLatentStates, probNewLatentStates, probForwardMove,
+                probBackwardsMove;
     ModelInfo   *m;
 
     /* Get numChars */
@@ -6048,12 +6040,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Get latent columns where count > 1 */
     int clusters[numTaxa * numCorrClusters];
     for (i=0; i<numCorrClusters; i++)
-        {
         for (j=0; j<numTaxa; j++)
-            {
-            clusters[pos(i,j,numTaxa)] = oldLatentMatrix[pos(clusterIndices[i],j,numTaxa)];
-            }
-        }
+            clusters[pos(j,i,numCorrClusters)] = oldLatentMatrix[pos(j,clusterIndices[i],m->numLatCols)];
 
     /* Only enter downstream processing if there exist clusters with more than 1 character */
     /* TODO: What happens if there aren't any? Is no move made? */
@@ -6068,7 +6056,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             hasIntmedState[i] = 0;
             for (j=0; j<numTaxa; j++)
                 {
-                if (clusters[pos(i,j,numTaxa)] == 2) // Latent state 1
+                if (clusters[pos(j,i,numCorrClusters)] == 2) // Latent state 1
                     {
                     numColWithIntmed++;
                     hasIntmedState[i] = 1;
@@ -6076,130 +6064,134 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
                     }
                 }
             }
-
-        /* Get indices of columns that have intermediate state(s) */
-        int clusterIntmedIndices[numColWithIntmed];
-        ciIdx = 0;
-        for (i=0; i<numCorrClusters; i++)
+        if (!(numColWithIntmed == 0)) // No need to do all this if there are no columns with intermediate states...
             {
-            if (hasIntmedState[i] == 1)
+            /* Get indices of columns that have intermediate state(s) */
+            int clusterIntmedIndices[numColWithIntmed];
+            ciIdx = 0;
+            for (i=0; i<numCorrClusters; i++)
                 {
-                clusterIntmedIndices[ciIdx] = i;
-                ciIdx++;
-                }
-            }
-
-        /* Get states from latent columns where count > 1 that contain intermediate state(s) */
-        int clustersWithIntmed[numTaxa * numColWithIntmed];
-        for (i=0; i<numColWithIntmed; i++)
-            {
-            for (j=0; j<numTaxa; j++)
-                clustersWithIntmed[pos(i,j,numTaxa)] = clusters[pos(clusterIntmedIndices[i],j,numTaxa)];
-            }
-
-        /* Randomly select a cluster where count > 1 that contains intemerdiate state(s) */
-        randClustIndex = (int) (RandomNumber(seed) * numColWithIntmed);
-
-        /* Get latent states from selected cluster */
-        int oldLatentStates[numTaxa];
-        for (i=0; i<numTaxa; i++)
-            {
-            oldLatentStates[i] = clustersWithIntmed[pos(randClustIndex,i,numTaxa)];
-            /* Also count number of intermediate states present in selected cluster */
-            if (oldLatentStates[i] == 2) // Latent state 1
-                numIntmedStates++;
-            }
-
-        /* Randomly pick a character in the selected cluster that is in the intermediate (1) state */
-        /* First, find indices of intermediate states in the selected cluster */
-        int intmedIndices[numIntmedStates];
-        idx = 0;
-        for (i=0; i<numTaxa; i++)
-            {
-            if (oldLatentStates[i] == 2) // Latent state 1
-                {
-                intmedIndices[idx] = i;
-                idx++;
-                }
-            }
-
-        /* Randomly select one of the intermediate states */
-        randIntmedIndex = (int) (RandomNumber(seed) * numIntmedStates);
-
-        /* Set the randomly selected state to an end state (0, without loss of generality) */
-        int newLatentStates[numTaxa];
-        newLatentStates[intmedIndices[randIntmedIndex]] = 0;
-        int numNewIntmedStates = 0; /* Also keep track of how many intermediate states are in the new latent column */
-        /* Need to resolve other latent states. All former 0's and 2's become 1's... */
-        for (i=0; i<numTaxa; i++)
-            {
-            if (oldLatentStates[i] == 1 || oldLatentStates[i] == 4)
-                {
-                newLatentStates[i] = 2;
-                numNewIntmedStates++;
-                }
-            /* For former 1's, the new state depends on the state that was selected
-            to become the new end state */
-            /* Get associated data for the selected row */
-            else
-                {
-                numCharsInCluster = allocationCount[clusterIntmedIndices[randClustIndex]];
-                int selectedData[numCharsInCluster];
-                idx = 0;
-                for (j=0; j<numChar; j++)
+                if (hasIntmedState[i] == 1)
                     {
-                    if (allocationVector[j] == clusterIntmedIndices[randClustIndex])
-                        {
-                        selectedData[idx] = compMatrix[pos(j,intmedIndices[randIntmedIndex],numTaxa)];
-                        idx++;
-                        }
+                    clusterIntmedIndices[ciIdx] = i;
+                    ciIdx++;
                     }
-                /* Do the same for all the other intermediate states */
-                for (k=0; k<numIntmedStates; k++)
+                }
+
+            /* Get states from latent columns with count > 1 that contain intermediate state(s) */
+            int clustersWithIntmed[numTaxa * numColWithIntmed];
+            for (i=0; i<numColWithIntmed; i++)
+                for (j=0; j<numTaxa; j++)
+                    clustersWithIntmed[pos(j,i,numColWithIntmed)] = clusters[pos(j,clusterIntmedIndices[i],numCorrClusters)];
+
+            /* Randomly select a cluster where count > 1 that contains intemerdiate state(s) */
+            randClustIndex = (int) (RandomNumber(seed) * numColWithIntmed);
+
+            /* Get latent states from selected cluster */
+            int oldLatentStates[numTaxa];
+            for (i=0; i<numTaxa; i++)
+                {
+                oldLatentStates[i] = clustersWithIntmed[pos(i,randClustIndex,numColWithIntmed)];
+                /* Also count number of intermediate states present in selected cluster */
+                if (oldLatentStates[i] == 2) // Latent state 1
+                    numIntmedStates++;
+                }
+
+            /* Randomly pick a character in the selected cluster that is in the intermediate (1) state */
+            /* First, find indices of intermediate states in the selected cluster */
+            int intmedIndices[numIntmedStates];
+            idx = 0;
+            for (i=0; i<numTaxa; i++)
+                {
+                if (oldLatentStates[i] == 2) // Latent state 1
                     {
-                    if (!(intmedIndices[k] == randIntmedIndex))
+                    intmedIndices[idx] = i;
+                    idx++;
+                    }
+                }
+
+            /* Randomly select one of the intermediate states */
+            randIntmedIndex = (int) (RandomNumber(seed) * numIntmedStates);
+
+            /* Set the randomly selected state to an end state (0, without loss of generality) */
+            int newLatentStates[numTaxa];
+            newLatentStates[intmedIndices[randIntmedIndex]] = 1; // Latent state 0
+            int numNewIntmedStates = 0; /* Also keep track of how many intermediate states are in the new latent column */
+
+            /* Need to resolve other latent states. All former 0's and 2's become 1's... */
+            numCharsInCluster = allocationCount[clusterIndices[clusterIntmedIndices[randClustIndex]]];
+            for (i=0; i<numTaxa; i++)
+                {
+                if ((oldLatentStates[i] == 1) || (oldLatentStates[i] == 4))
+                    {
+                    newLatentStates[i] = 2;
+                    numNewIntmedStates++;
+                    }
+                /* For former 1's, the new state depends on the state that was selected
+                to become the new end state */
+                else
+                    {
+                    if (i == intmedIndices[randIntmedIndex])
+                        continue;
+                    else
                         {
-                        int currIntmedState[numCharsInCluster];
-                        idx = 0;
-                        for (l=0; l<numChar; l++)
+                        int selectedData[numCharsInCluster];
+                        /* Get associated data for the selected new end state row */
+                        for (j=0; j<numChar; j++)
                             {
-                            currIntmedState[idx] = compMatrix[pos(l,intmedIndices[k],numTaxa)];
-                            idx++;
+                            if (allocationVector[j] == clusterIndices[clusterIntmedIndices[randClustIndex]])
+                                for (k=0; k<numCharsInCluster; k++)
+                                    selectedData[k] = compMatrix[pos(intmedIndices[randIntmedIndex],j,m->numChars)];
                             }
-                        /* Change latent column state assignment as necessary */
-                        /* First count number of states that are the same vs. opposite */
-                        numSame = 0;
-                        numOpposite = 0;
-                        for (p=0; p<numCharsInCluster; p++)
+                        /* Do the same for all the other intermediate states */
+                        for (k=0; k<numIntmedStates; k++)
                             {
-                            if (selectedData[p] == currIntmedState[p])
-                                numSame++;
-                            else /* NOTE: This won't work for non-binary characters! */
-                                numOpposite++;
-                            }
-                        if (numSame == numCharsInCluster)
-                            newLatentStates[i] = 1; /* Case where states are equal */
-                        else if (numOpposite == numCharsInCluster)
-                            newLatentStates[i] = 4; /* Case where states are opposites of one another */
-                        else
-                            {
-                            newLatentStates[i] = 2; /* Otherwise just another intermediate state */
-                            numNewIntmedStates++;
+                            if (!(intmedIndices[k] == randIntmedIndex))
+                                {
+                                int currIntmedState[numCharsInCluster];
+                                for (l=0; l<numCharsInCluster; l++)
+                                    currIntmedState[l] = compMatrix[pos(intmedIndices[k],l,m->numChars)];
+
+                                /* Change latent column state assignment as necessary */
+                                int same = TRUE;
+                                numOpposite = 0;
+                                for (l=0; l<numCharsInCluster; l++)
+                                    {
+                                    if (selectedData[l] != currIntmedState[l])
+                                        same = FALSE; // Flag if there is disagreement
+                                        numOpposite++; // Count number of opposite states
+                                    }
+                                if (same)
+                                    newLatentStates[i] = 1; // If states the same, latent state = 0
+                                else
+                                    {
+                                    if (numOpposite == numCharsInCluster)
+                                        newLatentStates[i] = 4; // If states opposite, latent state = 2
+                                    else
+                                        newLatentStates[i] = 2; // Otherwise, latent state = 1
+                                        numNewIntmedStates++;
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
             /* Copy over states from oldLatentMatrix to newLatentMatrix */
-            for (n=0; n<numValues; n++)
-                newLatentMatrix[n] = oldLatentMatrix[n];
+            for (i=0; i<numValues; i++)
+                newLatentMatrix[i] = oldLatentMatrix[i];
 
             /* Recode states of selected column in newLatentMatrix */
-            for (o=0; o<numTaxa; o++)
-                newLatentMatrix[pos(clusterIntmedIndices[randClustIndex],o,numTaxa)] = newLatentStates[o];
+            for (i=0; i<numTaxa; i++)
+                newLatentMatrix[pos(i,clusterIndices[clusterIntmedIndices[randClustIndex]],m->numLatCols)] = newLatentStates[i];
 
             /* Copy newLatentMatrix back */
-            *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
+            //*GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
+            /*
+            for (i=0; i<numTaxa; i++)
+                for (j=0; j<m->numLatCols; j++)
+                    latentMatrix[pos(i,j,m->numLatCols)] = newLatentMatrix[pos(i,j,m->numLatCols)];
+            */
 
             /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
             probOldLatentStates = LnProbLatentCluster(oldLatentStates, randClustIndex, numChars, allocationVector, chain);
@@ -6208,13 +6200,14 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             *lnPriorRatio = probNewLatentStates - probOldLatentStates;
 
             /* Get proposal ratio */
-            probForwardMove = (1 / numColWithIntmed) * (1 / numIntmedStates);
-            probBackwardsMove = (1 / numColWithIntmed) * (1 / numNewIntmedStates);
+            probForwardMove = log((1 / numColWithIntmed) * (1 / numIntmedStates));
+            probBackwardsMove = log((1 / numColWithIntmed) * (1 / numNewIntmedStates));
             *lnProposalRatio = probForwardMove - probBackwardsMove;
+
+            /* Update flags */
+            for (i=0; i<param->nRelParts; i++)
+                TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
             }
-        /* Update flags */
-        for (i=0; i<param->nRelParts; i++)
-            TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
         }
 
     /* If there are no clusters with more than two characters, then all characters are independent,

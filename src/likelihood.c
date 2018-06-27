@@ -41,6 +41,7 @@
 #include "model.h"
 #include "utils.h"
 #include "sumpt.h"
+#include <math.h>
 
 #define LIKE_EPSILON                1.0e-300
 
@@ -8430,7 +8431,7 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
 |       vector for a particular alphadir value
 |
 -----------------------------------------------------------------*/
-int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
+double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 {
     int         i, j, newestTableIndex, numSeatedAtTable;
     MrBFlt      totalProb;
@@ -8444,29 +8445,23 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
     /* Loop through the rest of the tables */
     for (i=1; i<numChars; i++)
         {
-        /* Case where current character is seated at an existing table */
-        if (allocationVector[i] <= newestTableIndex)
+        if (allocationVector[i] > newestTableIndex) // Seated at new table case
             {
-            /* Determine number of characters already seated at current table */
+            totalProb = totalProb * (alphaDir / (alphaDir + i)); // No -1 because of 0-indexing
+            newestTableIndex++;
+            }
+        else // Seated at existing table case
+            {
+            /* Calculate number currently seated at that existing table */
             numSeatedAtTable = 0;
             for (j=0; j<i; j++)
-                {
                 if (allocationVector[j] == allocationVector[i])
-                    {
                     numSeatedAtTable++;
-                    }
-                }
-            totalProb = totalProb * ((MrBFlt) numSeatedAtTable / (alphaDir + i)); /* no -1 because of 0-indexing */
-            }
-        /* Case where current character is seated at a new table */
-        else
-            {
-            totalProb = totalProb * (alphaDir / (alphaDir + i));
-            newestTableIndex = allocationVector[i];
+            totalProb = totalProb * ((MrBFlt) numSeatedAtTable / (alphaDir + i));
             }
         }
 
-    return ( log(totalProb) );
+    return ( log (totalProb) );
 }
 
 
@@ -8476,29 +8471,34 @@ int LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 |       for a particular column of the latent matrix
 |
 -----------------------------------------------------------------*/
-int LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars, int *allocationVector, int chain)
+double LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars, int *allocationVector, int chain)
 {
-    int         i, j, numIntmedStates=0, numCharsInCluster=0;
-    MrBFlt      columnProb;
+    int         i, j, n, numIntmedStates=0, numCharsInCluster=0;
+    MrBFlt      term, lnColumnProb, m;
 
     /* Loop through column and count number of taxa in intermediate state */
     for (i=0; i<numTaxa; i++)
-        {
-        if (latentColumn[i] == 1)
+        if (latentColumn[i] == 2) // Latent state 1
             numIntmedStates++;
-        }
 
     /* Get number of characters in cluster with given allocationValue */
-    for (j=0; j<numChar; j++)
-        {
+    for (j=0; j<numChars; j++)
         if (allocationVector[j] == allocationValue)
             numCharsInCluster++;
-        }
 
     /* Calculate final probability */
-    columnProb = numIntmedStates * (1.0 / (1 << (numCharsInCluster - 1)));
+    n = numCharsInCluster;
+    m = (double) numIntmedStates;
 
-    return ( log(columnProb) );
+    if (n == 1 || m == 0)
+        lnColumnProb = log (1.0);
+    else
+        {
+        term = 1.0 / ((1 << n) - 2.0);
+        lnColumnProb = log ( pow(term,m) );
+        }
+
+    return lnColumnProb;
 }
 
 
@@ -8508,12 +8508,12 @@ int LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars, i
 |       given the latent matrix
 |
 -----------------------------------------------------------------*/
-int LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar, int chain)
+double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar, int chain)
 {
     int         i, j, k, numProcesses;
-    MrBFlt      currProb, totalProb;
+    MrBFlt      lnCurrProb, lnTotalProb;
 
-    totalProb = 1.0;
+    lnTotalProb = 0.0;
 
     /* Get number of independent processes (i.e., number of columns) in latent matrix */
     numProcesses = 1;
@@ -8528,13 +8528,12 @@ int LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar, i
         {
         /* Grab current column/cluster/process */
         for (j=0; j<numTaxa; j++)
-            currColumn[j] = latentMatrix[pos(i,j,numTaxa)];
-        currProb = LnProbLatentCluster(currColumn, i, numChar, allocationVector, chain);
-        //MrBayesPrint("currProb: %f\n",currProb);
-        totalProb = totalProb * currProb;
+            currColumn[j] = latentMatrix[pos(j,i,numProcesses)];
+        lnCurrProb = LnProbLatentCluster(currColumn, i, numChar, allocationVector, chain);
+        lnTotalProb = lnTotalProb + lnCurrProb;
         }
 
-    return (NO_ERROR);
+    return lnTotalProb;
 }
 
 

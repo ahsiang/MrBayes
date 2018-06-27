@@ -564,10 +564,10 @@ int InitializeMrBayes (void)
     strcpy(defaultModel.corrPr, "Uncorrelated");        /* prior for allocation vector and latent matrix initialization state */
     strcpy(defaultModel.rhoPr, "Exponential");          /* prior for inverse correlation factor         */
     defaultModel.rhoFix = 0.05;
-    defaultModel.rhoExp = 20;
+    defaultModel.rhoExp = 20.0;
     strcpy(defaultModel.alphaDirPr, "Exponential");     /* prior for DPMM scaling factor                */
     defaultModel.alphaDirFix = 0.05;
-    defaultModel.alphaDirExp = 20;
+    defaultModel.alphaDirExp = 20.0;
 
     strcpy(defaultModel.revMatPr, "Dirichlet");         /* prior for GTR model (nucleotides)            */
     for (i=0; i<6; i++)

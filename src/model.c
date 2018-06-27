@@ -22593,7 +22593,7 @@ void SetUpMoveTypes (void)
     mt->Autotune = &AutotuneDirichlet;
     mt->targetRate = 0.25;
 
-    /* Move_Rho_Dir */
+    /* Move_Rho_M */
     mt = &moveTypes[i++];
     mt->name = "Multiplier";
     mt->shortName = "Multiplier";
@@ -22602,7 +22602,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[0] = RHO_FIX;
     mt->applicableTo[1] = RHO_EXP;
     mt->nApplicable = 2;
-    mt->moveFxn = &Move_Rho_Dir;
+    mt->moveFxn = &Move_Rho_M;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log (1.5);  /* so-called lambda */

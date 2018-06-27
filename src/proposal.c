@@ -461,7 +461,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
 
     /* Get rate parameter of alphadir prior */
-    lambda = 1.0 / mp->alphaDirExp;
+    lambda = mp->alphaDirExp;
 
     /* Get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;
@@ -582,12 +582,12 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         newAllocationVector[i] = rescaledAllocationVector[i];
 
     /* get proposal ratio */
-    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, lambda);
-    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, lambda);
+    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
 
     /* get prior ratio */
-    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, lambda);
-    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, lambda);
+    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
@@ -15494,73 +15494,45 @@ int Move_Revmat_SplitMerge2 (Param *param, int chain, RandLong *seed, MrBFlt *ln
 }
 
 
-int Move_Rho_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
+int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
-    /* change rho using Dirichlet proposal */
+    /* change rho using multiplier */
 
     int         i;
-    MrBFlt      oldRho, conc, lambda, oldProp[2], newProp[2], dirParm[2], sum, x, y;
+    MrBFlt      oldRho, lambda, newRho, minRho, tuning, ran, factor, newLambda;
     ModelParams *mp;
 
     /* get model params */
     mp = &modelParams[param->relParts[0]];
 
-    /* get concentration parameter */
-    conc = mvp[0];
+    /* get tuning parameter */
+    tuning = mvp[0];
+
+    /* get minimum value for rho */
+    minRho = MIN_RHO_PARAM;
 
     /* get old value of rho */
-    oldRho = *GetParamVals(param, chain, state[chain]);
+    lambda = *GetParamVals(param, chain, state[chain]);
+    oldRho = 1.0 / lambda;
 
-    /* get lambda parameter of prior */
-    lambda = mp->rhoExp;
+    /* change value for rho */
+    ran = RandomNumber(seed);
+    factor = exp(tuning * (ran - 0.5));
+    newRho = oldRho * factor;
 
-    /* calculate old simplex proportions */
-    oldProp[0] = oldRho;
-    oldProp[1] = 1.0 - oldProp[0];
-
-    /* multiply old rho props with some large number to get new values close to the old ones */
-    dirParm[0] = oldProp[0] * conc;
-    dirParm[1] = oldProp[1] * conc;
-
-    /* get new values */
-    DirichletRandomVariable (dirParm, newProp, 2, seed);
-
-    /* check validity of new values */
-    if (newProp[0] < MIN_RHO_PARAM)
-        {
-        newProp[0] = MIN_RHO_PARAM;
-        newProp[1] = 1.0 - MIN_RHO_PARAM;
-        }
-    else if (newProp[1] < MIN_RHO_PARAM)
-        {
-        newProp[1] = MIN_RHO_PARAM;
-        newProp[0] = 1.0 - MIN_RHO_PARAM;
-        }
-
-    /* calculate and copy new rho value back */
-    *GetParamVals(param, chain, state[chain]) = newProp[0];
+    /* check validity */
+    if (newRho < minRho)
+        newRho = minRho;
 
     /* get proposal ratio */
-    sum = 0.0;
-    for (i=0; i<2; i++)
-        sum += newProp[i] * conc;
-    x = LnGamma(sum);
-    for (i=0; i<2; i++)
-        x -= LnGamma(newProp[i] * conc);
-    for (i=0; i<2; i++)
-        x += (newProp[i] * conc - 1.0) * log(oldProp[i]);
-    sum = 0.0;
-    for (i=0; i<2; i++)
-        sum += oldProp[i] * conc;
-    y = LnGamma(sum);
-    for (i=0; i<2; i++)
-        y -= LnGamma(oldProp[i] * conc);
-    for (i=0; i<2; i++)
-        y += (oldProp[i]*conc-1.0) * log(newProp[i]);
-    (*lnProposalRatio) = x - y;
+    *lnProposalRatio = log(newRho / oldRho);
 
     /* get prior ratio */
-    (*lnPriorRatio) = lambda * (oldProp[0] - newProp[0]);
+    *lnPriorRatio = lambda * (oldRho - newRho);
+
+    /* copy new rho value back */
+    newLambda = 1.0 / newRho;
+    *GetParamVals(param, chain, state[chain]) = newLambda;
 
     /* Set update flags for all partitions that share this rho. Note that the conditional
        likelihood (actually a prior probability for this model) update flags have been set

@@ -5721,7 +5721,7 @@ int InitAugmentedModels (void)
 int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes, useBeagle,
-                clIndex, tiIndex, scalerIndex, indexStep, nChars;
+                clIndex, tiIndex, scalerIndex, indexStep, nChars, nStates;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -5757,12 +5757,22 @@ int InitChainCondLikes (void)
 #   if defined (BEAGLE_ENABLED)
             m->useBeagle = NO;
 #   endif
-            for (c=0; c<m->numChars; c++)
+            /* Set number of characters according to whether Mc model is set */
+            if (m->mcModelId == YES)
+                nChars = m->numLatCols;
+            else
+                nChars = m->numChars;
+
+            for (c=0; c<nChars; c++)
                 {
                 numReps = m->numRateCats;
                 if (m->nStates[c] == 2)
                     numReps *= m->numBetaCats;
-                m->condLikeLength += m->nStates[c] * numReps;
+                if (m->mcModelId == YES)
+                    nStates = 3;
+                else
+                    nStates = m->nStates[c];
+                m->condLikeLength += nStates * numReps;
                 }
             }
         else
@@ -5813,20 +5823,26 @@ int InitChainCondLikes (void)
             m->numTiCats = 0;   /* We do not have repeated similar transition probability matrices */
             if (m->stateFreq->paramId == SYMPI_EQUAL)
                 {
-                for (k=0; k<9; k++)
+                /* Set 3-state ti prob array for Mc model */
+                if (m->mcModelId == YES)
+                    m->tiProbLength += (3 * 3) * m->numRateCats;
+                else
                     {
-                    if (m->isTiNeeded[k] == YES)
-                        m->tiProbLength += (k + 2) * (k + 2) * m->numRateCats;
-                    }
-                for (k=9; k<13; k++)
-                    {
-                    if (m->isTiNeeded[k] == YES)
-                        m->tiProbLength += (k - 6) * (k - 6) * m->numRateCats;
-                    }
-                for (k=13; k<18; k++)
-                    {
-                    if (m->isTiNeeded[k] == YES)
-                         m->tiProbLength += (k - 11) * (k - 11) * m->numRateCats;
+                    for (k=0; k<9; k++) // unordered 10-state
+                        {
+                        if (m->isTiNeeded[k] == YES)
+                            m->tiProbLength += (k + 2) * (k + 2) * m->numRateCats;
+                        }
+                    for (k=9; k<13; k++) // ordered 3-, 4-, 5-, 6-state
+                        {
+                        if (m->isTiNeeded[k] == YES)
+                            m->tiProbLength += (k - 6) * (k - 6) * m->numRateCats;
+                        }
+                    for (k=13; k<18; k++)
+                        {
+                        if (m->isTiNeeded[k] == YES)
+                             m->tiProbLength += (k - 11) * (k - 11) * m->numRateCats;
+                        }
                     }
                 }
             else
@@ -5838,7 +5854,11 @@ int InitChainCondLikes (void)
                     {
                     if (m->nStates[c] > 2 && (m->cType[c] == UNORD || m->cType[c] == ORD))
                         {
-                        m->tiProbLength += (m->nStates[c] * m->nStates[c]) * m->numRateCats;
+                        if (m->mcModelId == YES)
+                            nStates = 3;
+                        else
+                            nStates = m->nStates[c];
+                        m->tiProbLength += (nStates * nStates) * m->numRateCats;
                         }
                     }
                 }
@@ -5910,7 +5930,7 @@ int InitChainCondLikes (void)
             for (i=0; i<m->numCondLikes; i++)
                 {
 #   if defined (SSE_ENABLED)
-                if (m->useVec != VEC_NONE)
+                if (m->useVec != VEC_NONE) /* TODO: Ask Fredrik what vec refers to */
                     {
                     /* calculate number SSE chars */
                     m->numVecChars = ((m->numChars - 1) / m->numFloatsPerVec) + 1;
@@ -6089,7 +6109,7 @@ int InitChainCondLikes (void)
 #   endif
             for (j=0; j<numLocalChains; j++)
                 m->condLikeIndex[j][i] = clIndex;
-            clIndex += 1; /* even for multiple omega cat we need only one set of conditional likelihoods  for terminals for all chains.*/
+            clIndex += 1; /* even for multiple omega cat we need only one set of conditional likelihoods for terminals for all chains.*/
             }
 
         /* reserve private space for parsimony-based moves if parsimony model is used */
@@ -6154,7 +6174,7 @@ int InitChainCondLikes (void)
         m->rescaleFreq = (int*) SafeMalloc((numLocalChains) * sizeof(int));
         for (i=0; i<numLocalChains; ++i)
             {
-            if (m->numModelStates == 4 )
+            if (m->numModelStates == 4 ) /* TODO: Ask Fredrik what the point of this if else statement is? */
                 m->rescaleFreq[i] = 1;
             else
                 m->rescaleFreq[i] = 1;
@@ -6254,7 +6274,11 @@ int InitChainCondLikes (void)
             if (m->useBeagle == YES)
                 {
                 nSitesOfPat = (double *) SafeMalloc (m->numChars * sizeof(double));
-                for (c=0; c<m->numChars; c++)
+                if (m->mcModelId == YES)
+                    numChar = m->numLatCols;
+                else
+                    numChar = m->numChars;
+                for (c=0; c<numChar; c++)
                     nSitesOfPat[c] = numSitesOfPat[m->compCharStart + c];
                 beagleSetPatternWeights(m->beagleInstance, nSitesOfPat);
                 free (nSitesOfPat);
@@ -6296,9 +6320,10 @@ int InitChainCondLikes (void)
                 cL = m->condLikes[clIndex++];
                 for (t=0; t<m->numRateCats;t++)
                     {
-                    charBits = m->parsSets[i];
                     /* Set number of characters to loop through if correlation model is set */
                     /* If we are using the Mc model, tip conditional likelihoods should be filled in using latent matrix */
+                    /* This should be fine because parsSets are initiated in InitParsSets using latent matrix when Mc model is set */
+                    charBits = m->parsSets[i];
                     if (m->mcModelId == YES)
                         nChars = m->numLatCols;
                     else
@@ -6323,6 +6348,30 @@ int InitChainCondLikes (void)
                         }
                     }
                 }
+/*
+            // print charBits
+            for (i=0; i<numLocalTaxa; i++)
+                {
+                for (c=0; c<nChars; c++)
+                    MrBayesPrint("%c ",WhichStand(m->parsSets[i][c]));
+                MrBayesPrint("\n");
+                }
+            MrBayesPrint("\n");
+
+            // print conditional likelihoods
+            for (i=0; i<numLocalTaxa; i++)
+                {
+                MrBayesPrint("Taxon #%d\n",i);
+                for (c=0; c<nChars; c++)
+                    {
+                    MrBayesPrint("Character %d\t",c);
+                    for (s=0; s<m->nStates[c]; s++)
+                        MrBayesPrint("%f ",m->condLikes[i][m->nStates[c]*c+s]);
+                    MrBayesPrint("\n");
+                    }
+                MrBayesPrint("\n\n");
+                }
+*/
             }
         else if (useBeagle == NO)
             {
@@ -6826,7 +6875,6 @@ int InitParsSets (void)
             m->numParsSets += nIntNodes;
         if (m->parsModelId == YES)
             m->numParsSets += (numLocalChains + 1) * nIntNodes;
-
         if (m->parsModelId == YES)
             m->numParsNodeLens = (numLocalChains + 1) * nNodes;
         else
@@ -18259,6 +18307,7 @@ int SetLikeFunctions (void)
                 {
                 if (m->mcModelId == YES)
                     {
+                    m->numStates = 3;
                     m->CondLikeDown   = &CondLikeDown_StdCorr;
                     m->CondLikeRoot   = &CondLikeRoot_StdCorr;
                     m->CondLikeScaler = &CondLikeScaler_Std;

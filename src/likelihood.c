@@ -1948,14 +1948,6 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
     clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
     clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
 
-    DoShowMcmcTrees();
-
-    for (int i=0; i<2*numChar; i++)
-        MrBayesPrint("CondLikes: %f\n",m->condLikes[m->condLikeIndex[chain][p->left->index]][i]);
-
-    MrBayesPrint("left index: %d\n",p->left->index);
-    MrBayesPrint("right index: %d\n",p->right->index);
-
     /* find transition probabilities */
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
@@ -4775,14 +4767,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
         /* calculate ancestral probabilities */
         for (c=0; c<m->numLatCols; c++)
             {
-            nStates = m->nStates[c];
-
-            /* the following lines ensure that nCats is 1 unless */
-            /* the character is binary and beta categories are used  */
-            if (nStates == 2)
-                nCats = m->numBetaCats;
-            else
-                nCats = 1;
+            nStates = 3;
+            nCats = 1;
 
             tmp = k*nStates*nStates; /* tmp contains offset to skip gamma cats that already processed*/
             tiPL = pL + m->tiIndex[c] + tmp;
@@ -5882,6 +5868,7 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
 
         scP[c]       = (CLFlt) log (scaler);    /* store node scaler */
         lnScaler[c] += scP[c];                  /* add into tree scaler  */
+        /*MrBayesPrint("lnScaler[c]: %f\n",lnScaler[c]);*/
         }
 
     m->unscaledNodes[chain][p->index] = 0;
@@ -7963,27 +7950,27 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
 
     pUnobserved = 0.0;
     catFreq = rateFreq;
-    /* numDummyChars should be 1 */
-    like = 0.0;
-    for (k=0; k<nRateCats; k++)
+    for (c=j=0; c<m->numDummyChars; c++) // numDummyChars should be 1
         {
-        catLike = 0.0;
-        for (j=0; j<nStates; j++)
-            catLike += clP[k][j] * bs[j];
-        like += catLike * catFreq;
-        clP[k] += nStates;
+        like = 0.0;
+        for (k=0; k<nRateCats; k++)
+            {
+            catLike = 0.0;
+            for (j=0; j<nStates; j++)
+                catLike += clP[k][j] * bs[j];
+            like += catLike * catFreq;
+            clP[k] += nStates;
+            }
+        pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
         }
-    //pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
-    pUnobserved += 2 * like * exp(lnScaler[0]); /* take advantage of model symmetry */
 
-    pObserved =  1.0 - pUnobserved; /* total probability for all patterns in L */
+    pObserved =  1.0 - pUnobserved;
     if (pObserved < LIKE_EPSILON)
         pObserved = LIKE_EPSILON;
 
-    for (c=m->numDummyChars; c<m->numLatCols; c++) /* numDummyChars = 1 */
+    for (c=m->numDummyChars; c<m->numLatCols; c++)
         {
         like = 0.0;
-
         for (k=0; k<nRateCats; k++)
             {
             catLike = 0.0;
@@ -8004,13 +7991,15 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         else
             {
-            //(*lnL) += (lnScaler[c] + log(2.0 * like) * nSitesOfPat[c]);
+            //(*lnL) += (lnScaler[c] + log(like)) * nSitesOfPat[c];
             (*lnL) += (lnScaler[c] + log(2.0 * like));
+            MrBayesPrint("lnScaler[%d]: %f\n",c,lnScaler[c]);
+            MrBayesPrint("like: %f\n",like);
             }
         }
 
-    /* correct for absent characters */
-    (*lnL) -=  log(pObserved) * (m->numUncompressedChars);
+    /* correct for absent characters */ /* TODO: Is this necessary for our model? */
+    (*lnL) -= log(pObserved) * (m->numUncompressedChars);
 
     /* Account for likelihood of emitting observed states from current latent matrix */
     (*lnL) += LnProbLatentMatrix(nSitesOfPat, latentMatrix, m->numChars, chain);
@@ -8488,14 +8477,14 @@ double LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars
 
     /* Calculate final probability */
     n = numCharsInCluster;
-    m = (double) numIntmedStates;
+    m = numIntmedStates;
 
     if (n == 1 || m == 0)
         lnColumnProb = log (1.0);
     else
         {
         term = 1.0 / ((1 << n) - 2.0);
-        lnColumnProb = log ( pow(term,m) );
+        lnColumnProb = log ( pow(term,(double) m) );
         }
 
     return lnColumnProb;
@@ -8518,8 +8507,8 @@ double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar
     /* Get number of independent processes (i.e., number of columns) in latent matrix */
     numProcesses = 1;
     for (k=0; k<numChar; k++)
-        if (allocationVector[k] > numProcesses)
-            numProcesses = allocationVector[k];
+        if (allocationVector[k] >= numProcesses)
+            numProcesses++;
 
     int currColumn[numTaxa];
 
@@ -8530,7 +8519,7 @@ double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar
         for (j=0; j<numTaxa; j++)
             currColumn[j] = latentMatrix[pos(j,i,numProcesses)];
         lnCurrProb = LnProbLatentCluster(currColumn, i, numChar, allocationVector, chain);
-        lnTotalProb = lnTotalProb + lnCurrProb;
+        lnTotalProb += lnCurrProb;
         }
 
     return lnTotalProb;
@@ -9931,7 +9920,6 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
         catRate = &theRate;
 
     /* compute pis */
-    /* TODO: error: invalid operands to binary expression ('double' and 'MrBFlt *' (aka 'double *')) */
     pis[0] = pis[2] = 1.0 / (2.0 + *rho);  /* alpha */
     pis[1] = 1.0 - (2.0 * pis[0]);         /* beta */
 
@@ -9982,7 +9970,6 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
             /* Fill in stationary matrix */
             for (i=0; i<3; i++)
                 for (j=0; j<3; j++)
-                    /* TODO: error: pointer cannot be cast to type 'CLFlt' (aka 'float') */
                     tiP[index++] = pis[j];
             }
         else

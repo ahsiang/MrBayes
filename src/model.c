@@ -217,13 +217,13 @@ int AddDummyChars (void)
         if (mp->dataType == STANDARD && !strcmp(mp->parsModel,"No"))
             {
             if (!strcmp(mp->mcModel,"Yes"))
-                m->numDummyChars = 0;
+                m->numDummyChars = 0; /* TODO: Is it 1 or 0?? */
             else
                 {
                 if (mp->coding & VARIABLE)
                     m->numDummyChars += 2;
                 if (mp->coding & NOSINGLETONS)
-                    m->numDummyChars += 2*numLocalTaxa;
+                    m->numDummyChars += 2 * numLocalTaxa;
                 }
             numStdChars += (m->numChars + m->numDummyChars);
             }
@@ -1129,7 +1129,7 @@ int ChangeNumChains (int from, int to)
         if (p->paramType == P_CPPEVENTS)
             nCppEventParams++;
         }
-    MrBayesPrint("Reallocation of zero size error\n");
+    MrBayesPrint("Reallocation of zero size error, line %d, %s\n",__LINE__,__FILE__);
     MrBayesPrint("nCpp: %d\n",nCppEventParams);
     cppEventParams = (Param *) SafeCalloc (nCppEventParams, sizeof(Param));
 
@@ -2706,9 +2706,9 @@ int CompressData (void)
         {
         m->numChars = numChar;
         m->compMatrixStart = 0;
-        m->compMatrixStop = m->numChars;
+        m->compMatrixStop = numChar;
         m->compCharStart = 0;
-        compMatrixRowSize = m->numChars;
+        compMatrixRowSize = numChar;
 
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
@@ -11258,7 +11258,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 {
                 /* Fill in rho ******************************************************************************************/
                 if (p->paramId == RHO_EXP)
-                    value[0] = mp->rhoExp;
+                    value[0] = 1.0 / mp->rhoExp;
                 else if (p->paramId == RHO_FIX)
                     value[0] = mp->rhoFix;
                 }
@@ -16156,7 +16156,10 @@ int ProcessStdChars (RandLong *seed)
         if (mp->dataType != STANDARD)
             continue;
 
-        numStandardChars += m->numChars;
+        if (m->mcModelId == YES)
+            numStandardChars += m->numLatCols;
+        else
+            numStandardChars += m->numChars;
         }
 
     /* return if there are no standard characters */
@@ -18591,7 +18594,7 @@ int SetModelInfo (void)
 
         /* number of observable states */
         if (m->dataType == STANDARD)
-            m->numStates = 0;   /* zero, meaining variable */
+            m->numStates = 0;   /* zero, meaning variable */
         else if (!strcmp(mp->nucModel,"Protein") && (mp->dataType == DNA || mp->dataType == RNA))
             m->numStates = 20;
         else
@@ -18608,8 +18611,11 @@ int SetModelInfo (void)
             m->numModelStates = 0;
         else if (mp->dataType == STANDARD)
             {
-            /* use max possible for now; we don't know what chars will be included */
-            m->numModelStates = 10;
+            if (m->mcModelId == YES)
+                m->numModelStates = 3;
+            else
+                /* use max possible for now; we don't know what chars will be included */
+                m->numModelStates = 10;
             }
         else
             m->numModelStates = m->numStates;
@@ -19391,13 +19397,21 @@ int SetModelParams (void)
             if (mp->dataType == STANDARD)
                 {
                 /* find number of model states */
-                m->numModelStates = 2;
+                if (m->mcModelId == YES) /* If Mc model is set, numModelStates will always be 3 */
+                    m->numModelStates = 3;
+                else
+                    m->numModelStates = 2;
                 for (c=0; c<numChar; c++)
                     {
                     for (i=0; i<p->nRelParts; i++)
                         {
-                        if (partitionId[c][partitionNum] == p->relParts[i] + 1 && charInfo[c].numStates > m->numModelStates)
-                            m->numModelStates = charInfo[c].numStates;
+                        if (m->mcModelId == YES)
+                            continue;
+                        else
+                            {
+                            if (partitionId[c][partitionNum] == p->relParts[i] + 1 && charInfo[c].numStates > m->numModelStates)
+                                m->numModelStates = charInfo[c].numStates;
+                            }
                         }
                     }
                 for (i=0; i<p->nRelParts; i++)

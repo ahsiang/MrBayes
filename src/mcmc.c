@@ -56,6 +56,8 @@
 typedef void (*sighandler_t) (int);
 #endif
 
+int GENX = 0;
+
 #define GIBBS_SAMPLE_FREQ           100         /* generations between gibbs sampling of gamma cats */
 #define MAX_SMALL_JUMP              10          /* threshold for precalculating trans probs of adgamma model */
 #define BIG_JUMP                    100         /* threshold for using stationary approximation */
@@ -16702,6 +16704,7 @@ int RunChain (RandLong *seed)
 
     for (n=numPreviousGen+1; n<=chainParams.numGen; n++) /* begin run chain */
         {
+        GENX = n;
         currentCPUTime = clock();
         if (currentCPUTime - previousCPUTime > 10 * CLOCKS_PER_SEC)
             {
@@ -16875,7 +16878,12 @@ int RunChain (RandLong *seed)
                 else
                     r = exp(lnLikelihoodRatio + lnPriorRatio + lnProposalRatio);
                 }
-
+/*
+            printf("likelihood ratio: %lf\n",lnLikelihoodRatio);
+            printf("prior ratio: %lf\n",lnPriorRatio);
+            printf("proposal ratio: %lf\n",lnProposalRatio);
+            printf("r: %f\n",r);
+*/
             /* decide to accept or reject the move */
             acceptMove = NO;
             i = chainId[chn];
@@ -16886,11 +16894,13 @@ int RunChain (RandLong *seed)
                 acceptMove = YES;
                 theMove->nAccepted[i]++;
                 theMove->nTotAccepted[i]++;
+                //printf("Move accepted\n");
                 }
 
             /* update the chain */
             if (acceptMove == NO)
                 {
+                //printf("Move rejected\n");
                 /* the new state did not work out so shift chain back */
                 if (abortMove == NO)
                     ResetFlips(chn);

@@ -2051,98 +2051,42 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     tiPL = pL;
     tiPR = pR;
 
-    if (p->left->left == NULL)
+    /* Calculate ancestral probabilities */
+    for (k=0; k<m->numRateCats; k++)
         {
-        if (p->right->left == NULL)
+        for (c=0; c<numLatCols; c++)
             {
-        /* Calculate ancestral probabilities if both left and right are tips */
-            for (k=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<numLatCols; c++)
-                    {
-                    tiPL = pL + leftStates[c];
-                    tiPR = pR + rightStates[c];
-                    *(clP++) = (*tiPR) * (*tiPL);
-                    tiPL += 3;
-                    *(clP++) = (*tiPR) * (*tiPL);
-                    tiPL += 3;
-                    *(clP++) = (*tiPR) * (*tiPL);
-                    clL += 3;
-                    clR += 3;
-                    }
-                pL += 9;
-                pR += 9;
-                }
+            *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
+                      *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
+            *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
+                      *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
+            *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
+                      *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
+
+
+/*
+if (GENX >= 1000)
+    {
+            for (int i=0; i<9; i++)
+                printf("tiPL[%d] = %f\n",i,tiPL[i]);
+            for (int i=0; i<9; i++)
+                printf("tiPR[%d] = %f\n",i,tiPR[i]);
+
+            for (int i=0; i<3; i++)
+                printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i],i,clR[i]);
+
+            printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+
+            getchar();
+}
+*/
+
+
+            clL += 3;
+            clR += 3;
             }
-        else
-            {
-            /* Calculate ancestral probabilities if left is a tip and right is not */
-            for (k=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<numLatCols; c++)
-                    {
-                    tiPL = pL + leftStates[c];
-                    *(clP++) = (*tiPL)
-                              *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
-                    tiPL += 3;
-                    *(clP++) = (*tiPL)
-                              *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
-                    tiPL += 3;
-                    *(clP++) = (*tiPL)
-                              *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
-                    clL += 3;
-                    clR += 3;
-                    }
-                pL += 9;
-                pR += 9;
-                }
-            }
-        }
-    else
-        {
-        if (p->right->left == NULL)
-            {
-            /* Calculate ancestral probabilities if right is a tip and left is not */
-            for (k=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<numLatCols; c++)
-                    {
-                    tiPR = pR + rightStates[c];
-                    *(clP++) = (*tiPR)
-                              *(tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2]);
-                    tiPL += 3;
-                    *(clP++) = (*tiPR)
-                              *(tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2]);
-                    tiPL += 3;
-                    *(clP++) = (*tiPR)
-                              *(tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2]);
-                    clL += 3;
-                    clR += 3;
-                    }
-                pL += 9;
-                pR += 9;
-                }
-            }
-        else
-            {
-            /* Calculate ancestral probabilities if both right and left are internal nodes */
-            for (k=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<numLatCols; c++)
-                    {
-                    *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
-                              *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
-                    *(clP++) = (tiPL[3]*clL[0] + tiPL[4]*clL[1] + tiPL[5]*clL[2])
-                              *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
-                    *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
-                              *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
-                    clL += 3;
-                    clR += 3;
-                    }
-                tiPL += 9;
-                tiPR += 9;
-                }
-            }
+        tiPL += 9;
+        tiPR += 9;
         }
 
     return NO_ERROR;
@@ -7991,10 +7935,12 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         else
             {
-            //(*lnL) += (lnScaler[c] + log(like)) * nSitesOfPat[c];
             (*lnL) += (lnScaler[c] + log(2.0 * like));
-            MrBayesPrint("lnScaler[%d]: %f\n",c,lnScaler[c]);
-            MrBayesPrint("like: %f\n",like);
+            if (GENX >= 1000)
+                {
+                //MrBayesPrint("lnScaler[%d]: %f\n",c,lnScaler[c]);
+                //MrBayesPrint("like: %f\n",like);
+                }
             }
         }
 
@@ -8436,7 +8382,7 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
         {
         if (allocationVector[i] > newestTableIndex) // Seated at new table case
             {
-            totalProb = totalProb * (alphaDir / (alphaDir + i)); // No -1 because of 0-indexing
+            totalProb *= alphaDir / (alphaDir + i); // No -1 because of 0-indexing
             newestTableIndex++;
             }
         else // Seated at existing table case
@@ -8446,7 +8392,7 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
             for (j=0; j<i; j++)
                 if (allocationVector[j] == allocationVector[i])
                     numSeatedAtTable++;
-            totalProb = totalProb * ((MrBFlt) numSeatedAtTable / (alphaDir + i));
+            totalProb *= (MrBFlt) numSeatedAtTable / (alphaDir + i);
             }
         }
 
@@ -9950,6 +9896,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
     for (k=index=0; k<m->numRateCats; k++)
         {
         t =  length * baseRate * catRate[k];
+        //printf("t: %f\n",t);
 
         if (t < TIME_MIN)
             {
@@ -9975,33 +9922,46 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
         else
             {
             /* calculate probabilities */
-            for (i=0; i<3; i++)
+            for (i=0; i<9; i++)
                 {
-                for (j=0; j<3; j++)
-                    {
-                    a = pis[0];
-                    b = pis[1];
-                    u = exp(-b * t);
-                    u_inv = 1 / u;
-                    x = exp(-2 * a * t);
-                    y = 2 * a + b;
-                    z = exp(-y * t);
+                a = pis[0];
+                b = pis[1];
+                u = exp(b * t);
+                u_inv = 1 / u;
+                x = exp(2 * a * t);
+                y = exp(-2 * a * t);
+                z = exp(-t);
 
-                    if ((i == 0 && j == 0) || (i == 2 && j == 2))
-                        tiP[index++] = (CLFlt) (((u * b * (1 + x)) + (2 * a * (1 + u_inv))) / (2 * y));
-                    else if ((i == 0 && j == 1) || (i == 2 && j == 1))
-                        tiP[index++] = (CLFlt) ((b - b * z) / y);
-                    else if ((i == 0 && j == 2) || (i == 2 && j == 0))
-                        tiP[index++] = (CLFlt) (((u * b * (-1 + x)) + (2 * a * (-1 + u_inv))) / (2 * y));
-                    else if (i == 1)
-                        {
-                        if (j == 0 || j == 2)
-                            tiP[index++] = (CLFlt) ((a - a * z) / y);
-                        else
-                            tiP[index++] = (CLFlt) ((b + 2 * a * z) / y);
-                        }
-                    }
+                if (i == 0 || i == 8)
+                    tiP[index++] = (CLFlt) (exp(-b * t) * (b * (1 + exp(-2*a*t)) + (2*a) * (1 + exp(b*t)))) / 2;
+                else if (i == 1 || i == 7)
+                    tiP[index++] = (CLFlt) (b - b * z);
+                else if (i == 2 || i == 6)
+                    tiP[index++] = (CLFlt) (exp(-b * t) * (b * (-1 + exp(-2*a*t)) + (2*a) * (-1 + exp(b*t)))) / 2;
+                else if (i == 3 || i == 5)
+                    tiP[index++] = (CLFlt) a - a * z;
+                else
+                    tiP[index++] = b + 2 * a * z;
                 }
+
+/*
+            int hasError = NO;
+            float epsilon = 0.0001;
+
+            for (i=0; i<6; i+=3)
+                {
+                if (1 - (tiP[i]+tiP[i+1]+tiP[i+2]) > epsilon)
+                    hasError = YES;
+                }
+            if (hasError)
+                {
+                for (i=0; i<9; i++)
+                    printf("tiP[%d] = %f\n",i,tiP[i]);
+                printf("a = %f\tb = %f\tu = %f\tu_inv = %f\tx = %f\ty = %f\t z = %f\n",a,b,u,u_inv,x,y,z);
+                printf("t = %f\n",t);
+                getchar();
+                }
+*/
             }
         }
 

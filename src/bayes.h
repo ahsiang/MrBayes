@@ -1587,6 +1587,7 @@ typedef struct
     NameSet;
 
 /* global variables */
+extern int              GENX;                                   /* Global generation number for debugging        */
 extern int              abortMove;                              /* flag determining whether to abort move        */
 extern int              *activeParams[NUM_LINKED];              /* a table holding the parameter status          */
 extern int              *activeParts;                           /* partitions changes should apply to            */

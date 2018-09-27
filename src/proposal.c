@@ -412,6 +412,8 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* get old value of alphadir */
     oldA = *GetParamVals(param, chain, state[chain]);
 
+    printf("oldA: %f\n",oldA);
+
     /* change value for alphadir */
     ran = RandomNumber(seed);
     factor = exp(tuning * (ran - 0.5));
@@ -421,11 +423,17 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     if (newA < minA)
         newA = minA;
 
+    printf("newA: %f\n",newA);
+
     /* get proposal ratio */
     *lnProposalRatio = log(newA / oldA);
 
+    printf("proposal ratio: %lf\n",*lnProposalRatio);
+
     /* get prior ratio */
     *lnPriorRatio = lambda * (oldA - newA);
+
+    printf("prior ratio: %lf\n",*lnPriorRatio);
 
     /* copy new alphadir value back */
     *GetParamVals(param, chain, state[chain]) = newA;
@@ -8860,7 +8868,7 @@ int Move_Nu (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBF
 
 /*----------------------------------------------------------------
 |
-|   Move_Omega: Change the nonysnonymous/synonymous rate ratio
+|   Move_Omega: Change the nonsynonymous/synonymous rate ratio
 |      Note that this is appropriate when omegavar=equal
 |
 ----------------------------------------------------------------*/

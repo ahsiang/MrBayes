@@ -391,7 +391,6 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* change alphadir parameter using multiplier */
 
-    int         *allocationVector;
     MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning;
     ModelParams *mp;
     ModelInfo   *m;
@@ -412,8 +411,6 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* get old value of alphadir */
     oldA = *GetParamVals(param, chain, state[chain]);
 
-    printf("oldA: %f\n",oldA);
-
     /* change value for alphadir */
     ran = RandomNumber(seed);
     factor = exp(tuning * (ran - 0.5));
@@ -423,27 +420,16 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     if (newA < minA)
         newA = minA;
 
-    printf("newA: %f\n",newA);
-
     /* get proposal ratio */
     *lnProposalRatio = log(newA / oldA);
 
-    printf("proposal ratio: %lf\n",*lnProposalRatio);
-
     /* get prior ratio */
-    *lnPriorRatio = lambda * (oldA - newA);
-
-    printf("prior ratio: %lf\n",*lnPriorRatio);
+    *lnPriorRatio = -lambda * (newA - oldA);
 
     /* copy new alphadir value back */
     *GetParamVals(param, chain, state[chain]) = newA;
 
-    /* compute probability of allocation vector given old and new alphadir values */
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
-    *lnPriorRatio += LnProbAllocation(allocationVector, m->numChars, newA);
-    *lnPriorRatio -= LnProbAllocation(allocationVector, m->numChars, oldA);
-
-    /* probabilities on the tree (called likelihoods) are not affected */
+    /* Contribution of allocation vector moved to likelihood calculation in Likelihood_StdCorr in likelihood.c */
 
     return (NO_ERROR);
 }
@@ -475,7 +461,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     minA = MIN_ALPHADIR_PARAM;
 
     /* Get new and old allocation vectors */
-    //oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
     oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
     newAllocationVector = GetParamIntVals(param, chain, state[chain]);
 
@@ -593,15 +578,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
     *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
 
-    /* get prior ratio */
-    *lnPriorRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
-    *lnPriorRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
-
-    /* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
 
     return (NO_ERROR);
 }
@@ -5992,8 +5971,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
                 *newLatentMatrix, numIntmedStates=0, maxCount=1, randClustIndex,
                 idx, numLatCols, numValues, numCorrClusters, randIntmedIndex,
                 numCharsInCluster, numOpposite, ciIdx;
-    MrBFlt      probOldLatentStates, probNewLatentStates, probForwardMove,
-                probBackwardsMove;
+    MrBFlt      probForwardMove, probBackwardsMove;
     ModelInfo   *m;
 
     /* Get numChars */
@@ -6193,23 +6171,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             for (i=0; i<numTaxa; i++)
                 newLatentMatrix[pos(i,clusterIndices[clusterIntmedIndices[randClustIndex]],m->numLatCols)] = newLatentStates[i];
 
-            /* Copy newLatentMatrix back */
-            //*GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
-            /*
-            for (i=0; i<numTaxa; i++)
-                for (j=0; j<m->numLatCols; j++)
-                    latentMatrix[pos(i,j,m->numLatCols)] = newLatentMatrix[pos(i,j,m->numLatCols)];
-            */
-
-            /* Calculate Pr(D|oldLatentStates) and Pr(D|newLatentStates) */
-            probOldLatentStates = LnProbLatentCluster(oldLatentStates, randClustIndex, numChars, allocationVector, chain);
-            probNewLatentStates = LnProbLatentCluster(newLatentStates, randClustIndex, numChars, allocationVector, chain);
-            /* Get prior ratio */
-            *lnPriorRatio = probNewLatentStates - probOldLatentStates;
-
             /* Get proposal ratio */
-            probForwardMove = log((1 / numColWithIntmed) * (1 / numIntmedStates));
-            probBackwardsMove = log((1 / numColWithIntmed) * (1 / numNewIntmedStates));
+            probForwardMove = log((1.0 / numColWithIntmed) * (1.0 / numIntmedStates));
+            probBackwardsMove = log((1.0 / numColWithIntmed) * (1.0 / numNewIntmedStates));
             *lnProposalRatio = probForwardMove - probBackwardsMove;
 
             /* Update flags */
@@ -6221,6 +6185,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* If there are no clusters with more than two characters, then all characters are independent,
     and we do not make a move. */
     /* TODO: How to exit in this case? */
+    //else
+    //    *lnProposalRatio = 0.0;
 
     return (NO_ERROR);
 }
@@ -8947,7 +8913,7 @@ int Move_Omega (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
 
 /*----------------------------------------------------------------
 |
-|   Move_Omega_M: Change the nonysnonymous/synonymous rate ratio
+|   Move_Omega_M: Change the nonsynonymous/synonymous rate ratio
 |      using multiplier. Note that this is appropriate when
 |      omegavar=equal
 |
@@ -15507,7 +15473,7 @@ int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
     /* change rho using multiplier */
 
     int         i;
-    MrBFlt      oldRho, lambda, newRho, minRho, tuning, ran, factor, newLambda;
+    MrBFlt      oldRho, lambda, newRho, minRho, tuning, ran, factor;
     ModelParams *mp;
 
     /* get model params */
@@ -15519,9 +15485,10 @@ int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
     /* get minimum value for rho */
     minRho = MIN_RHO_PARAM;
 
+    lambda = mp->rhoExp;
+
     /* get old value of rho */
-    lambda = *GetParamVals(param, chain, state[chain]);
-    oldRho = 1.0 / lambda;
+    oldRho = *GetParamVals(param, chain, state[chain]);
 
     /* change value for rho */
     ran = RandomNumber(seed);
@@ -15536,21 +15503,16 @@ int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
     *lnProposalRatio = log(newRho / oldRho);
 
     /* get prior ratio */
-    *lnPriorRatio = lambda * (oldRho - newRho);
+    *lnPriorRatio = -lambda * (newRho - oldRho);
 
     /* copy new rho value back */
-    newLambda = 1.0 / newRho;
-    *GetParamVals(param, chain, state[chain]) = newLambda;
+    *GetParamVals(param, chain, state[chain]) = newRho;
 
     /* Set update flags for all partitions that share this rho. Note that the conditional
        likelihood (actually a prior probability for this model) update flags have been set
        before we even call this function. */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
-
-    /* Set update flags for transition probabilities */
-    for (i=0; i<param->nRelParts; i++)
-        modelSettings[param->relParts[i]].upDateCijk = YES;
 
     return (NO_ERROR);
 }

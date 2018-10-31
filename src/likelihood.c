@@ -2062,26 +2062,6 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                       *(tiPR[3]*clR[0] + tiPR[4]*clR[1] + tiPR[5]*clR[2]);
             *(clP++) = (tiPL[6]*clL[0] + tiPL[7]*clL[1] + tiPL[8]*clL[2])
                       *(tiPR[6]*clR[0] + tiPR[7]*clR[1] + tiPR[8]*clR[2]);
-
-
-/*
-if (GENX >= 1000)
-    {
-            for (int i=0; i<9; i++)
-                printf("tiPL[%d] = %f\n",i,tiPL[i]);
-            for (int i=0; i<9; i++)
-                printf("tiPR[%d] = %f\n",i,tiPR[i]);
-
-            for (int i=0; i<3; i++)
-                printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i],i,clR[i]);
-
-            printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
-
-            getchar();
-}
-*/
-
-
             clL += 3;
             clR += 3;
             }
@@ -7850,17 +7830,19 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
 {
-    int             c, j, k, nRateCats, nStates, numReps, *nSitesOfPat, *latentMatrix;
-    MrBFlt          catLike, catFreq, rateFreq, like, bs[3], rho,
+    int             c, j, k, nRateCats, nStates, numReps, *allocationVector, *latentMatrix;
+    MrBFlt          catLike, catFreq, rateFreq, like, bs[3], alphaDir, rho,
                     pUnobserved, pObserved;
     CLFlt           *clPtr, **clP, *lnScaler;
     ModelInfo       *m;
 
     m = &modelSettings[division];
 
-    /* Get number of site patterns (allocation vector) and latent matrix */
-    nSitesOfPat = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    /* Get number of site patterns (allocation vector), latent matrix, alphaDir, and rho */
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
     latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
+    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]); /* DPMM scaling factor */
+    rho = *GetParamVals(m->rho, chain, state[chain]); /* Inverse correlation factor */
 
     numReps = m->numLatCols * 3; /* 3 is the number of states in the rate matrix */
 
@@ -7872,9 +7854,6 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         clP[k] = clPtr;
         clPtr += numReps;
         }
-
-    /* get inverse correlation factor */
-    rho = *GetParamVals(m->rho, chain, state[chain]);
 
     /* find base frequencies */
     bs[0] = bs[2] = 1.0 / (2 + rho);
@@ -7944,11 +7923,14 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         }
 
-    /* correct for absent characters */ /* TODO: Is this necessary for our model? */
+    /* correct for absent characters */
     (*lnL) -= log(pObserved) * (m->numUncompressedChars);
 
     /* Account for likelihood of emitting observed states from current latent matrix */
-    (*lnL) += LnProbLatentMatrix(nSitesOfPat, latentMatrix, m->numChars, chain);
+    (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, m->numChars, chain);
+
+    /* Account for likelihood of current alphaDir value */
+    (*lnL) += LnProbAllocation(allocationVector, m->numChars, alphaDir);
 
     return NO_ERROR;
 }

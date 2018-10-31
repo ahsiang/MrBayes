@@ -11283,9 +11283,11 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     int maxTable = 0;
                     for (j=0; j<m->numChars; j++)
+                        {
                         intValue[j] = numSitesAlloc[j];
                         if (numSitesOfPat[j] > maxTable)
                             maxTable = numSitesAlloc[j];
+                        }
                     m->numLatCols = maxTable + 1;
                     }
                 }
@@ -11309,16 +11311,16 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
                     int currTable = 0;
-                    for (i=0; i<numTaxa; i++)
+                    for (i=0; i<m->numChars; i++)
                         {
-                        if (numSitesOfPat[i] == currTable)
+                        if (numSitesAlloc[i] == currTable)
                             {
-                            for (j=0; j<m->numLatCols; j++)
+                            for (j=0; j<numTaxa; j++)
                                 {
-                                if (compMatrix[pos(i,j,m->numLatCols)] == 1)
-                                    intValue[pos(currTable,j,m->numLatCols)] = 1;
-                                else if (compMatrix[pos(j,i,m->numLatCols)] == 2)
-                                    intValue[pos(currTable,j,m->numLatCols)] = 4;
+                                if (compMatrix[pos(j,i,m->numChars)] == 1)
+                                    intValue[pos(j,currTable,m->numLatCols)] = 1;
+                                else if (compMatrix[pos(j,i,m->numChars)] == 2)
+                                    intValue[pos(j,currTable,m->numLatCols)] = 4;
                                 }
                             currTable++;
                             }
@@ -19070,8 +19072,8 @@ int SetModelParams (void)
                 m->numLatCols = 0;
                 for (j=0; j<m->numChars; j++)
                     {
-                    if (numSitesOfPat[j] > m->numLatCols)
-                        m->numLatCols = numSitesAlloc[j];
+                    if (numSitesAlloc[j] >= m->numLatCols)
+                        m->numLatCols = numSitesAlloc[j]++;
                     }
                 //p->nIntValues = m->numLatCols * numTaxa;
                 }

@@ -7643,24 +7643,6 @@ MrBFlt LogPrior (int chain)
             if (p->paramId == RHO_EXP)
                 lnPrior += log(mp->rhoExp) - mp->rhoExp * st[0];
             }
-        else if (p->paramType == P_ALLOCATIONVECTOR)
-            {
-            /* Correlation model allocation vector parameter */
-            allocationVector = GetParamIntVals(p, chain, state[chain]);
-            if (p->paramId == ALPHADIR_EXP)
-                aDir = mp->alphaDirExp;
-            else
-                aDir = mp->alphaDirFix;
-            lnPrior += LnProbAllocation(allocationVector, m->numChars, aDir);
-            }
-        else if (p->paramType == P_LATENTMATRIX)
-            {
-            /* Correlation model latent matrix parameter */
-            allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
-            latentMatrix = GetParamIntVals(p, chain, state[chain]);
-            numChar = m->numChars;
-            lnPrior += LnProbLatentMatrix(allocationVector, latentMatrix, numChar, chain);
-            }
         else if (p->paramType == P_REVMAT)
             {
             /* revmat parameter */

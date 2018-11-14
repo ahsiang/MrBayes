@@ -2020,7 +2020,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     /* Get allocationVector, latentMatrix, and number of latent matrix columns */
     allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
     latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-    numLatCols = m->numLatCols;
+    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
 
     /* Flip conditional likelihood space */
     FlipCondLikeSpace (m, chain, p->index);
@@ -4664,12 +4664,15 @@ int CondLikeRoot_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             a, c, h, i, j, k, nStates=0, nCats=0, tmp;
+    int             a, c, h, i, j, k, nStates=0, nCats=0, tmp, numLatCols;
     CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA,
                     likeL, likeR, likeA;
     ModelInfo       *m;
 
     m = &modelSettings[division];
+
+    /* Get number of latent columns */
+    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
 
     /* flip state of node so that we are not overwriting old cond likes */
     FlipCondLikeSpace (m, chain, p->index);
@@ -4689,7 +4692,7 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
     for (k=h=0; k<m->numRateCats; k++)
         {
         /* calculate ancestral probabilities */
-        for (c=0; c<m->numLatCols; c++)
+        for (c=0; c<numLatCols; c++)
             {
             nStates = 3;
             nCats = 1;
@@ -5723,25 +5726,20 @@ int CondLikeScaler_NY98_SSE (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeScaler_Std (TreeNode *p, int division, int chain)
 {
-    int             c, n, k, nStates, numReps;
+    int             c, n, k, nStates, numReps, nChar;
     CLFlt           scaler, *clPtr, **clP, *scP, *lnScaler;
     ModelInfo       *m;
 
     m = &modelSettings[division];
 
     if (m->mcModelId == YES)
-        numChar = m->numLatCols;
+        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
     else
-        numChar = m->numChars;
+        nChar = m->numChars;
 
-    //MrBayesPrint("numLatCols: %d\n",m->numLatCols);
-    //MrBayesPrint("numChar: %d\n",numChar);
-
-    numReps=0;
-    for (c=0; c<numChar; c++)
+    numReps = 0;
+    for (c=0; c<nChar; c++)
         {
-        //MrBayesPrint("nStates: %d\n",m->nStates[c]);
-
         if (m->nStates[c] == 2)
             numReps += m->numBetaCats * 2;
         else
@@ -5767,7 +5765,7 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 
     /* rescale */
-    for (c=0; c<numChar; c++)
+    for (c=0; c<nChar; c++)
         {
         scaler = 0.0;
         nStates = m->nStates[c];
@@ -7830,7 +7828,8 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
 {
-    int             c, j, k, nRateCats, nStates, numReps, *allocationVector, *latentMatrix;
+    int             c, j, k, nRateCats, nStates, numReps, *allocationVector,
+                    *latentMatrix, numLatCols;
     MrBFlt          catLike, catFreq, rateFreq, like, bs[3], alphaDir, rho,
                     pUnobserved, pObserved;
     CLFlt           *clPtr, **clP, *lnScaler;
@@ -7838,13 +7837,14 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
 
     m = &modelSettings[division];
 
-    /* Get number of site patterns (allocation vector), latent matrix, alphaDir, and rho */
+    /* Get number of site patterns (allocation vector), numLatCols, latent matrix, alphaDir, and rho */
     allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
     latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]); /* DPMM scaling factor */
     rho = *GetParamVals(m->rho, chain, state[chain]); /* Inverse correlation factor */
 
-    numReps = m->numLatCols * 3; /* 3 is the number of states in the rate matrix */
+    numReps = numLatCols * 3; /* 3 is the number of states in the rate matrix */
 
     /* find conditional likelihood pointers */
     clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
@@ -7891,7 +7891,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     if (pObserved < LIKE_EPSILON)
         pObserved = LIKE_EPSILON;
 
-    for (c=m->numDummyChars; c<m->numLatCols; c++)
+    for (c=m->numDummyChars; c<numLatCols; c++)
         {
         like = 0.0;
         for (k=0; k<nRateCats; k++)
@@ -8461,18 +8461,18 @@ double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar
 -----------------------------------------------------------------*/
 int RemoveNodeScalers (TreeNode *p, int division, int chain)
 {
-    int             c;
+    int             c, nChar;
     CLFlt           *scP, *lnScaler;
     ModelInfo       *m;
 
     m = &modelSettings[division];
     assert (m->unscaledNodes[chain][p->index] == 0);
 
-    /* Set numChar depending on if mcModel is set */
+    /* Set nChar depending on if mcModel is set */
     if (m->mcModelId == YES)
-        numChar = m->numLatCols;
+        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
     else
-        numChar = m->numChars;
+        nChar = m->numChars;
 
     /* find scalers */
     scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
@@ -8482,7 +8482,7 @@ int RemoveNodeScalers (TreeNode *p, int division, int chain)
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 
     /* remove scalers */
-    for (c=0; c<numChar; c++)
+    for (c=0; c<nChar; c++)
         lnScaler[c] -= scP[c];
 
     return NO_ERROR;

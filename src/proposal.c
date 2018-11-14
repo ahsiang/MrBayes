@@ -442,7 +442,8 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     int         i, j, k, randCharIndex, oldTable, numTables, newNumTables,
                 *oldAllocationVector, *newLatentMatrix, charIndexRandomBuddy,
                 newTable, *oldLatentMatrix, *newAllocationVector, *newLatentStates,
-                endStateIndex, *rescaledAllocationVector, currIdx;
+                endStateIndex, *rescaledAllocationVector, currIdx, oldNumLatCols,
+                newNumLatCols, needEndStateFlip;
     MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable;
     ModelParams *mp;
     ModelInfo   *m;
@@ -524,8 +525,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     for (i=0; i<m->numChars; i++)
         if (newAllocationVector[i] >= newNumTables)
             newNumTables++;
-    /* Update numLatCols */
-    m->numLatCols = newNumTables;
+    /* Update numLatCols (but keep track of old numLatCols) */
+    oldNumLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
+    newNumLatCols = (int) GetParamSubVals(m->allocationVector, chain, state[chain]);
+    newNumLatCols = newNumTables;
 
     /* Get numSeatedAtTable */
     int newNumSeatedAtTable[newNumTables];
@@ -557,17 +560,36 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             for (k=0; k<numTaxa; k++)
                 tempData[pos(k,j,numAtTable)] = compMatrix[pos(k,currIdx,m->numChars)];
             }
+        /* Flip end state 2's to 0's if there are no 0's in the original latent states  */
+        needEndStateFlip = YES;
+        for (j=0; j<numTaxa; j++)
+            {
+            if (oldLatentMatrix[pos(j,newTable,oldNumLatCols)] == 1) //Equivalent to end state 0
+                {
+                needEndStateFlip = NO;
+                break;
+                }
+            }
+        if (needEndStateFlip == YES)
+            {
+            for (j=0; j<numTaxa; j++)
+                if (oldLatentMatrix[pos(j,newTable,oldNumLatCols)] == 4) //Equivalent to end state 2
+                    oldLatentMatrix[pos(j,newTable,oldNumLatCols)] = 1;
+            }
         /* Find index of first end state in original latent states */
         for (j=0; j<numTaxa; j++)
-            if (oldLatentMatrix[pos(j,i,m->numLatCols)] == 1) //Equivalent to end state 0
+            {
+            if (oldLatentMatrix[pos(j,newTable,oldNumLatCols)] == 1) //Equivalent to end state 0
                 {
                 endStateIndex = j;
                 break;
                 }
+            }
+
         /* Get new latent states from tempData and fill in column of newLatentMatrix */
         newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
         for (j=0; j<numTaxa; j++)
-            newLatentMatrix[pos(j,i,m->numLatCols)] = newLatentStates[j];
+            newLatentMatrix[pos(j,i,newNumLatCols)] = newLatentStates[j];
         }
 
     /* Copy new allocation vector back */
@@ -5978,8 +6000,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     m = &modelSettings[param->relParts[0]];
     numChars = m->numChars;
 
-    /* Get allocation vector */
+    /* Get allocation vector and number of latent columns */
     allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain] ^ 1);
+    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
 
     /* Get new and old latent matrices */
     oldLatentMatrix = GetParamIntVals(param, chain, state[chain] ^ 1);
@@ -5987,8 +6010,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     /* Count number of characters in each cluster */
     /* Initialize allocationCount to keep track of counts, setting all elements to 0 */
-    int allocationCount[m->numLatCols];
-    for (i=0; i<m->numLatCols; i++)
+    int allocationCount[numLatCols];
+    for (i=0; i<numLatCols; i++)
         allocationCount[i] = 0;
 
     /* Loop through allocation vector to make counts */
@@ -6000,9 +6023,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             maxCount = allocationCount[allocationVector[i]];
         }
 
-    /* Get numLatCols and numValues */
-    //numLatCols = maxCount + 1;
-    numLatCols = m->numLatCols;
+    /* Get local total number of values in latent matrix */
     numValues = numLatCols * numTaxa;
 
     /* Determine how many columns have count > 1 */
@@ -6027,7 +6048,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     int clusters[numTaxa * numCorrClusters];
     for (i=0; i<numCorrClusters; i++)
         for (j=0; j<numTaxa; j++)
-            clusters[pos(j,i,numCorrClusters)] = oldLatentMatrix[pos(j,clusterIndices[i],m->numLatCols)];
+            clusters[pos(j,i,numCorrClusters)] = oldLatentMatrix[pos(j,clusterIndices[i],numLatCols)];
 
     /* Only enter downstream processing if there exist clusters with more than 1 character */
     /* TODO: What happens if there aren't any? Is no move made? */
@@ -6169,7 +6190,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
             /* Recode states of selected column in newLatentMatrix */
             for (i=0; i<numTaxa; i++)
-                newLatentMatrix[pos(i,clusterIndices[clusterIntmedIndices[randClustIndex]],m->numLatCols)] = newLatentStates[i];
+                newLatentMatrix[pos(i,clusterIndices[clusterIntmedIndices[randClustIndex]],numLatCols)] = newLatentStates[i];
 
             /* Get proposal ratio */
             probForwardMove = log((1.0 / numColWithIntmed) * (1.0 / numIntmedStates));

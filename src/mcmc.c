@@ -2809,7 +2809,7 @@ int DoMcmcParm (char *parmName, char *tkn)
         /* set Seed (globalSeed) ***************************************************************/
         if (!strcmp(parmName, "Seed"))
             {
-                MrBayesPrint ("%s   Error: Setting \"Seed\" in mcmc command is depricated. Use \"set\" command instead.\n", spacer);
+                MrBayesPrint ("%s   Error: Setting \"Seed\" in mcmc command is deprecated. Use \"set\" command instead.\n", spacer);
                 MrBayesPrint ("%s   For more information type \"help set\";\n", spacer);
                 free (tempStr);
                 return (ERROR);
@@ -2833,7 +2833,7 @@ int DoMcmcParm (char *parmName, char *tkn)
         /* set Swapseed (global variable swapSeed) ***************************************************************/
         else if (!strcmp(parmName, "Swapseed"))
             {
-                MrBayesPrint ("%s   Error: Setting \"Swapseed\" in mcmc command is depricated. Use \"set\" command instead.\n", spacer);
+                MrBayesPrint ("%s   Error: Setting \"Swapseed\" in mcmc command is deprecated. Use \"set\" command instead.\n", spacer);
                 MrBayesPrint ("%s   For more information type \"help set\";\n", spacer);
                 free (tempStr);
                 return (ERROR);
@@ -5723,7 +5723,7 @@ int InitAugmentedModels (void)
 int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes, useBeagle,
-                clIndex, tiIndex, scalerIndex, indexStep, nChars, nStates;
+                clIndex, tiIndex, scalerIndex, indexStep, nChar, nStates;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -5761,11 +5761,11 @@ int InitChainCondLikes (void)
 #   endif
             /* Set number of characters according to whether Mc model is set */
             if (m->mcModelId == YES)
-                nChars = m->numLatCols;
+                nChar = m->numLatCols;
             else
-                nChars = m->numChars;
+                nChar = m->numChars;
 
-            for (c=0; c<nChars; c++)
+            for (c=0; c<nChar; c++)
                 {
                 numReps = m->numRateCats;
                 if (m->nStates[c] == 2)
@@ -6276,11 +6276,8 @@ int InitChainCondLikes (void)
             if (m->useBeagle == YES)
                 {
                 nSitesOfPat = (double *) SafeMalloc (m->numChars * sizeof(double));
-                if (m->mcModelId == YES)
-                    numChar = m->numLatCols;
-                else
-                    numChar = m->numChars;
-                for (c=0; c<numChar; c++)
+
+                for (c=0; c<m->numChars; c++)
                     nSitesOfPat[c] = numSitesOfPat[m->compCharStart + c];
                 beagleSetPatternWeights(m->beagleInstance, nSitesOfPat);
                 free (nSitesOfPat);
@@ -6327,11 +6324,11 @@ int InitChainCondLikes (void)
                     /* This should be fine because parsSets are initiated in InitParsSets using latent matrix when Mc model is set */
                     charBits = m->parsSets[i];
                     if (m->mcModelId == YES)
-                        nChars = m->numLatCols;
+                        nChar = m->numLatCols;
                     else
-                        nChars = m->numChars;
-                    /* Loop through nChars to fill in tip conditional likelihoods */
-                    for (c=0; c<nChars; c++)
+                        nChar = m->numChars;
+                    /* Loop through characters to fill in tip conditional likelihoods */
+                    for (c=0; c<nChar; c++)
                         {
                         if (m->nStates[c] == 2)
                             numReps = m->numBetaCats;
@@ -6350,30 +6347,6 @@ int InitChainCondLikes (void)
                         }
                     }
                 }
-/*
-            // print charBits
-            for (i=0; i<numLocalTaxa; i++)
-                {
-                for (c=0; c<nChars; c++)
-                    MrBayesPrint("%c ",WhichStand(m->parsSets[i][c]));
-                MrBayesPrint("\n");
-                }
-            MrBayesPrint("\n");
-
-            // print conditional likelihoods
-            for (i=0; i<numLocalTaxa; i++)
-                {
-                MrBayesPrint("Taxon #%d\n",i);
-                for (c=0; c<nChars; c++)
-                    {
-                    MrBayesPrint("Character %d\t",c);
-                    for (s=0; s<m->nStates[c]; s++)
-                        MrBayesPrint("%f ",m->condLikes[i][m->nStates[c]*c+s]);
-                    MrBayesPrint("\n");
-                    }
-                MrBayesPrint("\n\n");
-                }
-*/
             }
         else if (useBeagle == NO)
             {
@@ -7581,11 +7554,10 @@ MrBFlt LogDirPrior (Tree *t, ModelParams *mp, int PV)
 
 MrBFlt LogPrior (int chain)
 {
-    int             i, j, c, n, nStates, *nEvents, sumEvents, *ist, nRates, nParts[6],
-                    *allocationVector, *latentMatrix;
+    int             i, j, c, n, nStates, *nEvents, sumEvents, *ist, nRates, nParts[6];
     const int       *rateCat;
     MrBFlt          *st, *sst, lnPrior, sum, x, clockRate, theta, popSize, growth, *alphaDir, newProp[190],
-                    sF, *sR, *eR, *fR,  freq, pInvar, lambda, sigma, nu, igrvar, **rateMultiplier, aDir;
+                    sF, *sR, *eR, *fR,  freq, pInvar, lambda, sigma, nu, igrvar, **rateMultiplier;
     char            *sS;
     CLFlt           *nSitesOfPat;
     Param           *p;
@@ -15481,7 +15453,8 @@ int ConfirmAbortRun(void)
 --------------------------------------------------------------------*/
 void ResetChainIds (void)
 {
-    int     j, k, k1, tempId, *curId, toChn, fromChn, *to, *from, *swap;
+    int     j, k, k1, tempId, *curId, toChn, fromChn, *to, *from, *swap,
+            *fromIntVals, *toIntVals, *swapIntVals;
     Param   *p;
     MrBFlt  *fromVals, *toVals, *swapVals, **fromPosition, **toPosition,
             **swapPosition, **fromRateMult, **toRateMult, **swapRateMult;
@@ -15551,6 +15524,14 @@ void ResetChainIds (void)
                 {
                 toVals[k] = fromVals[k];
                 fromVals[k] = swapVals[k];
+                }
+            toIntVals = GetParamIntVals (p, toChn, 0);
+            swapIntVals = GetParamIntVals (p, toChn, 1);
+            fromIntVals = GetParamIntVals (p, fromChn, state[fromChn]);
+            for (k=0; k<p->nIntValues; k++)
+                {
+                toIntVals[k] = fromIntVals[k];
+                fromIntVals[k] = swapIntVals[k];
                 }
             if (p->nStdStateFreqs > 0)
                 {

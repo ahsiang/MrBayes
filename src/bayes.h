@@ -1324,7 +1324,7 @@ typedef struct modelinfo
     int         numParsNodeLens;            /* number of parsimony node lengths             */
 
     /* Variables for correlation model */
-    int         numLatCols;                 /* number of processes in current latent matrix */
+    int         numLatCols;                 /* number of processes in initial latent matrix */
 
     /* Miscellaneous parameters */
     int         mark;                       /* scratch parameter                            */

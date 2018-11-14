@@ -2391,7 +2391,8 @@ int CorrPreprocess (void)
 int CompressData (void)
 {
     int             a, c, d, i, j, k, t, col[3], isSame, newRow, newColumn,
-                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter;
+                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter, sameIdx,
+                    idxSeen;
     BitsLong        *tempMatrix;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -2474,9 +2475,8 @@ int CompressData (void)
         /* Preprocess matrix and initialize allocation counter if correlation model is set */
         if (!strcmp(mp->mcModel,"Yes"))
             CorrPreprocess();
-
-        allocCounter = 0;
         numSitesAlloc = SafeCalloc (numChar, sizeof(int));
+        allocCounter = 1;
 
         /* set column offset for this division in compressed matrix */
         m->compMatrixStart = newColumn;
@@ -2555,6 +2555,7 @@ int CompressData (void)
 
             /* is it unique? */
             isSame = NO;
+            idxSeen = NO;
             if (mp->dataType != CONTINUOUS)
                 {
                 for (i=m->compMatrixStart; i<newColumn; i+=m->nCharsPerSite)
@@ -2573,8 +2574,12 @@ int CompressData (void)
                         }
                     if (isSame == YES)
                         {
-                        numSitesAlloc[c] = numSitesAlloc[i];
-                        break;
+                        if (idxSeen == NO)
+                            {
+                            sameIdx = i;
+                            idxSeen = YES;
+                            break;
+                            }
                         }
                     }
                 }
@@ -2621,6 +2626,8 @@ int CompressData (void)
                     /* tempChar (pointing from compressed to uncompresed) */
                     /* can only be set for first pattern */
                     }
+                /* Update allocation patterns */
+                numSitesAlloc[c] = numSitesAlloc[sameIdx];
                 }
             }   /* next character */
 
@@ -11277,18 +11284,18 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     for (j=0; j<m->numChars; j++)
                         intValue[j] = j;
-                    m->numLatCols = m->numChars;
+                    subValue[0] = m->numChars;
                     }
                 else if (p->paramId == ALLOCATIONVECTOR_CORR)
                     {
                     int maxTable = 0;
                     for (j=0; j<m->numChars; j++)
                         {
-                        intValue[j] = numSitesAlloc[j];
-                        if (numSitesOfPat[j] > maxTable)
+                        intValue[j] = numSitesAlloc[j] - 1;
+                        if (numSitesAlloc[j] > maxTable)
                             maxTable = numSitesAlloc[j];
                         }
-                    m->numLatCols = maxTable + 1;
+                    subValue[0] = maxTable;
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -11310,23 +11317,35 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     }
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
+                    /* Get numLatCols */
+                    int numLatCols = 0;
+                    for (j=0; j<m->numChars; j++)
+                        {
+                        intValue[j] = numSitesAlloc[j] - 1;
+                        if (numSitesAlloc[j] > numLatCols)
+                            numLatCols = numSitesAlloc[j];
+                        }
+                    /* Fill in latent matrix */
                     int currTable = 0;
                     for (i=0; i<m->numChars; i++)
                         {
-                        if (numSitesAlloc[i] == currTable)
+                        if (numSitesAlloc[i] == currTable + 1)
                             {
                             for (j=0; j<numTaxa; j++)
                                 {
                                 if (compMatrix[pos(j,i,m->numChars)] == 1)
-                                    intValue[pos(j,currTable,m->numLatCols)] = 1;
+                                    {
+                                    intValue[pos(j,currTable,numLatCols)] = 1;
+                                    }
                                 else if (compMatrix[pos(j,i,m->numChars)] == 2)
-                                    intValue[pos(j,currTable,m->numLatCols)] = 4;
+                                    intValue[pos(j,currTable,numLatCols)] = 4;
                                 }
                             currTable++;
                             }
                         }
                     }
                 }
+
             else if (p->paramType == P_REVMAT)
                 {
                 /* Fill in revMat ***************************************************************************************/
@@ -16158,10 +16177,7 @@ int ProcessStdChars (RandLong *seed)
         if (mp->dataType != STANDARD)
             continue;
 
-        if (m->mcModelId == YES)
-            numStandardChars += m->numLatCols;
-        else
-            numStandardChars += m->numChars;
+        numStandardChars += m->numChars;
         }
 
     /* return if there are no standard characters */
@@ -19025,7 +19041,7 @@ int SetModelParams (void)
             /* Set up allocationVector for correlation model DPMM ***********************************************************/
             p->paramType = P_ALLOCATIONVECTOR;
             p->nIntValues = m->numChars;
-            p->nSubValues = 0;
+            p->nSubValues = 1;
             p->min = 0;
             p->max = POS_INFINITY;
             for (i=0; i<numCurrentDivisions; i++)
@@ -19071,17 +19087,13 @@ int SetModelParams (void)
                 p->paramId = LATENTMATRIX_CORR;
                 m->numLatCols = 0;
                 for (j=0; j<m->numChars; j++)
-                    {
                     if (numSitesAlloc[j] >= m->numLatCols)
-                        m->numLatCols = numSitesAlloc[j]++;
-                    }
-                //p->nIntValues = m->numLatCols * numTaxa;
+                        m->numLatCols = numSitesAlloc[j];
                 }
             else
                 {
                 p->paramId = LATENTMATRIX_UNCORR;
                 m->numLatCols = m->numChars;
-                //p->nIntValues = m->numChars * numTaxa;
                 }
 
             p->printParam = NO;

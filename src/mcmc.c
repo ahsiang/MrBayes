@@ -5761,7 +5761,10 @@ int InitChainCondLikes (void)
 #   endif
             /* Set number of characters according to whether Mc model is set */
             if (m->mcModelId == YES)
-                nChar = m->numLatCols;
+                {
+                nChar = m->allocationVector->subValues[0];
+                printf("nChar: %d\n",nChar);
+                }
             else
                 nChar = m->numChars;
 
@@ -5852,7 +5855,7 @@ int InitChainCondLikes (void)
                 /* deal with unequal state frequencies */
                 if (m->isTiNeeded[0] == YES)
                     m->tiProbLength += 4 * m->numRateCats * m->numBetaCats;
-                for (c=0; c<m->numChars; c++)
+                for (c=0; c<nChar; c++)
                     {
                     if (m->nStates[c] > 2 && (m->cType[c] == UNORD || m->cType[c] == ORD))
                         {
@@ -5932,7 +5935,7 @@ int InitChainCondLikes (void)
             for (i=0; i<m->numCondLikes; i++)
                 {
 #   if defined (SSE_ENABLED)
-                if (m->useVec != VEC_NONE) /* TODO: Ask Fredrik what vec refers to */
+                if (m->useVec != VEC_NONE)
                     {
                     /* calculate number SSE chars */
                     m->numVecChars = ((m->numChars - 1) / m->numFloatsPerVec) + 1;
@@ -5971,6 +5974,13 @@ int InitChainCondLikes (void)
 
             /* allocate scaler space and pointers for scaling */
             m->scalers = (CLFlt**) SafeMalloc(m->numScalers * sizeof(CLFlt*));
+
+            /* Set nChar as necessary */
+            if (m->mcModelId == YES)
+                nChar = m->allocationVector->subValues[0];
+            else
+                nChar = m->numChars;
+
             if (!m->scalers)
                 return (ERROR);
             for (i=0; i<m->numScalers; i++)
@@ -5990,12 +6000,12 @@ int InitChainCondLikes (void)
                     }
                 else
                     {
-                    m->scalers[i] = (CLFlt*) SafeMalloc (m->numChars * sizeof(CLFlt));
+                    m->scalers[i] = (CLFlt*) SafeMalloc (nChar * sizeof(CLFlt));
                     if (!m->scalers[i])
                         return (ERROR);
                     }
 #   else
-                m->scalers[i] = (CLFlt*) SafeMalloc (m->numChars * sizeof(CLFlt));
+                m->scalers[i] = (CLFlt*) SafeMalloc (nChar * sizeof(CLFlt));
                 if (!m->scalers[i])
                     return (ERROR);
 #   endif

@@ -11252,7 +11252,7 @@ int GetUserHelp (char *helpTkn)
         MrBayesPrint ("                       prset rhopr = exponential(<number>)                       \n");
         MrBayesPrint ("                                                                                 \n");
         MrBayesPrint ("                    Under the correlation model, the rates are constrained such  \n");
-        MrBayesPrint ("                    that (2 * beta) + alpha = 1. For example, if you fix rho to  \n");
+        MrBayesPrint ("                    that (2 * alpha) + beta = 1. For example, if you fix rho to  \n");
         MrBayesPrint ("                    0.25, then beta = 0.(1) (= 1/9) and alpha = 0.(4) (= 4/9). If\n");
         MrBayesPrint ("                    you set rhopr as exponential(5), then rho will be estimated  \n");
         MrBayesPrint ("                    against a prior probability distribution where the expected  \n");

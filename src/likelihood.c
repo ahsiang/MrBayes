@@ -5733,20 +5733,21 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
     m = &modelSettings[division];
 
     if (m->mcModelId == YES)
-        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
-    else
-        nChar = m->numChars;
-
-    numReps = 0;
-    for (c=0; c<nChar; c++)
         {
-        if (m->nStates[c] == 2)
-            numReps += m->numBetaCats * 2;
-        else
-            if (m->mcModelId == YES)
-                numReps += 3;
+        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]); /* number of latent columns */
+        numReps = 3 * nChar;
+        }
+    else
+        {
+        nChar = m->numChars;
+        numReps = 0;
+        for (c=0; c<nChar; c++)
+            {
+            if (m->nStates[c] == 2)
+                numReps += m->numBetaCats * 2;
             else
                 numReps += m->nStates[c];
+            }
         }
 
     /* find conditional likelihood pointers */
@@ -5790,7 +5791,6 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
 
         scP[c]       = (CLFlt) log (scaler);    /* store node scaler */
         lnScaler[c] += scP[c];                  /* add into tree scaler  */
-        /*MrBayesPrint("lnScaler[c]: %f\n",lnScaler[c]);*/
         }
 
     m->unscaledNodes[chain][p->index] = 0;
@@ -7915,19 +7915,11 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         else
             {
             (*lnL) += (lnScaler[c] + log(2.0 * like));
-            if (GENX >= 1000)
-                {
-                //MrBayesPrint("lnScaler[%d]: %f\n",c,lnScaler[c]);
-                //MrBayesPrint("like: %f\n",like);
-                }
             }
         }
 
-    /* correct for absent characters */
-    (*lnL) -= log(pObserved) * (m->numUncompressedChars);
-
     /* Account for likelihood of emitting observed states from current latent matrix */
-    (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, m->numChars, chain);
+    (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, numLatCols, m->numChars, chain);
 
     /* Account for likelihood of current alphaDir value */
     (*lnL) += LnProbAllocation(allocationVector, m->numChars, alphaDir);
@@ -8357,14 +8349,14 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
     newestTableIndex = 0;
 
     /* Probability of sitting at first table is always 1 */
-    totalProb = 1.0;
+    totalProb = log (1.0);
 
     /* Loop through the rest of the tables */
     for (i=1; i<numChars; i++)
         {
         if (allocationVector[i] > newestTableIndex) // Seated at new table case
             {
-            totalProb *= alphaDir / (alphaDir + i); // No -1 because of 0-indexing
+            totalProb += log (alphaDir / (alphaDir + i)); // No -1 because of 0-indexing
             newestTableIndex++;
             }
         else // Seated at existing table case
@@ -8374,11 +8366,11 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
             for (j=0; j<i; j++)
                 if (allocationVector[j] == allocationVector[i])
                     numSeatedAtTable++;
-            totalProb *= (MrBFlt) numSeatedAtTable / (alphaDir + i);
+            totalProb += log (numSeatedAtTable / (alphaDir + i));
             }
         }
 
-    return ( log (totalProb) );
+    return ( totalProb );
 }
 
 
@@ -8390,8 +8382,9 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 -----------------------------------------------------------------*/
 double LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars, int *allocationVector, int chain)
 {
-    int         i, j, n, numIntmedStates=0, numCharsInCluster=0;
-    MrBFlt      term, lnColumnProb, m;
+    int         i, j, n, m, numIntmedStates=0, numCharsInCluster=0;
+    long long   bitshift;
+    MrBFlt      term, lnColumnProb;
 
     /* Loop through column and count number of taxa in intermediate state */
     for (i=0; i<numTaxa; i++)
@@ -8407,12 +8400,15 @@ double LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars
     n = numCharsInCluster;
     m = numIntmedStates;
 
-    if (n == 1 || m == 0)
+    //if (n == 1 || m == 0)
+    if (m == 0)
         lnColumnProb = log (1.0);
     else
         {
-        term = 1.0 / ((1 << n) - 2.0);
-        lnColumnProb = log ( pow(term,(double) m) );
+        // i.e., log (1 / (2**n - 2)) ^ m
+        bitshift = (1ULL << n) - 2;
+        term = -log ( bitshift );
+        lnColumnProb = m * term;
         }
 
     return lnColumnProb;
@@ -8425,28 +8421,22 @@ double LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars
 |       given the latent matrix
 |
 -----------------------------------------------------------------*/
-double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numChar, int chain)
+double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numLatCols, int numChars, int chain)
 {
-    int         i, j, k, numProcesses;
+    int         i, j;
     MrBFlt      lnCurrProb, lnTotalProb;
 
     lnTotalProb = 0.0;
 
-    /* Get number of independent processes (i.e., number of columns) in latent matrix */
-    numProcesses = 1;
-    for (k=0; k<numChar; k++)
-        if (allocationVector[k] >= numProcesses)
-            numProcesses++;
-
     int currColumn[numTaxa];
 
     /* Loop through processes and calculate probability */
-    for (i=0; i<numProcesses; i++)
+    for (i=0; i<numLatCols; i++)
         {
         /* Grab current column/cluster/process */
         for (j=0; j<numTaxa; j++)
-            currColumn[j] = latentMatrix[pos(j,i,numProcesses)];
-        lnCurrProb = LnProbLatentCluster(currColumn, i, numChar, allocationVector, chain);
+            currColumn[j] = latentMatrix[pos(j,i,numLatCols)];
+        lnCurrProb = LnProbLatentCluster(currColumn, i, numChars, allocationVector, chain);
         lnTotalProb += lnCurrProb;
         }
 
@@ -8477,7 +8467,6 @@ int RemoveNodeScalers (TreeNode *p, int division, int chain)
     /* find scalers */
     scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
 
-    //MrBayesPrint("siteScalerIndex: %d\n",m->siteScalerIndex[chain]);
     /* find site scalers */
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 

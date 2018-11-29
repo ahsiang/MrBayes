@@ -503,7 +503,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     else /* Seated at existing table case */
         {
         /* Pick random character to sit next to */
-        charIndexRandomBuddy = (int) (RandomNumber(seed) * m->numChars - 1);
+        charIndexRandomBuddy = (int) (RandomNumber(seed) * (m->numChars - 1));
         /* In case original character is chosen, choose the last character */
         if (charIndexRandomBuddy == randCharIndex)
             charIndexRandomBuddy = m->numChars - 1;
@@ -527,7 +527,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             newNumTables++;
     /* Update numLatCols (but keep track of old numLatCols) */
     oldNumLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
-    newNumLatCols = (int) GetParamSubVals(m->allocationVector, chain, state[chain]);
     newNumLatCols = newNumTables;
 
     /* Get numSeatedAtTable */
@@ -592,13 +591,14 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             newLatentMatrix[pos(j,i,newNumLatCols)] = newLatentStates[j];
         }
 
-    /* Copy new allocation vector back */
-    for (i=0; i<m->numChars; i++) // Allocation vector
-        newAllocationVector[i] = rescaledAllocationVector[i];
+    /* Copy new allocation vector, latent matrix, and numLatCols back */
+    *GetParamIntVals(param, chain, state[chain]) = *rescaledAllocationVector;
+    *GetParamIntVals(m->latentMatrix, chain, state[chain]) = *newLatentMatrix;
+    *GetParamSubVals(param, chain, state[chain]) = newNumLatCols;
 
     /* get proposal ratio */
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio -= LnProbAllocation(rescaledAllocationVector, m->numChars, alphaDir);
 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
@@ -6001,8 +6001,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     numChars = m->numChars;
 
     /* Get allocation vector and number of latent columns */
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain] ^ 1);
-    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
 
     /* Get new and old latent matrices */
     oldLatentMatrix = GetParamIntVals(param, chain, state[chain] ^ 1);
@@ -6192,6 +6192,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             for (i=0; i<numTaxa; i++)
                 newLatentMatrix[pos(i,clusterIndices[clusterIntmedIndices[randClustIndex]],numLatCols)] = newLatentStates[i];
 
+            /* Copy back newLatentMatrix */
+            *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
+
             /* Get proposal ratio */
             probForwardMove = log((1.0 / numColWithIntmed) * (1.0 / numIntmedStates));
             probBackwardsMove = log((1.0 / numColWithIntmed) * (1.0 / numNewIntmedStates));
@@ -6211,9 +6214,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     return (NO_ERROR);
 }
-
-/* TODO: Make sure we just call the Likelihood function without recomputing tree likelihoods */
-
 
 
 /*----------------------------------------------------------------

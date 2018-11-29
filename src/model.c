@@ -2646,52 +2646,54 @@ int CompressData (void)
 
     compMatrixRowSize = newColumn;
 
-    /* now we know the size, so we can allocate space for the compressed matrix ... */
-    if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
-        {
-        free (numSitesOfPat);
-        numSitesOfPat = NULL;
-        memAllocs[ALLOC_NUMSITESOFPAT] = NO;
-        }
-    numSitesOfPat = (CLFlt *) SafeCalloc (numCompressedChars, sizeof(CLFlt));
-    if (!numSitesOfPat)
-        {
-        MrBayesPrint ("%s   Problem allocating numSitesOfPat (%d)\n", spacer, numCompressedChars * sizeof(MrBFlt));
-        goto errorExit;
-        }
-    memAllocs[ALLOC_NUMSITESOFPAT] = YES;
 
-    /* Fill in numSitesOfPat */
-    for (i=0; i<numCompressedChars; i++)
-        numSitesOfPat[i] = (CLFlt) tempSitesOfPat[i];
-
-    if (memAllocs[ALLOC_ORIGCHAR] == YES)
-        {
-        free (origChar);
-        origChar = NULL;
-        memAllocs[ALLOC_ORIGCHAR] = NO;
-        }
-    origChar = (int *)SafeMalloc((size_t)compMatrixRowSize * sizeof(int));
-    if (!origChar)
-        {
-        MrBayesPrint ("%s   Problem allocating origChar (%d)\n", spacer, numCompressedChars * sizeof(int));
-        goto errorExit;
-        }
-    memAllocs[ALLOC_ORIGCHAR] = YES;
-
-    /* Fill in origChar */
-    for (i=0; i<compMatrixRowSize; i++)
-        origChar[i] = tempChar[i];
-
-    /* Only use the compressed matrix if we're not using the correlation model */
+    /* Fill in numSitesOfPat, origChar, and compMatrix if we're not using the correlation model */
     if (!strcmp(mp->mcModel,"No"))
         {
+        /* now we know the size, so we can allocate space for the compressed matrix ... */
+        if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
+            {
+            free (numSitesOfPat);
+            numSitesOfPat = NULL;
+            memAllocs[ALLOC_NUMSITESOFPAT] = NO;
+            }
+        numSitesOfPat = (CLFlt *) SafeCalloc (numCompressedChars, sizeof(CLFlt));
+        if (!numSitesOfPat)
+            {
+            MrBayesPrint ("%s   Problem allocating numSitesOfPat (%d)\n", spacer, numCompressedChars * sizeof(MrBFlt));
+            goto errorExit;
+            }
+        memAllocs[ALLOC_NUMSITESOFPAT] = YES;
+
+        /* Fill in numSitesOfPat */
+        for (i=0; i<numCompressedChars; i++)
+            numSitesOfPat[i] = (CLFlt) tempSitesOfPat[i];
+
+        if (memAllocs[ALLOC_ORIGCHAR] == YES)
+            {
+            free (origChar);
+            origChar = NULL;
+            memAllocs[ALLOC_ORIGCHAR] = NO;
+            }
+        origChar = (int *)SafeMalloc((size_t)compMatrixRowSize * sizeof(int));
+        if (!origChar)
+            {
+            MrBayesPrint ("%s   Problem allocating origChar (%d)\n", spacer, numCompressedChars * sizeof(int));
+            goto errorExit;
+            }
+        memAllocs[ALLOC_ORIGCHAR] = YES;
+
+        /* Fill in origChar */
+        for (i=0; i<compMatrixRowSize; i++)
+            origChar[i] = tempChar[i];
+
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
             free (compMatrix);
             compMatrix = NULL;
             memAllocs[ALLOC_COMPMATRIX] = NO;
             }
+
         compMatrix = (BitsLong *) SafeCalloc (compMatrixRowSize * numLocalTaxa, sizeof(BitsLong));
         if (!compMatrix)
             {
@@ -2709,6 +2711,7 @@ int CompressData (void)
     /* If we are using the correlation model, copy over the preprocessed matrix to compMatrix */
     /* We still call it compMatrix so that we don't have to change a bunch of downstream code */
     /* We're doing this at the end here because we still need to run CompressData to get numSitesAlloc */
+    /* Also fill in numSitesOfPat and origChar to reflect uncompressed matrix */
     else
         {
         m->numChars = numChar;
@@ -2716,6 +2719,43 @@ int CompressData (void)
         m->compMatrixStop = numChar;
         m->compCharStart = 0;
         compMatrixRowSize = numChar;
+        numCompressedChars = numChar;
+
+        if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
+            {
+            free (numSitesOfPat);
+            numSitesOfPat = NULL;
+            memAllocs[ALLOC_NUMSITESOFPAT] = NO;
+            }
+        numSitesOfPat = (CLFlt *) SafeCalloc (numCompressedChars, sizeof(CLFlt));
+        if (!numSitesOfPat)
+            {
+            MrBayesPrint ("%s   Problem allocating numSitesOfPat (%d)\n", spacer, numCompressedChars * sizeof(MrBFlt));
+            goto errorExit;
+            }
+        memAllocs[ALLOC_NUMSITESOFPAT] = YES;
+
+        /* Fill in numSitesOfPat */
+        for (i=0; i<numCompressedChars; i++)
+            numSitesOfPat[i] = (CLFlt) 1.0;
+
+        if (memAllocs[ALLOC_ORIGCHAR] == YES)
+            {
+            free (origChar);
+            origChar = NULL;
+            memAllocs[ALLOC_ORIGCHAR] = NO;
+            }
+        origChar = (int *)SafeMalloc((size_t)compMatrixRowSize * sizeof(int));
+        if (!origChar)
+            {
+            MrBayesPrint ("%s   Problem allocating origChar (%d)\n", spacer, numCompressedChars * sizeof(int));
+            goto errorExit;
+            }
+        memAllocs[ALLOC_ORIGCHAR] = YES;
+
+        /* Fill in origChar */
+        for (i=0; i<compMatrixRowSize; i++)
+            origChar[i] = matrix[i];
 
         if (memAllocs[ALLOC_COMPMATRIX] == YES)
             {
@@ -16234,7 +16274,7 @@ int ProcessStdChars (RandLong *seed)
                 /* this is an ordinary character */
                 if (!strcmp(mp->mcModel,"Yes"))
                     {
-                    m->cType[c] = charInfo[origChar[c + m->compMatrixStart]].ctype;
+                    m->cType[c] = UNORD;
                     m->nStates[c] = 3;
                     }
                 else

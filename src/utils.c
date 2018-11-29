@@ -14058,45 +14058,29 @@ int *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTabl
 ---------------------------------------------------------------------------------*/
 int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, int oldTable)
 {
-    int         i, j, barrier=-1;
+    int         i, j, barrier=-1, toSwitch;
 
-    for (i=0; i<numChar; i++)
+    if (newTable != oldTable)
         {
-        if (allocationVector[i] == barrier + 1)
+        for (i=0; i<numChar; i++)
             {
-            allocationVector[i] = barrier + 1;
-            barrier++;
-            }
-        else
-            {
-            if (allocationVector[i] > barrier + 1)
-                {
-                allocationVector[i] = barrier + 1;
+            if (allocationVector[i] == barrier + 1)
                 barrier++;
-                for (j=i+1; j<numChar; j++)
-                    {
-                    if ((allocationVector[j] == newTable) || (allocationVector[j] == oldTable))
-                        {
-                        if (newTable > oldTable)
-                            allocationVector[j] = oldTable;
-                        else if (oldTable < newTable)
-                            allocationVector[j] = newTable;
-                        else
-                            continue;
-                        }
-                    else
-                        if ((allocationVector[j] >= barrier + 1) || (allocationVector[j] == oldTable))
-                            {
-                            allocationVector[j] = barrier + 1;
-                            barrier++;
-                            }
-                        else
-                            continue;
-                    }
-                break;
-                }
             else
-                continue;
+                {
+                if (allocationVector[i] > barrier + 1)
+                    {
+                    toSwitch = allocationVector[i];
+                    for (j=i; j<numChar; j++)
+                        {
+                        if (allocationVector[j] == toSwitch)
+                            allocationVector[j] = barrier + 1;
+                        else if (allocationVector[j] >= barrier + 1)
+                            allocationVector[j]++;
+                        }
+                    barrier++;
+                    }
+                }
             }
         }
 

@@ -1587,7 +1587,6 @@ typedef struct
     NameSet;
 
 /* global variables */
-extern int              GENX;                                   /* Global generation number for debugging        */
 extern int              abortMove;                              /* flag determining whether to abort move        */
 extern int              *activeParams[NUM_LINKED];              /* a table holding the parameter status          */
 extern int              *activeParts;                           /* partitions changes should apply to            */
@@ -1621,6 +1620,7 @@ extern BitsLong         expecting;                              /* variable deno
 extern int              fileNameChanged;                        /* has file name been changed?                   */
 extern int              foundNewLine;                           /* whether a new line has been found             */
 extern char             gapId;                                  /* gap character Id                              */
+extern int              GENX;                                   /* Global generation number for debugging        */
 extern RandLong         globalSeed;                             /* seed that is initialized at start up          */
 extern char             **headerNames;                          /* string to hold headers in sump and plot       */
 extern int              inComment;                              /* flag for whether input stream is commented    */
@@ -1628,6 +1628,7 @@ extern int              inferAncStates;                         /* should ancest
 extern int              inferSiteOmegas;                        /* should site omega values be inferred (y/n)    */
 extern int              inferSiteRates;                         /* should site rates be inferred (y/n)           */
 extern int              inferPosSel;                            /* should positive selection be inferred (y/n)   */
+extern int              *initialLatentMatrix;                   /* initialized latent matrix at beginning of run */
 extern char             inputFileName[100];                     /* input (NEXUS) file name                       */
 extern int              inTreesBlock;                           /* are we in the sumt block                      */
 extern int              inValidCommand;                         /* a useful flag set whenever you enter a cmd    */

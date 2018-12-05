@@ -276,9 +276,10 @@ int             recalcScalers;               /* shoud we recalculate scalers for
 #endif
 
 /* globals used here but declared elsewhere (in likelihood.c) */
-extern CLFlt     *preLikeL;                  /* precalculated cond likes for left descendant */
-extern CLFlt     *preLikeR;                  /* precalculated cond likes for right descendant*/
-extern CLFlt     *preLikeA;                  /* precalculated cond likes for ancestor        */
+extern CLFlt    *preLikeL;                   /* precalculated cond likes for left descendant */
+extern CLFlt    *preLikeR;                   /* precalculated cond likes for right descendant*/
+extern CLFlt    *preLikeA;                   /* precalculated cond likes for ancestor        */
+extern int      *initialLatentMatrix;        /* initialized latent matrix at beginning       */
 
 /* local (to this file) variables */
 int             numLocalChains;              /* number of Markov chains                      */
@@ -5723,7 +5724,8 @@ int InitAugmentedModels (void)
 int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes, useBeagle,
-                clIndex, tiIndex, scalerIndex, indexStep, nChar, nStates;
+                clIndex, tiIndex, scalerIndex, indexStep, nStates, *allocationVector,
+                numLatCols;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -5742,7 +5744,15 @@ int InitChainCondLikes (void)
         {
         m = &modelSettings[d];
 
-        MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, m->numChars);
+        /* Get allocation vector and numLatCols if Mc model is set */
+        if (m->mcModelId == YES)
+            {
+            allocationVector = m->allocationVector->intValues;
+            numLatCols = m->allocationVector->subValues[0];
+            MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, numLatCols);
+            }
+        else
+            MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, m->numChars);
 
         /* initialize model settings for chain cond likes */
         m->condLikeLength = 0;
@@ -5759,16 +5769,7 @@ int InitChainCondLikes (void)
 #   if defined (BEAGLE_ENABLED)
             m->useBeagle = NO;
 #   endif
-            /* Set number of characters according to whether Mc model is set */
-            if (m->mcModelId == YES)
-                {
-                nChar = m->allocationVector->subValues[0];
-                printf("nChar: %d\n",nChar);
-                }
-            else
-                nChar = m->numChars;
-
-            for (c=0; c<nChar; c++)
+            for (c=0; c<m->numChars; c++)
                 {
                 numReps = m->numRateCats;
                 if (m->nStates[c] == 2)
@@ -5855,7 +5856,7 @@ int InitChainCondLikes (void)
                 /* deal with unequal state frequencies */
                 if (m->isTiNeeded[0] == YES)
                     m->tiProbLength += 4 * m->numRateCats * m->numBetaCats;
-                for (c=0; c<nChar; c++)
+                for (c=0; c<m->numChars; c++)
                     {
                     if (m->nStates[c] > 2 && (m->cType[c] == UNORD || m->cType[c] == ORD))
                         {
@@ -5975,12 +5976,6 @@ int InitChainCondLikes (void)
             /* allocate scaler space and pointers for scaling */
             m->scalers = (CLFlt**) SafeMalloc(m->numScalers * sizeof(CLFlt*));
 
-            /* Set nChar as necessary */
-            if (m->mcModelId == YES)
-                nChar = m->allocationVector->subValues[0];
-            else
-                nChar = m->numChars;
-
             if (!m->scalers)
                 return (ERROR);
             for (i=0; i<m->numScalers; i++)
@@ -6000,12 +5995,12 @@ int InitChainCondLikes (void)
                     }
                 else
                     {
-                    m->scalers[i] = (CLFlt*) SafeMalloc (nChar * sizeof(CLFlt));
+                    m->scalers[i] = (CLFlt*) SafeMalloc (m->numChars * sizeof(CLFlt));
                     if (!m->scalers[i])
                         return (ERROR);
                     }
 #   else
-                m->scalers[i] = (CLFlt*) SafeMalloc (nChar * sizeof(CLFlt));
+                m->scalers[i] = (CLFlt*) SafeMalloc (m->numChars * sizeof(CLFlt));
                 if (!m->scalers[i])
                     return (ERROR);
 #   endif
@@ -6333,12 +6328,8 @@ int InitChainCondLikes (void)
                     /* If we are using the Mc model, tip conditional likelihoods should be filled in using latent matrix */
                     /* This should be fine because parsSets are initiated in InitParsSets using latent matrix when Mc model is set */
                     charBits = m->parsSets[i];
-                    if (m->mcModelId == YES)
-                        nChar = m->numLatCols;
-                    else
-                        nChar = m->numChars;
                     /* Loop through characters to fill in tip conditional likelihoods */
-                    for (c=0; c<nChar; c++)
+                    for (c=0; c<m->numChars; c++)
                         {
                         if (m->nStates[c] == 2)
                             numReps = m->numBetaCats;
@@ -6822,7 +6813,8 @@ int InitInvCondLikes (void)
 int InitParsSets (void)
 {
     int             c, i, j, k, d, nParsStatesForCont, nIntNodes, nNodes,
-                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, *latentMatrix;
+                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, numLatCols,
+                    *allocationVector;
     BitsLong        allAmbig, x, x1, x2, x3, *longPtr, bitsLongOne;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -6876,7 +6868,7 @@ int InitParsSets (void)
             return (ERROR);
         for (i=0; i<m->numParsSets; i++)
             {
-            m->parsSets[i] = (BitsLong *) SafeCalloc (m->numChars*m->nParsIntsPerSite, sizeof(BitsLong));
+            m->parsSets[i] = (BitsLong *) SafeCalloc (m->numChars * m->nParsIntsPerSite, sizeof(BitsLong));
             if (!m->parsSets[i])
                 return (ERROR);
             }
@@ -6895,9 +6887,12 @@ int InitParsSets (void)
         m = &modelSettings[d];
         mp = &modelParams[d];
 
-        /* Get latent matrix if mcModel is set */
+        /* Get numLatCols if mcModel is set */
         if (m->mcModelId == YES)
-            latentMatrix = GetParamIntVals(m->latentMatrix,d,state[d]);
+            {
+            numLatCols = (int) *GetParamSubVals(m->allocationVector,d,state[d]);
+            allocationVector = GetParamIntVals(m->allocationVector,d,state[d]);
+            }
 
         if (mp->dataType == CONTINUOUS)
             {
@@ -6927,7 +6922,7 @@ int InitParsSets (void)
                 for (c=0, j=m->compMatrixStart; j<m->compMatrixStop; j++, c++)
                     {
                     if (m->mcModelId == YES)
-                        x = latentMatrix[pos(i,j,m->numLatCols)];
+                        x = (BitsLong) initialLatentMatrix[pos(i,allocationVector[j],numLatCols)];
                     else
                         x = compMatrix[pos(i,j,compMatrixRowSize)];
 

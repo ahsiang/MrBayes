@@ -2009,8 +2009,8 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             c, k, nStates,  *rightStates, *leftStates,
-                    numLatCols, *allocationVector, *latentMatrix;
+    int             c, k, nStates, numLatCols, *allocationVector,
+                    *latentMatrix;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     ModelInfo       *m;
 
@@ -2034,16 +2034,6 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
 
-    /* Find appropriate rows in latentMatrix */
-    if (p->left->left == NULL)
-        leftStates = latentMatrix + p->left->index * numLatCols;
-    else
-        leftStates = NULL;
-    if (p->right->left == NULL)
-        rightStates = latentMatrix + p->right->index * numLatCols;
-    else
-        rightStates = NULL;
-
     /* Conditional likelihood space is assumed to be arranged in numGammaCats blocks of data. Each block contains all data for one gamma category.
     Each gamma cat block consist of numChars conditional likelihood vectors, each of these vectors has three elements corresponding to a group of characters in the data matrix
     sitting at the same table in the DPP correlation model. */
@@ -2054,7 +2044,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     /* Calculate ancestral probabilities */
     for (k=0; k<m->numRateCats; k++)
         {
-        for (c=0; c<numLatCols; c++)
+        for (c=0; c<m->numChars; c++)
             {
             *(clP++) = (tiPL[0]*clL[0] + tiPL[1]*clL[1] + tiPL[2]*clL[2])
                       *(tiPR[0]*clR[0] + tiPR[1]*clR[1] + tiPR[2]*clR[2]);
@@ -2068,6 +2058,21 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
         tiPL += 9;
         tiPR += 9;
         }
+
+        // FOR DEBUGGING
+        /*
+        for (int i=0; i<9; i++)
+            printf("tiPL[%d] = %f\n",i,tiPL[i]);
+        for (int i=0; i<9; i++)
+            printf("tiPR[%d] = %f\n",i,tiPR[i]);
+
+        for (int i=0; i<3; i++)
+            printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i],i,clR[i]);
+
+        printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+
+        getchar();
+        */
 
     return NO_ERROR;
 }
@@ -7828,7 +7833,7 @@ int Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int which
 -------------------------------------------------------------------*/
 int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
 {
-    int             c, j, k, nRateCats, nStates, numReps, *allocationVector,
+    int             c, i, j, k, nRateCats, nStates, numReps, *allocationVector,
                     *latentMatrix, numLatCols;
     MrBFlt          catLike, catFreq, rateFreq, like, bs[3], alphaDir, rho,
                     pUnobserved, pObserved;
@@ -7869,6 +7874,21 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     /* find site scaler */
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 
+    /* Determine indices in original data matrix where each latent
+    pattern is located */
+    int indices[numLatCols];
+    for (i=0; i<numLatCols; i++)
+        {
+        for (j=0; j<m->numChars; j++)
+            {
+            if (allocationVector[j] == i)
+                {
+                indices[i] = j;
+                break;
+                }
+            }
+        }
+
     *lnL = 0.0; /* reset lnL */
 
     pUnobserved = 0.0;
@@ -7891,30 +7911,37 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     if (pObserved < LIKE_EPSILON)
         pObserved = LIKE_EPSILON;
 
-    for (c=m->numDummyChars; c<numLatCols; c++)
+    int trackTable = 0;
+    for (c=m->numDummyChars; c<m->numChars; c++)
         {
-        like = 0.0;
-        for (k=0; k<nRateCats; k++)
+        if (allocationVector[c] == trackTable) // Only calculate likelihood for latent columns once
             {
-            catLike = 0.0;
-            for (j=0; j<nStates; j++)
-                catLike += clP[k][j] * bs[j];
-            like += catLike * catFreq;
-            clP[k] += nStates;
-            }
-        /* check against LIKE_EPSILON (values close to zero are problematic) */
-        if (like < LIKE_EPSILON)
-            {
-#   ifdef DEBUG_LIKELIHOOD
-            MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-            (*lnL) = MRBFLT_NEG_MAX;
-            abortMove = YES;
-            return ERROR;
+            trackTable++;
+            like = 0.0;
+            for (k=0; k<nRateCats; k++)
+                {
+                catLike = 0.0;
+                for (j=0; j<nStates; j++)
+                    catLike += clP[k][j] * bs[j];
+                like += catLike * catFreq;
+                clP[k] += nStates;
+                }
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+                {
+    #   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+    #   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+                }
+            else
+                (*lnL) += (lnScaler[c] + log(2.0 * like));
             }
         else
             {
-            (*lnL) += (lnScaler[c] + log(2.0 * like));
+            clP[k] += nStates; // If latent column already seen, increment pointer to skip it
             }
         }
 

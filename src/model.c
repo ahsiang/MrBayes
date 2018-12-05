@@ -116,6 +116,7 @@ ShowmovesParams showmovesParams;                        /* holds parameters for 
 Param           *treePrintparams;                       /* vector of tree parameters to print               */
 int             setUpAnalysisSuccess;                   /* Set to YES if analysis is set without error      */
 int             *numSitesAlloc;                         /* pattern allocation by site                       */
+int             *initialLatentMatrix;                   /* initialized latent matrix at beginning of run    */
 
 /* globals used to describe and change the current model; allocated in AllocCharacters and SetPartition  */
 int         *numVars;                                   /* number of variables in setting arrays         */
@@ -11324,7 +11325,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     for (j=0; j<m->numChars; j++)
                         intValue[j] = j;
-                    subValue[0] = m->numChars;
+                    subValue[0] = m->numChars; // This is numLatCols
                     }
                 else if (p->paramId == ALLOCATIONVECTOR_CORR)
                     {
@@ -11335,7 +11336,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                         if (numSitesAlloc[j] > maxTable)
                             maxTable = numSitesAlloc[j];
                         }
-                    subValue[0] = maxTable;
+                    subValue[0] = maxTable; // This is numLatCols
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -11354,35 +11355,47 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                                 intValue[pos(i,j,m->numChars)] = 4;
                             }
                         }
+                    /* Copy over latent matrix to global initialLatentMatrix */
+                    initialLatentMatrix = (int *) SafeCalloc(m->numChars * numTaxa, sizeof(int));
+                    for (i=0; i<numTaxa; i++)
+                        for (j=0; j<m->numChars; j++)
+                            initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
                     }
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
                     /* Get numLatCols */
-                    int numLatCols = 0;
-                    for (j=0; j<m->numChars; j++)
+                    int numLatCols = m->allocationVector->subValues[0];
+
+                    /* Determine indices in original data matrix where each latent
+                    pattern is located */
+                    int indices[numLatCols];
+                    for (i=0; i<numLatCols; i++)
                         {
-                        intValue[j] = numSitesAlloc[j] - 1;
-                        if (numSitesAlloc[j] > numLatCols)
-                            numLatCols = numSitesAlloc[j];
-                        }
-                    /* Fill in latent matrix */
-                    int currTable = 0;
-                    for (i=0; i<m->numChars; i++)
-                        {
-                        if (numSitesAlloc[i] == currTable + 1)
+                        for (j=0; j<m->numChars; j++)
                             {
-                            for (j=0; j<numTaxa; j++)
+                            if (numSitesAlloc[j] == (i+1))
                                 {
-                                if (compMatrix[pos(j,i,m->numChars)] == 1)
-                                    {
-                                    intValue[pos(j,currTable,numLatCols)] = 1;
-                                    }
-                                else if (compMatrix[pos(j,i,m->numChars)] == 2)
-                                    intValue[pos(j,currTable,numLatCols)] = 4;
+                                indices[i] = j;
+                                break;
                                 }
-                            currTable++;
                             }
                         }
+                    /* Fill in latent matrix */
+                    for (i=0; i<numTaxa; i++)
+                        {
+                        for (j=0; j<numLatCols; j++)
+                            {
+                            if (compMatrix[pos(i,indices[j],m->numChars)] == 1)
+                                intValue[pos(i,j,numLatCols)] = 1;
+                            else if (compMatrix[pos(i,indices[j],m->numChars)] == 2)
+                                intValue[pos(i,j,numLatCols)] = 4;
+                            }
+                        }
+                    /* Copy over latent matrix to global initialLatentMatrix */
+                    initialLatentMatrix = (int *) SafeCalloc(numLatCols * numTaxa, sizeof(int));
+                    for (i=0; i<numTaxa; i++)
+                        for (j=0; j<numLatCols; j++)
+                            initialLatentMatrix[pos(i,j,numLatCols)] = intValue[pos(i,j,numLatCols)];
                     }
                 }
 
@@ -19123,18 +19136,9 @@ int SetModelParams (void)
 
             /* find the parameter x prior type */
             if (!strcmp(mp->corrPr,"Correlated"))
-                {
                 p->paramId = LATENTMATRIX_CORR;
-                m->numLatCols = 0;
-                for (j=0; j<m->numChars; j++)
-                    if (numSitesAlloc[j] >= m->numLatCols)
-                        m->numLatCols = numSitesAlloc[j];
-                }
             else
-                {
                 p->paramId = LATENTMATRIX_UNCORR;
-                m->numLatCols = m->numChars;
-                }
 
             p->printParam = NO;
 
@@ -23465,15 +23469,15 @@ int ShowModel (void)
                               MrBayesPrint ("%s         # States  = Correlated binary characters\n", spacer);
                               if (!strcmp(modelParams[i].rhoPr,"Fixed"))
                                   MrBayesPrint ("%s                     Rho is fixed to %1.2lf\n", spacer, modelParams[i].rhoFix);
-                              else /* if (!strcmp(modelParams[i].rhoPr,"Exponential")) */
+                              else
                                   MrBayesPrint ("%s                     Rho has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].rhoExp);
                               if (!strcmp(modelParams[i].alphaDirPr,"Fixed"))
                                   MrBayesPrint ("%s                     Alphadir is fixed to %1.2lf\n", spacer, modelParams[i].alphaDirFix);
-                              else /* if (!strcmp(modelParams[i].alphaDirPr,"Exponential")) */
+                              else
                                   MrBayesPrint ("%s                     Alphadir has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].alphaDirExp);
                               if (!strcmp(modelParams[i].corrPr,"Uncorrelated"))
                                   MrBayesPrint ("%s                     Correlation model is initialized with all characters uncorrelated\n", spacer);
-                              else /* if (!strcmp(modelParams[i].alphaDirPr,"Exponential")) */
+                              else
                                   MrBayesPrint ("%s                     Correlation model is initialized with maximum correlation\n", spacer);
                               }
                           else

@@ -1750,6 +1750,7 @@ extern int              userBrlensDef;                          /* are the branc
 extern int              userLevel;                              /* the level of the user                         */
 extern PolyTree         *userTree[];                            /* array of user trees                           */
 extern char             workingDir[100];                        /* working directory                             */
+extern int              writeAlloc;                             /* should .alloc file be written                 */
 #if defined (BEAGLE_ENABLED)
 extern int              tryToUseBEAGLE;                         /* try to use the BEAGLE library                 */
 extern long             beagleFlags;                            /* BEAGLE requirement flags                      */

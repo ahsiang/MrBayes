@@ -279,7 +279,10 @@ int             recalcScalers;               /* shoud we recalculate scalers for
 extern CLFlt    *preLikeL;                   /* precalculated cond likes for left descendant */
 extern CLFlt    *preLikeR;                   /* precalculated cond likes for right descendant*/
 extern CLFlt    *preLikeA;                   /* precalculated cond likes for ancestor        */
+
+/* globals used here but declared elsewhere (in command.c) */
 extern int      *initialLatentMatrix;        /* initialized latent matrix at beginning       */
+extern int      writeAlloc;                  /* should .alloc file be written                */
 
 /* local (to this file) variables */
 int             numLocalChains;              /* number of Markov chains                      */
@@ -337,6 +340,7 @@ FILE            *fpMcmc = NULL;              /* pointer to .mcmc file           
 FILE            **fpParm = NULL;             /* pointer to .p file(s)                        */
 FILE            ***fpTree = NULL;            /* pointer to .t file(s)                        */
 FILE            *fpSS = NULL;                /* pointer to .ss file                          */
+FILE            *fpAlloc = NULL;             /* pointer to .alloc file                       */
 static int      requestAbortRun;             /* flag for aborting mcmc analysis              */
 int             *topologyPrintIndex;         /* print file index of each topology            */
 int             *printTreeTopologyIndex;     /* topology index of each tree print file       */
@@ -1918,6 +1922,10 @@ void CloseMBPrintFiles (void)
 
     if (chainParams.isSS == YES)
         SafeFclose (&fpSS);
+
+    if (writeAlloc == YES)
+        SafeFclose (&fpAlloc);
+
 }
 
 
@@ -4766,6 +4774,7 @@ void FreeChainMemory (void)
         fpParm = NULL;
         fpTree = NULL;
         fpMcmc = NULL;
+        fpAlloc = NULL;
         fpSS = NULL;
         memAllocs[ALLOC_FILEPOINTERS] = NO;
         }
@@ -10366,9 +10375,10 @@ int SiteOmegas_SSE (TreeNode *p, int division, int chain)
 ------------------------------------------------------------------------*/
 int PreparePrintFiles (void)
 {
-    int         i, n, previousResults, oldAutoOverwrite, oldNoWarn;
+    int         i, d, n, previousResults, oldAutoOverwrite, oldNoWarn;
     char        localFileName[100], fileName[220], bkupName[220];
     FILE        *tempFile;
+    ModelInfo   *m;
 
 #if defined (MPI_ENABLED)
     if (proc_id != 0)
@@ -10388,6 +10398,17 @@ int PreparePrintFiles (void)
     fpSS = NULL;
     fpParm = NULL;
     fpTree = NULL;
+
+    for (d=0; d<numCurrentDivisions; d++)
+        {
+        m = &modelSettings[d];
+        if (m->mcModelId == YES)
+            {
+            fpAlloc = NULL;
+            writeAlloc = YES;
+            }
+        }
+
     fpParm = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
     if (fpParm == NULL)
         {
@@ -10420,6 +10441,15 @@ int PreparePrintFiles (void)
         if (chainParams.mcmcDiagn == YES)
             {
             sprintf (fileName, "%s.mcmc", localFileName);
+            if ((tempFile = TestOpenTextFileR(fileName)) != NULL)
+                {
+                fclose(tempFile);
+                previousResults = YES;
+                }
+            }
+        if (writeAlloc == YES)
+            {
+            sprintf (fileName, "%s.alloc", localFileName);
             if ((tempFile = TestOpenTextFileR(fileName)) != NULL)
                 {
                 fclose(tempFile);
@@ -10481,6 +10511,18 @@ int PreparePrintFiles (void)
         {
         sprintf (fileName, "%s.mcmc", chainParams.chainFileName);
         if ((fpMcmc = OpenNewMBPrintFile (fileName)) == NULL)
+            {
+            noWarn = oldNoWarn;
+            autoOverwrite = oldAutoOverwrite;
+            return (ERROR);
+            }
+        }
+
+    /* Prepare .alloc file if Mc model is set */
+    if (writeAlloc == YES)
+        {
+        sprintf (fileName, "%s.alloc", chainParams.chainFileName);
+        if ((fpAlloc = OpenNewMBPrintFile (fileName)) == NULL)
             {
             noWarn = oldNoWarn;
             autoOverwrite = oldAutoOverwrite;
@@ -11699,6 +11741,54 @@ errorExit:
     printStringSize = 0;
     SafeFclose (&fp);
     return (ERROR);
+}
+
+
+/*----------------------------------------------------------------------
+|
+|   PrintAllocationVectorToFile: Print allocation vector to file.
+|
+------------------------------------------------------------------------*/
+int PrintAllocationVectorToFile (int curGen)
+{
+    int         i, d, chn, coldId, runId, *allocationVector;
+    ModelInfo   *m;
+
+
+    /* Print header if curGen == 0 */
+    if (curGen == 0)
+        {
+        MrBayesPrintf (fpAlloc, "[ID: %s]\n", stamp);
+        MrBayesPrintf (fpAlloc, "[   Gen                --  Generation]\n");
+        MrBayesPrintf (fpAlloc, "[   Alloc              --  Allocation vector]\n");
+        MrBayesPrintf (fpAlloc, "Gen\tAlloc\n");
+        fflush (fpAlloc);
+        return (NO_ERROR);
+        }
+
+    MrBayesPrintf (fpAlloc, "%d\t", curGen);
+
+    /* print allocation vector (single-processor version) */
+    for (chn=0; chn<numLocalChains; chn++)
+        {
+        if ((chainId[chn] % chainParams.numChains) == 0)
+            {
+            coldId = chn;
+            runId = chainId[chn] / chainParams.numChains;
+            }
+        }
+
+    for (d=0; d<numCurrentDivisions; d++)
+        {
+        m = &modelSettings[d];
+        allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
+        for (i=0; i<m->numChars; i++)
+            MrBayesPrintf(fpAlloc, "%d ", allocationVector[i]);
+        MrBayesPrintf(fpAlloc, "\n");
+        }
+
+    fflush (fpAlloc);
+    return (NO_ERROR);
 }
 
 
@@ -15822,6 +15912,8 @@ int ReusePreviousResults (int *numSamples, int steps)
     fpSS = NULL;
     fpParm = NULL;
     fpTree = NULL;
+    if (writeAlloc == YES)
+        fpAlloc = NULL;
     fpParm = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
     if (fpParm == NULL)
         {
@@ -15926,6 +16018,24 @@ int ReusePreviousResults (int *numSamples, int steps)
         if ((fpMcmc = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
             return (ERROR);
         else if (CopyResults(fpMcmc,bkupName+strlen(workingDir),numPreviousGen)==ERROR)
+            return (ERROR);
+        }
+
+    /* Store old and prepare new .alloc file */
+    if (writeAlloc == YES)
+        {
+        sprintf (fileName, "%s%s.alloc", workingDir, chainParams.chainFileName);
+        strcpy(bkupName,fileName);
+        strcat(bkupName,"~");
+        remove(bkupName);
+        if (rename(fileName,bkupName) != 0)
+            {
+            MrBayesPrint ("%s   Could not rename file %s\n", spacer, fileName);
+            return ERROR;
+            }
+        if ((fpAlloc = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
+            return (ERROR);
+        else if (CopyResults(fpAlloc,bkupName+strlen(workingDir),numPreviousGen)==ERROR)
             return (ERROR);
         }
 
@@ -16638,6 +16748,28 @@ int RunChain (RandLong *seed)
 #   endif
                 }
             }
+
+        if (writeAlloc == YES)
+            {
+            if (PrintAllocationVectorToFile (0) == ERROR)
+                {
+                MrBayesPrint ("%s   Problem printing allocation vector headers to file\n", spacer);
+#   if defined (MPI_ENABLED)
+                nErrors++;
+#   else
+                return (ERROR);
+#   endif
+                }
+            #   if defined (MPI_ENABLED)
+                        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+                        if (sumErrors > 0)
+                            {
+                            MrBayesPrint ("%s   Aborting run.\n");
+                            return ERROR;
+                            }
+            #   endif
+            }
+
         if (chainParams.isSS == YES)
             {
             if (chainParams.burninSS == 0)
@@ -17122,6 +17254,15 @@ int RunChain (RandLong *seed)
             if (PrintMCMCDiagnosticsToFile (n) == ERROR)
                 {
                 MrBayesPrint ("%s   Problem printing mcmc diagnostics to file\n", spacer);
+#   if defined (MPI_ENABLED)
+                nErrors++;
+#   else
+                return (ERROR);
+#   endif
+                }
+            if (PrintAllocationVectorToFile (n) == ERROR)
+                {
+                MrBayesPrint ("%s   Problem printing allocation vector to file\n", spacer);
 #   if defined (MPI_ENABLED)
                 nErrors++;
 #   else

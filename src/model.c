@@ -117,6 +117,7 @@ Param           *treePrintparams;                       /* vector of tree parame
 int             setUpAnalysisSuccess;                   /* Set to YES if analysis is set without error      */
 int             *numSitesAlloc;                         /* pattern allocation by site                       */
 int             *initialLatentMatrix;                   /* initialized latent matrix at beginning of run    */
+int             writeAlloc;                             /* should .alloc file be written                    */
 
 /* globals used to describe and change the current model; allocated in AllocCharacters and SetPartition  */
 int         *numVars;                                   /* number of variables in setting arrays         */
@@ -18618,9 +18619,15 @@ int SetModelInfo (void)
 
         /* correlation model? */
         if (!strcmp(mp->mcModel, "Yes"))
+            {
             m->mcModelId = YES;
+            writeAlloc = YES;
+            }
         else
+            {
             m->mcModelId = NO;
+            writeAlloc = NO;
+            }
 
         /* number of rate categories */
         if (activeParams[P_SHAPE][i] > 0)

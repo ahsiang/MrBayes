@@ -491,7 +491,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     if (RandomNumber(seed) < probNewTable) /* Seated at new table case */
         {
         newTable = -1;
-        /* If there is only one character that table, the new table is essentially
+        /* If there is only one character at that table, the new table is essentially
         the same as the old table, and we do not reseat. Otherwise we do, like so... */
         if (numSeatedAtTable[oldAllocationVector[oldTable]] != 1)
             {

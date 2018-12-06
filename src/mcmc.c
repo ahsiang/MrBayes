@@ -340,7 +340,7 @@ FILE            *fpMcmc = NULL;              /* pointer to .mcmc file           
 FILE            **fpParm = NULL;             /* pointer to .p file(s)                        */
 FILE            ***fpTree = NULL;            /* pointer to .t file(s)                        */
 FILE            *fpSS = NULL;                /* pointer to .ss file                          */
-FILE            *fpAlloc = NULL;             /* pointer to .alloc file                       */
+FILE            **fpAlloc = NULL;            /* pointer to .alloc file                       */
 static int      requestAbortRun;             /* flag for aborting mcmc analysis              */
 int             *topologyPrintIndex;         /* print file index of each topology            */
 int             *printTreeTopologyIndex;     /* topology index of each tree print file       */
@@ -1906,6 +1906,8 @@ void CloseMBPrintFiles (void)
 #if defined (PRINT_DUMP)
         SafeFclose (&fpDump[n]);
 #endif
+        if (writeAlloc == YES)
+            SafeFclose (&fpParm[n]);
 
         for (i=0; i<numTrees; i++)
             {
@@ -1922,9 +1924,6 @@ void CloseMBPrintFiles (void)
 
     if (chainParams.isSS == YES)
         SafeFclose (&fpSS);
-
-    if (writeAlloc == YES)
-        SafeFclose (&fpAlloc);
 
 }
 
@@ -4771,10 +4770,11 @@ void FreeChainMemory (void)
             }
         if (fpParm != NULL)
             free (fpParm);
+        if (fpAlloc != NULL)
+            free (fpAlloc);
         fpParm = NULL;
         fpTree = NULL;
         fpMcmc = NULL;
-        fpAlloc = NULL;
         fpSS = NULL;
         memAllocs[ALLOC_FILEPOINTERS] = NO;
         }
@@ -10431,6 +10431,13 @@ int PreparePrintFiles (void)
     for (i=1; i<chainParams.numRuns; i++)
         fpTree[i] = fpTree[0] + i*numTrees;
 
+    fpAlloc = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
+    if (fpAlloc == NULL)
+        {
+        MrBayesPrint ("%s   Could not allocate fpAlloc in PreparePrintFiles\n", spacer);
+        return ERROR;
+        }
+
     /* Get root of local file name */
     strcpy (localFileName, chainParams.chainFileName);
 
@@ -10447,15 +10454,6 @@ int PreparePrintFiles (void)
                 previousResults = YES;
                 }
             }
-        if (writeAlloc == YES)
-            {
-            sprintf (fileName, "%s.alloc", localFileName);
-            if ((tempFile = TestOpenTextFileR(fileName)) != NULL)
-                {
-                fclose(tempFile);
-                previousResults = YES;
-                }
-            }
         for (n=0; n<chainParams.numRuns; n++)
             {
             if (chainParams.numRuns == 1)
@@ -10466,6 +10464,19 @@ int PreparePrintFiles (void)
                 {
                 fclose(tempFile);
                 previousResults = YES;
+                }
+
+            if (writeAlloc == YES)
+                {
+                if (chainParams.numRuns == 1)
+                    sprintf (fileName, "%s.alloc", localFileName);
+                else
+                    sprintf (fileName, "%s.run%d.alloc", localFileName, n+1);
+                if ((tempFile = TestOpenTextFileR(fileName)) != NULL)
+                    {
+                    fclose(tempFile);
+                    previousResults = YES;
+                    }
                 }
 
             for (i=0; i<numTrees; i++)
@@ -10518,21 +10529,22 @@ int PreparePrintFiles (void)
             }
         }
 
-    /* Prepare .alloc file if Mc model is set */
-    if (writeAlloc == YES)
-        {
-        sprintf (fileName, "%s.alloc", chainParams.chainFileName);
-        if ((fpAlloc = OpenNewMBPrintFile (fileName)) == NULL)
-            {
-            noWarn = oldNoWarn;
-            autoOverwrite = oldAutoOverwrite;
-            return (ERROR);
-            }
-        }
-
-    /* Prepare the .p and .t files */
+    /* Prepare the .p, .t, and .alloc (if Mc model set) files */
     for (n=0; n<chainParams.numRuns; n++)
         {
+        if (writeAlloc == YES)
+            {
+            if (chainParams.numRuns == 1)
+                sprintf (fileName, "%s.alloc", localFileName);
+            else
+                sprintf (fileName, "%s.run%d.alloc", localFileName, n+1);
+            if ((fpAlloc[n] = OpenNewMBPrintFile (fileName)) == NULL)
+                {
+                noWarn = oldNoWarn;
+                autoOverwrite = oldAutoOverwrite;
+                return (ERROR);
+                }
+            }
         if (chainParams.numRuns == 1)
             sprintf (fileName, "%s.p", localFileName);
         else
@@ -11754,40 +11766,39 @@ int PrintAllocationVectorToFile (int curGen)
     int         i, d, chn, coldId, runId, *allocationVector;
     ModelInfo   *m;
 
-
-    /* Print header if curGen == 0 */
-    if (curGen == 0)
-        {
-        MrBayesPrintf (fpAlloc, "[ID: %s]\n", stamp);
-        MrBayesPrintf (fpAlloc, "[   Gen                --  Generation]\n");
-        MrBayesPrintf (fpAlloc, "[   Alloc              --  Allocation vector]\n");
-        MrBayesPrintf (fpAlloc, "Gen\tAlloc\n");
-        fflush (fpAlloc);
-        return (NO_ERROR);
-        }
-
-    MrBayesPrintf (fpAlloc, "%d\t", curGen);
-
-    /* print allocation vector (single-processor version) */
+    /* Print allocation vector (single-processor version) */
     for (chn=0; chn<numLocalChains; chn++)
         {
         if ((chainId[chn] % chainParams.numChains) == 0)
             {
             coldId = chn;
             runId = chainId[chn] / chainParams.numChains;
+
+            /* Print header if curGen == 0 */
+            if (curGen == 0)
+                {
+                MrBayesPrintf (fpAlloc[runId], "[ID: %s]\n", stamp);
+                MrBayesPrintf (fpAlloc[runId], "[   Gen                --  Generation]\n");
+                MrBayesPrintf (fpAlloc[runId], "[   Alloc              --  Allocation vector]\n");
+                MrBayesPrintf (fpAlloc[runId], "Gen\tAlloc\n");
+                fflush (fpAlloc[runId]);
+                }
+
+            MrBayesPrintf (fpAlloc[runId], "%d\t", curGen);
+
+            for (d=0; d<numCurrentDivisions; d++)
+                {
+                m = &modelSettings[d];
+                allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
+                for (i=0; i<m->numChars; i++)
+                    MrBayesPrintf(fpAlloc[runId], "%d ", allocationVector[i]);
+                MrBayesPrintf(fpAlloc[runId], "\t");
+                }
+            MrBayesPrintf (fpAlloc[runId], "\n");
+
+            fflush (fpAlloc[runId]);
             }
         }
-
-    for (d=0; d<numCurrentDivisions; d++)
-        {
-        m = &modelSettings[d];
-        allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
-        for (i=0; i<m->numChars; i++)
-            MrBayesPrintf(fpAlloc, "%d ", allocationVector[i]);
-        MrBayesPrintf(fpAlloc, "\n");
-        }
-
-    fflush (fpAlloc);
     return (NO_ERROR);
 }
 
@@ -15939,7 +15950,7 @@ int ReusePreviousResults (int *numSamples, int steps)
     /* Get root of local file name */
     strcpy (localFileName, chainParams.chainFileName);
 
-    /* Store old and prepare new .p and .t files */
+    /* Store old and prepare new .p and .t (and .alloc if Mc model is set) files */
     for (n=0; n<chainParams.numRuns; n++)
         {
         if (chainParams.numRuns == 1)
@@ -15959,6 +15970,27 @@ int ReusePreviousResults (int *numSamples, int steps)
             return (ERROR);
         else if (CopyResults(fpParm[n],bkupName+strlen(workingDir),numPreviousGen) == ERROR)
             return (ERROR);
+
+        if (writeAlloc == YES)
+            {
+            if (chainParams.numRuns == 1)
+                sprintf (fileName, "%s%s.alloc", workingDir, localFileName);
+            else
+                sprintf (fileName, "%s%s.run%d.alloc", workingDir, localFileName, n+1);
+            strcpy(bkupName,fileName);
+            strcat(bkupName,"~");
+            remove(bkupName);
+            if (rename(fileName,bkupName) != 0)
+                {
+                MrBayesPrint ("%s   Could not rename file %s\n", spacer, fileName);
+                return ERROR;
+                }
+
+            if ((fpParm[n] = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
+                return (ERROR);
+            else if (CopyResults(fpAlloc[n],bkupName+strlen(workingDir),numPreviousGen) == ERROR)
+                return (ERROR);
+            }
 
         for (i=0; i<numTrees; i++)
             {
@@ -16018,24 +16050,6 @@ int ReusePreviousResults (int *numSamples, int steps)
         if ((fpMcmc = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
             return (ERROR);
         else if (CopyResults(fpMcmc,bkupName+strlen(workingDir),numPreviousGen)==ERROR)
-            return (ERROR);
-        }
-
-    /* Store old and prepare new .alloc file */
-    if (writeAlloc == YES)
-        {
-        sprintf (fileName, "%s%s.alloc", workingDir, chainParams.chainFileName);
-        strcpy(bkupName,fileName);
-        strcat(bkupName,"~");
-        remove(bkupName);
-        if (rename(fileName,bkupName) != 0)
-            {
-            MrBayesPrint ("%s   Could not rename file %s\n", spacer, fileName);
-            return ERROR;
-            }
-        if ((fpAlloc = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
-            return (ERROR);
-        else if (CopyResults(fpAlloc,bkupName+strlen(workingDir),numPreviousGen)==ERROR)
             return (ERROR);
         }
 
@@ -16696,6 +16710,18 @@ int RunChain (RandLong *seed)
             return ERROR;
 #   endif
             }
+        if (writeAlloc == YES)
+            {
+            if (PrintAllocationVectorToFile (0) == ERROR)
+                {
+                MrBayesPrint("%s   Error in printing allocation vector header to files\n");
+#   if defined (MPI_ENABLED)
+                nErrors++;
+#   else
+                return ERROR;
+#   endif
+                }
+            }
 #   if defined (MPI_ENABLED)
         MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         if (sumErrors > 0)
@@ -16747,27 +16773,6 @@ int RunChain (RandLong *seed)
                     }
 #   endif
                 }
-            }
-
-        if (writeAlloc == YES)
-            {
-            if (PrintAllocationVectorToFile (0) == ERROR)
-                {
-                MrBayesPrint ("%s   Problem printing allocation vector headers to file\n", spacer);
-#   if defined (MPI_ENABLED)
-                nErrors++;
-#   else
-                return (ERROR);
-#   endif
-                }
-            #   if defined (MPI_ENABLED)
-                        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-                        if (sumErrors > 0)
-                            {
-                            MrBayesPrint ("%s   Aborting run.\n");
-                            return ERROR;
-                            }
-            #   endif
             }
 
         if (chainParams.isSS == YES)
@@ -17097,6 +17102,18 @@ int RunChain (RandLong *seed)
 #   else
                 return ERROR;
 #   endif
+                }
+            if (writeAlloc == YES)
+                {
+                if (PrintAllocationVectorToFile (n) == ERROR)
+                    {
+                    MrBayesPrint("%s   Error in printing allocation vector to files\n");
+#   if defined (MPI_ENABLED)
+                    nErrors++;
+#   else
+                    return ERROR;
+#   endif
+                    }
                 }
 #   if defined (MPI_ENABLED)
             MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);

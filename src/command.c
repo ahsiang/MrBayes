@@ -227,6 +227,7 @@ int             speciespartitionNum;   /* index of current speciespartition     
 Sump            sumpParams;            /* holds parameters for sump command             */
 Sumt            sumtParams;            /* holds parameters for sumt command             */
 Sumss           sumssParams;           /* holds parameters for sumss command            */
+//Suma            sumaParams;            /* holds parameters for suma command             */
 TaxaInformation *taxaInfo;             /* holds critical information about taxa         */
 char            **taxaNames;           /* holds name of taxa                            */
 BitsLong        **taxaSet;             /* holds information about defined taxasets      */
@@ -352,7 +353,8 @@ CmdType     commands[] =
                                                                                                                                                      270,273,274},        4,             "Unlinks parameters across character partitions",  IN_CMD, SHOW },
             { 59,        "Usertree", YES,        DoUserTree,  1,                                                                                            {203},        8,                                 "Defines a single user tree",  IN_CMD, HIDE },
             { 60,         "Version",  NO,         DoVersion,  0,                                                                                             {-1},       32,                                      "Shows program version",  IN_CMD, SHOW },
-            { 61,      "Compareref",  NO,     DoCompRefTree,  7,                                                                    {127,128,129,130,221,222,223},       36,                     "Compares the tree to the reference trees",  IN_CMD, HIDE },
+            { 61,      "Compareref",  NO,     DoCompRefTree,  7,                                                                    {127,128,129,130,221,222,223},       36,                   "Compares the tree to the reference trees",  IN_CMD, HIDE },
+            //{ 62,            "Suma",  NO,            DoSuma,  1,                                                                                {282,283,284,285},       36,  "Summarizes allocation vector from analysis using Mc model",  IN_CMD, SHOW },
             /* NOTE: If you add a command here, make certain to change NUMCOMMANDS (above, in this file) appropriately! */
             { 999,             NULL,  NO,              NULL,  0,                                                                                             {-1},       32,                                                           "",  IN_CMD, HIDE }
             };
@@ -14604,6 +14606,10 @@ void SetUpParms (void)
     PARAM (279, "Rhopr",          DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|\0");
+    //PARAM (282, "Filename",       DoSumaParm,        "\0");
+    //PARAM (283, "Burnin",         DoSumaParm,        "\0");
+    //PARAM (284, "Relburnin",      DoSumaParm,        "Yes|No|\0");
+    //PARAM (285, "Burninfrac",     DoSumaParm,        "\0");
 
 
     /* NOTE: If a change is made to the parameter table, make certain you change

@@ -5731,28 +5731,19 @@ int CondLikeScaler_NY98_SSE (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeScaler_Std (TreeNode *p, int division, int chain)
 {
-    int             c, n, k, nStates, numReps, nChar;
+    int             c, n, k, nStates, numReps;
     CLFlt           scaler, *clPtr, **clP, *scP, *lnScaler;
     ModelInfo       *m;
 
     m = &modelSettings[division];
 
-    if (m->mcModelId == YES)
+    numReps = 0;
+    for (c=0; c<m->numChars; c++)
         {
-        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]); /* number of latent columns */
-        numReps = 3 * nChar;
-        }
-    else
-        {
-        nChar = m->numChars;
-        numReps = 0;
-        for (c=0; c<nChar; c++)
-            {
-            if (m->nStates[c] == 2)
-                numReps += m->numBetaCats * 2;
-            else
-                numReps += m->nStates[c];
-            }
+        if (m->nStates[c] == 2)
+            numReps += m->numBetaCats * 2;
+        else
+            numReps += m->nStates[c];
         }
 
     /* find conditional likelihood pointers */
@@ -5771,7 +5762,7 @@ int CondLikeScaler_Std (TreeNode *p, int division, int chain)
     lnScaler = m->scalers[m->siteScalerIndex[chain]];
 
     /* rescale */
-    for (c=0; c<nChar; c++)
+    for (c=0; c<m->numChars; c++)
         {
         scaler = 0.0;
         nStates = m->nStates[c];

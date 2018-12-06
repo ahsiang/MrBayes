@@ -942,6 +942,12 @@ int ReinitializeMrBayes (void)
     sumpParams.HPD = YES;                            /* use Highest Posterior Density?                */
     sumpParams.minProb = 0.05;                       /* min. prob. of models to include in summary    */
 
+    /* suma parameters */
+    //strcpy(sumaParams.sumaFileName, "temp");         /* input name for suma command                   */
+    //strcpy (sumaParams.sumaOutfile, "temp");         /* output name for suma command                  */
+    //sumpParams.numRuns = 2;                          /* number of analyses to summarize               */
+    //sumpParams.HPD = YES;                            /* use Highest Posterior Density?                */
+
     /* sumss parameters */
     sumssParams.numRuns= 2;                          /* number of independent analyses to summarize   */
     sumssParams.allRuns = YES;                       /* should data for all runs be printed (yes/no)? */

@@ -287,8 +287,9 @@ MrBFlt    LogNormalPoint (MrBFlt x, MrBFlt mu, MrBFlt sigma);
 int       cmpMrBFlt(const void *a, const void *b);
 
 /* correlation model utility functions */
-int       *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTable);
-int       *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, int oldTable);
-
+int      *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTable);
+int      *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, int oldTable);
+int      *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *rescaledAllocationVector, int *originalLatentMatrix, BitsLong *compMatrix, int numChars, int newNumLatCols, int oldNumLatCols, int newTable, int oldTable);
+int      *ReorderLatentMatrix(int *unscaledAllocationVector, int *rescaledAllocationVector, int *latentMatrix, int origNumLatCols, int finalNumLatCols, int numChar);
 
 #endif  /* __UTILS_H__ */

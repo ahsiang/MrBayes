@@ -1492,6 +1492,18 @@ typedef struct sump
     MrBFlt      minProb;               /* cut-off for model probabilities to show       */
     } Sump;
 
+// typedef struct suma
+//     {
+//     char        sumaFileName[100];     /* name of input file                            */
+//     char        sumaOutfile[120];      /* name of output file                           */
+//     //int       plot;                  /* output plot (y/n)?                            */
+//     int         table;                 /* output table (y/n)?                           */
+//     int         numRuns;               /* number of independent analyses to summarize   */
+//     int         allRuns;               /* should data for all runs be printed (yes/no)? */
+//     int         HPD;                   /* use highest posterior density?                */
+//     MrBFlt      minProb;               /* cut-off for model probabilities to show       */
+//     } Suma;
+
 typedef struct sumss
     {
     //int       plot;                  /* output plot (y/n)?                            */

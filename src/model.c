@@ -11393,7 +11393,6 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             }
                         }
                     /* Copy over latent matrix to global initialLatentMatrix */
-                    initialLatentMatrix = (int *) SafeCalloc(numLatCols * numTaxa, sizeof(int));
                     for (i=0; i<numTaxa; i++)
                         for (j=0; j<numLatCols; j++)
                             initialLatentMatrix[pos(i,j,numLatCols)] = intValue[pos(i,j,numLatCols)];

@@ -14060,23 +14060,28 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
 {
     int         i, j, barrier=-1, toSwitch;
 
+    int *rescaled = SafeMalloc(numChar * sizeof(int*));
+
+    for (i=0; i<numChar; i++)
+        rescaled[i] = allocationVector[i];
+
     if (newTable != oldTable)
         {
         for (i=0; i<numChar; i++)
             {
-            if (allocationVector[i] == barrier + 1)
+            if (rescaled[i] == barrier + 1)
                 barrier++;
             else
                 {
-                if (allocationVector[i] > barrier + 1)
+                if (rescaled[i] > barrier + 1)
                     {
-                    toSwitch = allocationVector[i];
+                    toSwitch = rescaled[i];
                     for (j=i; j<numChar; j++)
                         {
-                        if (allocationVector[j] == toSwitch)
-                            allocationVector[j] = barrier + 1;
-                        else if (allocationVector[j] >= barrier + 1)
-                            allocationVector[j]++;
+                        if (rescaled[j] == toSwitch)
+                            rescaled[j] = barrier + 1;
+                        else if (rescaled[j] >= barrier + 1)
+                            rescaled[j]++;
                         }
                     barrier++;
                     }
@@ -14084,5 +14089,266 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
             }
         }
 
-    return (allocationVector);
+    return (rescaled);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   ReorderLatentMatrix
+|
+|   Reorders latent matrix to follow rescaled allocation vector
+|
+---------------------------------------------------------------------------------*/
+int *ReorderLatentMatrix(int *unscaledAllocationVector, int *rescaledAllocationVector, int *latentMatrix, int origNumLatCols, int finalNumLatCols, int numChar)
+{
+    int         i, j, numValues, *reorderedLatentMatrix;
+
+    numValues = finalNumLatCols * numTaxa;
+    reorderedLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
+
+    for (i=0; i<numChar; i++)
+        {
+        if (unscaledAllocationVector[i] == rescaledAllocationVector[i])
+            for (j=0; j<numTaxa; j++)
+                reorderedLatentMatrix[pos(j,rescaledAllocationVector[i],finalNumLatCols)] = latentMatrix[pos(j,rescaledAllocationVector[i],origNumLatCols)];
+        else
+            for (j=0; j<numTaxa; j++)
+                reorderedLatentMatrix[pos(j,rescaledAllocationVector[i],finalNumLatCols)] = latentMatrix[pos(j,unscaledAllocationVector[i],origNumLatCols)];
+        }
+
+    return (reorderedLatentMatrix);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   UpdateLatentPattern
+|
+|   Ensures that latent patterns in latent matrix match allocation vector.
+|
+---------------------------------------------------------------------------------*/
+int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *rescaledAllocationVector, int *originalLatentMatrix, BitsLong *compMatrix, int numChars, int newNumLatCols, int oldNumLatCols, int newTable, int oldTable)
+{
+    int         i, j, k, numAtTable, idx, currIdx, needEndStateFlip,
+                currTable, numColsToRemove, finalNumLatCols, fillIdx = 0,
+                endStateIndex, *newLatentStates, tablesToProcess[2],
+                tempNumLatCols, *reorderedLatentMatrix, *finalLatentMatrix;
+
+    // printf("------------\n\n");
+    // printf("newNumLatCols: %d\n",newNumLatCols);
+    // printf("oldNumLatCols: %d\n",oldNumLatCols);
+
+    if (newNumLatCols > oldNumLatCols)
+        tempNumLatCols = newNumLatCols;
+    else
+        tempNumLatCols = oldNumLatCols;
+
+    // printf("tempNumLatCols: %d\n",tempNumLatCols);
+
+    /* Initialize newLatentMatrix */
+    int newLatentMatrix[numTaxa * tempNumLatCols];
+
+    /* Get numSeatedAtTables */
+    int numSeatedAtTables[tempNumLatCols];
+    for (i=0; i<tempNumLatCols; i++)
+        numSeatedAtTables[i] = 0;
+    for (i=0; i<numChars; i++)
+        numSeatedAtTables[allocationVector[i]]++;
+
+    // printf("numSeatedAtTables: (utils) ");
+    // for (i=0; i<tempNumLatCols; i++)
+    //     printf("%d ",numSeatedAtTables[i]);
+    // printf("\n\n");
+
+    tablesToProcess[0] = newTable;
+    tablesToProcess[1] = oldTable;
+
+    int origNumSeatedAtTables[oldNumLatCols];
+    for (i=0; i<oldNumLatCols; i++)
+        origNumSeatedAtTables[i] = 0;
+    for (i=0; i<numChars; i++)
+        origNumSeatedAtTables[oldAllocationVector[i]]++;
+
+    for (i=0; i<2; i++)
+        {
+        currTable = tablesToProcess[i];
+        numAtTable = numSeatedAtTables[currTable];
+        // printf("currTable: %d\n",currTable);
+        // printf("numAtTable: %d\n",numAtTable);
+
+        /* If nothing at table, set all latent column entries to -1; will be removed at end */
+        numColsToRemove = 0;
+        if (numAtTable == 0)
+            {
+            numColsToRemove++;
+            for (j=0; j<numTaxa; j++)
+                newLatentMatrix[pos(j,currTable,tempNumLatCols)] = -1;
+            }
+        else
+            {
+            /* Get column indices for characters seated at current table */
+            int colIndices[numAtTable];
+            idx = 0;
+            for (j=0; j<numChars; j++)
+                {
+                if (allocationVector[j] == currTable)
+                    {
+                    colIndices[idx] = j;
+                    idx++;
+                    }
+                }
+
+            // printf("colIndices: ");
+            // for (j=0; j<numAtTable; j++)
+            //     printf("%d ",colIndices[j]);
+            // printf("\n\n");
+
+            /* Get original data from relevant columns */
+            int tempData[numTaxa * numAtTable];
+            for (j=0; j<numAtTable; j++)
+                {
+                currIdx = colIndices[j];
+                for (k=0; k<numTaxa; k++)
+                    tempData[pos(k,j,numAtTable)] = compMatrix[pos(k,currIdx,numChars)];
+                }
+
+            // printf("tempData: \n");
+            // for (j=0; j<numTaxa; j++)
+            //     {
+            //     for (int k=0; k<numAtTable; k++)
+            //         printf("%c ",WhichStand(tempData[pos(j,k,numAtTable)]));
+            //     printf("\n");
+            //     }
+            // printf("\n\n");
+
+            /* Flip end state 2's to 0's if there are no 0's in the original latent states  */
+            needEndStateFlip = YES;
+            for (j=0; j<numTaxa; j++)
+                {
+                if (originalLatentMatrix[pos(j,currTable,oldNumLatCols)] == 1) //Equivalent to end state 0
+                    {
+                    needEndStateFlip = NO;
+                    break;
+                    }
+                }
+            if (needEndStateFlip == YES)
+                {
+                for (j=0; j<numTaxa; j++)
+                    if (originalLatentMatrix[pos(j,currTable,oldNumLatCols)] == 4) //Equivalent to end state 2
+                        originalLatentMatrix[pos(j,currTable,oldNumLatCols)] = 1;
+                }
+
+            // printf("originalLatentMatrix: \n");
+            // for (k=0; k<numTaxa; k++)
+            //     {
+            //     for (j=0; j<oldNumLatCols; j++)
+            //         printf("%c ", WhichStand(originalLatentMatrix[pos(k,j,oldNumLatCols)]));
+            //     printf("\n");
+            //     }
+            // printf("\n\n");
+
+            /* Find index of first end state in original latent states */
+            for (j=0; j<numTaxa; j++)
+                {
+                if (originalLatentMatrix[pos(j,currTable,oldNumLatCols)] == 1) //Equivalent to end state 0
+                    {
+                    endStateIndex = j;
+                    break;
+                    }
+                }
+
+            // printf("originalLatentStates: ");
+            // for (j=0; j<numTaxa; j++)
+            //     printf("%c ",WhichStand(originalLatentMatrix[pos(j,oldTable,oldNumLatCols)]));
+            // printf("\n\n");
+            //
+            // printf("endStateIndex: %d\n",endStateIndex);
+
+            /* Get new latent states from tempData and fill in column of newLatentMatrix */
+            newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
+
+            // printf("newLatentStates: ");
+            // for (j=0; j<numTaxa; j++)
+            //     printf("%c ",WhichStand(newLatentStates[j]));
+            // printf("\n\n");
+
+            for (j=0; j<numTaxa; j++)
+                newLatentMatrix[pos(j,currTable,tempNumLatCols)] = newLatentStates[j];
+            }
+        }
+
+    /* Fill in rest of latent matrix */
+    for (i=0; i<tempNumLatCols; i++)
+        {
+        if (!(i == newTable) && (!(i == oldTable)))
+            for (j=0; j<numTaxa; j++)
+                    newLatentMatrix[pos(j,i,tempNumLatCols)] = originalLatentMatrix[pos(j,i,oldNumLatCols)];
+        }
+
+
+    // printf("newLatentMatrix (before pruning):\n");
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (j=0; j<tempNumLatCols; j++)
+    //         printf("%d ", newLatentMatrix[pos(i,j,tempNumLatCols)]);
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
+
+    /* Time to get final latent matrix */
+    finalNumLatCols = tempNumLatCols - numColsToRemove;
+    int numValues = numTaxa * finalNumLatCols;
+    finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
+
+    // printf("numColsToRemove: %d\n",numColsToRemove);
+    // printf("finalNumLatCols: %d\n",finalNumLatCols);
+    // printf("numValues: %d\n",numValues);
+
+    /* Reorder latent matrix columns according to rescaled allocation vector */
+    reorderedLatentMatrix = ReorderLatentMatrix(allocationVector, rescaledAllocationVector, newLatentMatrix, tempNumLatCols, finalNumLatCols, numChar);
+
+    /* copy reorderedLatentMatrix into finalLatentMatrix */
+    for (i=0; i<numTaxa; i++)
+        for (j=0; j<finalNumLatCols; j++)
+            finalLatentMatrix[pos(i,j,finalNumLatCols)] = reorderedLatentMatrix[pos(i,j,newNumLatCols)];
+
+
+    // /* Remove any empty latent columns */
+    // if (numColsToRemove > 0)
+    //     {
+    //     for (i=0; i<tempNumLatCols; i++)
+    //         {
+    //         if (newLatentMatrix[pos(0,i,tempNumLatCols)] == -1)
+    //             continue;
+    //         else
+    //             {
+    //             for (j=0; j<numTaxa; j++)
+    //                 finalLatentMatrix[pos(j,fillIdx,finalNumLatCols)] = newLatentMatrix[pos(j,i,tempNumLatCols)];
+    //             fillIdx++;
+    //             }
+    //         }
+    //     }
+    // else // If no cols to remove, just copy newLatentMatrix into finalLatentMatrix
+    //     {
+    //     for (i=0; i<numTaxa; i++)
+    //         for (j=0; j<finalNumLatCols; j++)
+    //             finalLatentMatrix[pos(i,j,finalNumLatCols)] = newLatentMatrix[pos(i,j,newNumLatCols)];
+    //     }
+
+    // printf("finalLatentMatrix:\n");
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (j=0; j<finalNumLatCols; j++)
+    //         printf("%c ", WhichStand(finalLatentMatrix[pos(i,j,finalNumLatCols)]));
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+    // printf("------------\n\n");
+
+    free (reorderedLatentMatrix);
+
+    //return (*finalLatentMatrix);
+    return (finalLatentMatrix);
 }

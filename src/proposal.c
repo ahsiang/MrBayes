@@ -439,12 +439,11 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* Change allocation vector by picking random character and re-seating it */
 
-    int         i, j, k, randCharIndex, oldTable, numTables, newNumTables,
-                *oldAllocationVector, *newLatentMatrix, charIndexRandomBuddy,
-                newTable, *oldLatentMatrix, *newAllocationVector, *newLatentStates,
-                endStateIndex, *rescaledAllocationVector, currIdx, oldNumLatCols,
-                newNumLatCols, needEndStateFlip;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable;
+    int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
+                *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
+                *rescaledAllocationVector, newNumLatCols, oldNumLatCols,
+                *updatedLatentMatrix;
+    MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable, randomNum;
     ModelParams *mp;
     ModelInfo   *m;
 
@@ -452,11 +451,11 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     mp = &modelParams[param->relParts[0]];
     m  = &modelSettings[param->relParts[0]];
 
-    /* Get alphadir */
-    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
+    /* Get alphadir rate parameter */
+    lambda = *GetParamVals(m->alphaDir, chain, state[chain]);
 
-    /* Get rate parameter of alphadir prior */
-    lambda = mp->alphaDirExp;
+    /* Get alphadir */
+    alphaDir = 1.0 / lambda;
 
     /* Get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;
@@ -465,144 +464,189 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
     newAllocationVector = GetParamIntVals(param, chain, state[chain]);
 
+    // printf("\n--------------------------------\n");
+    //
+    // printf("Allocation vector (old):                     ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",oldAllocationVector[i]);
+    // printf("\n\n");
+    //
+    // printf("alphaDir: %f\n",alphaDir);
+    // printf("lambda: %f\n",lambda);
+
+    /* Get number of tables (i.e., number of latent columns) */
+    numTables = (int) *GetParamSubVals(param, chain, state[chain] ^ 1);
+
+    // printf("numTables: %d\n",numTables);
+
     /* Propose new allocation vector */
     /* Pick random character from old allocation vector */
     randCharIndex = (int) (RandomNumber(seed) * m->numChars);
 
+    // printf("randCharIndex: %d\n",randCharIndex);
+
     /* Get index of table that randomly selected character is seated at */
     oldTable = oldAllocationVector[randCharIndex];
 
-    /* Get number of tables */
-    numTables = 1;
-    for (i=0; i<m->numChars; i++)
-        if (oldAllocationVector[i] >= numTables)
-            numTables++;
+    // printf("oldTable: %d\n",oldTable);
 
-    /* Get number of characters seated at each table */
-    int numSeatedAtTable[numTables];
+    /* Get number of characters seated at each table, excluding the selected character */
+    int numSeatedAtTablesWithoutSelected[numTables];
     for (i=0; i<numTables; i++)
-        numSeatedAtTable[i] = 0;
+        numSeatedAtTablesWithoutSelected[i] = 0;
     for (i=0; i<m->numChars; i++)
-        numSeatedAtTable[oldAllocationVector[i]] += 1;
-
-    /* Decide if character should be seated at new table and then reseat it accordingly */
-    /* Note that there are smarter ways of doing this... */
-    probNewTable = alphaDir / (alphaDir + m->numChars - 1);
-    if (RandomNumber(seed) < probNewTable) /* Seated at new table case */
         {
-        newTable = -1;
-        /* If there is only one character at that table, the new table is essentially
-        the same as the old table, and we do not reseat. Otherwise we do, like so... */
-        if (numSeatedAtTable[oldAllocationVector[oldTable]] != 1)
+        if (!(i == randCharIndex))
+            numSeatedAtTablesWithoutSelected[oldAllocationVector[i]] += 1;
+        }
+
+    // printf("numAtTablesWithoutSelected: ");
+    // for (i=0; i<numTables; i++)
+    //     printf("%d ",numSeatedAtTablesWithoutSelected[i]);
+    // printf("\n\n");
+
+    /* Get probabilities of seating at new table and seating at all existing tables */
+    MrBFlt tableProbs[numTables];
+    probNewTable = alphaDir / (alphaDir + m->numChars - 1);
+    for (i=0; i<numTables; i++)
+        tableProbs[i] = numSeatedAtTablesWithoutSelected[i] / (alphaDir + m->numChars - 1);
+    tableProbs[numTables] = probNewTable;
+
+    // printf("probNewTable: %f\n",probNewTable);
+    //
+    // printf("tableProbs: ");
+    // for (i=0; i<numTables+1; i++)
+    //     printf("%f ",tableProbs[i]);
+    // printf("\n\n");
+
+    /* Get cumulative probabilities */
+    MrBFlt cumulativeTableProbs[numTables + 1];
+    for (i=0; i<numTables+1; i++)
+        {
+        if (i == 0)
+            cumulativeTableProbs[i] = tableProbs[0];
+        else
+            cumulativeTableProbs[i] = tableProbs[i] + cumulativeTableProbs[i-1];
+        }
+
+    // printf("cumulativeProbs: ");
+    // for (i=0; i<numTables+1; i++)
+    //     printf("%f ",cumulativeTableProbs[i]);
+    // printf("\n\n");
+
+    /* Randomly select a table using cumulativeTableProbs */
+    randomNum = RandomNumber(seed);
+    newTable = numTables;
+    for (i=0; i<numTables+1; i++)
+        {
+        if (randomNum <= cumulativeTableProbs[i])
             {
-            newAllocationVector[randCharIndex] = numTables;
-            newTable = numTables;
-            numTables++;
+            newTable = i;
+            break;
             }
         }
-    else /* Seated at existing table case */
-        {
-        /* Pick random character to sit next to */
-        charIndexRandomBuddy = (int) (RandomNumber(seed) * (m->numChars - 1));
-        /* In case original character is chosen, choose the last character */
-        if (charIndexRandomBuddy == randCharIndex)
-            charIndexRandomBuddy = m->numChars - 1;
-        /* Get index of table that newly selected buddy is seated at */
-        newTable = oldAllocationVector[charIndexRandomBuddy];
-        newAllocationVector[randCharIndex] = newTable;
-        }
 
-    /* Rescale allocation vector to fit growth function */
+    // printf("newTable: %d\n",newTable);
+
+    /* Now get numSeatedAtTables proper */
+    int numSeatedAtTables[numTables];
+    for (i=0; i<numTables; i++)
+        numSeatedAtTables[i] = 0;
+    for (i=0; i<m->numChars; i++)
+        numSeatedAtTables[oldAllocationVector[i]] += 1;
+
+    // printf("numAtTables: (1) ");
+    // for (i=0; i<numTables; i++)
+    //     printf("%d ",numSeatedAtTables[i]);
+    // printf("\n\n");
+
+    /* If character in a cluster of 1 is seated at a "new" table, don't change allocation */
+    /* Otherwise, reseat character at newTable */
+    if (newTable == numTables)
+        {
+        // printf("numAtTables: (2) ");
+        // for (i=0; i<numTables; i++)
+        //     printf("%d ",numSeatedAtTables[i]);
+        // printf("\n\n");
+        //
+        // printf("numSeatedAtTables[oldTable]: %d\n",numSeatedAtTables[oldTable]);
+        if (numSeatedAtTables[oldTable] == 1)
+            {
+            newAllocationVector[randCharIndex] = oldTable;
+            newTable = oldTable;
+            }
+        else
+            newAllocationVector[randCharIndex] = newTable;
+        }
+    else
+        newAllocationVector[randCharIndex] = newTable;
+
+    // printf("Allocation vector (reseated):                ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",newAllocationVector[i]);
+    // printf("\n\n");
+
+    /* Rescale allocation vector to fit growth function and get newNumLatCols */
     rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
+    newNumLatCols = 1;
+    for (i=0; i<m->numChars; i++)
+        if (rescaledAllocationVector[i] == newNumLatCols)
+            newNumLatCols++;
 
     /* Change latent matrix to reflect change in allocation vector */
-    /* First get these parameters */
     oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
-    newLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-
-    /* Get new numTables */
-    newNumTables = 1;
-    for (i=0; i<m->numChars; i++)
-        if (newAllocationVector[i] >= newNumTables)
-            newNumTables++;
-    /* Update numLatCols (but keep track of old numLatCols) */
     oldNumLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
-    newNumLatCols = newNumTables;
+    updatedLatentMatrix = UpdateLatentPatterns(oldAllocationVector, newAllocationVector, rescaledAllocationVector, oldLatentMatrix, compMatrix, m->numChars, newNumLatCols, oldNumLatCols, newTable, oldTable);
 
-    /* Get numSeatedAtTable */
-    int newNumSeatedAtTable[newNumTables];
-    for (i=0; i<newNumTables; i++)
-        newNumSeatedAtTable[i] = 0;
+    // printf("Allocation vector (rescaled):                ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",rescaledAllocationVector[i]);
+    // printf("\n\n");
+    //
+    // printf("oldNumLatCols: %d\n",oldNumLatCols);
+    // printf("newNumLatCols: %d\n",newNumLatCols);
+    //
+    // printf("oldLatentMatrix:\n");
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (j=0; j<oldNumLatCols; j++)
+    //         printf("%c ", WhichStand(oldLatentMatrix[pos(i,j,oldNumLatCols)]));
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+    //
+    //
+    // printf("updatedLatentMatrix:\n");
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (j=0; j<newNumLatCols; j++)
+    //         printf("%c ", WhichStand(updatedLatentMatrix[pos(i,j,newNumLatCols)]));
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
+    /* Copy new allocation vector, latent matrix, and newNumLatCols back */
     for (i=0; i<m->numChars; i++)
-        newNumSeatedAtTable[newAllocationVector[i]] += 1;
-
-    /* Make sure latent pattern is correct for the new table */
-    for (i=0; i<newNumTables; i++)
+        newAllocationVector[i] = rescaledAllocationVector[i];
+    newLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
+    for (i=0; i<numTaxa; i++)
         {
-        int numAtTable = newNumSeatedAtTable[i];
-        int tempIndices[numAtTable];
-        int idx = 0;
-        /* Get column indices for characters seated at current table */
-        for (j=0; j<m->numChars; j++)
-            {
-            if (newAllocationVector[j] == i)
-                {
-                tempIndices[idx] = j;
-                idx++;
-                }
-            }
-        /* Get original data from relevant columns */
-        int tempData[numTaxa * numAtTable];
-        for (j=0; j<numAtTable; j++)
-            {
-            currIdx = tempIndices[j];
-            for (k=0; k<numTaxa; k++)
-                tempData[pos(k,j,numAtTable)] = compMatrix[pos(k,currIdx,m->numChars)];
-            }
-        /* Flip end state 2's to 0's if there are no 0's in the original latent states  */
-        needEndStateFlip = YES;
-        for (j=0; j<numTaxa; j++)
-            {
-            if (oldLatentMatrix[pos(j,newTable,oldNumLatCols)] == 1) //Equivalent to end state 0
-                {
-                needEndStateFlip = NO;
-                break;
-                }
-            }
-        if (needEndStateFlip == YES)
-            {
-            for (j=0; j<numTaxa; j++)
-                if (oldLatentMatrix[pos(j,newTable,oldNumLatCols)] == 4) //Equivalent to end state 2
-                    oldLatentMatrix[pos(j,newTable,oldNumLatCols)] = 1;
-            }
-        /* Find index of first end state in original latent states */
-        for (j=0; j<numTaxa; j++)
-            {
-            if (oldLatentMatrix[pos(j,newTable,oldNumLatCols)] == 1) //Equivalent to end state 0
-                {
-                endStateIndex = j;
-                break;
-                }
-            }
-
-        /* Get new latent states from tempData and fill in column of newLatentMatrix */
-        newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
-        for (j=0; j<numTaxa; j++)
-            newLatentMatrix[pos(j,i,newNumLatCols)] = newLatentStates[j];
+        for (j=0; j<newNumLatCols; j++)
+            newLatentMatrix[pos(i,j,newNumLatCols)] = updatedLatentMatrix[pos(i,j,newNumLatCols)];
         }
-
-    /* Copy new allocation vector, latent matrix, and numLatCols back */
-    *GetParamIntVals(param, chain, state[chain]) = *rescaledAllocationVector;
-    *GetParamIntVals(m->latentMatrix, chain, state[chain]) = *newLatentMatrix;
     *GetParamSubVals(param, chain, state[chain]) = newNumLatCols;
+
+    free(updatedLatentMatrix);
 
     /* get proposal ratio */
     *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir);
-    *lnProposalRatio -= LnProbAllocation(rescaledAllocationVector, m->numChars, alphaDir);
+    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir);
 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
+
+    // getchar();
 
     return (NO_ERROR);
 }

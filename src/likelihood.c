@@ -7840,6 +7840,11 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]); /* DPMM scaling factor */
     rho = *GetParamVals(m->rho, chain, state[chain]); /* Inverse correlation factor */
 
+    // printf("allocation vector: ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",allocationVector[i]);
+    // printf("\n\n");
+
     numReps = numLatCols * 3; /* 3 is the number of states in the rate matrix */
 
     /* find conditional likelihood pointers */
@@ -7898,6 +7903,9 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         pUnobserved += 2 * like * exp(lnScaler[c]); /* take advantage of model symmetry */
         }
 
+    // printf("________________________________\n");
+    // printf("lnL (1): %f\n",*lnL);
+
     pObserved =  1.0 - pUnobserved;
     if (pObserved < LIKE_EPSILON)
         pObserved = LIKE_EPSILON;
@@ -7936,11 +7944,40 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         }
 
+    // printf("lnL (2): %f\n",*lnL);
+
     /* Account for likelihood of emitting observed states from current latent matrix */
     (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, numLatCols, m->numChars, chain);
 
+    // printf("lnL (3): %f\n",*lnL);
+
     /* Account for likelihood of current alphaDir value */
     (*lnL) += LnProbAllocation(allocationVector, m->numChars, alphaDir);
+
+    // printf("lnL (4): %f\n",*lnL);
+
+
+    // if (!isfinite(*lnL))
+    //     {
+    //     printf("numLatCols: %d\n",numLatCols);
+    //
+    //     printf("latent matrix:\n");
+    //     for (i=0; i<numTaxa; i++)
+    //         {
+    //         for (j=0; j<numLatCols; j++)
+    //             printf("%d ", latentMatrix[pos(i,j,numLatCols)]);
+    //         printf("\n");
+    //         }
+    //     printf("\n\n");
+    //
+    //     printf("allocation vector: ");
+    //     for (i=0; i<m->numChars; i++)
+    //         printf("%d ",allocationVector[i]);
+    //     printf("\n\n");
+    //     }
+    //
+    //
+    // getchar();
 
     return NO_ERROR;
 }
@@ -8361,7 +8398,7 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
 double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 {
     int         i, j, newestTableIndex, numSeatedAtTable;
-    MrBFlt      totalProb;
+    MrBFlt      totalProb, alpha;
 
     /* Initialize counter to keep track of highest current table number */
     newestTableIndex = 0;
@@ -8369,12 +8406,14 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
     /* Probability of sitting at first table is always 1 */
     totalProb = log (1.0);
 
+    alpha = 1.0 / alphaDir;
+
     /* Loop through the rest of the tables */
     for (i=1; i<numChars; i++)
         {
         if (allocationVector[i] > newestTableIndex) // Seated at new table case
             {
-            totalProb += log (alphaDir / (alphaDir + i)); // No -1 because of 0-indexing
+            totalProb += log (alpha / (alpha + i)); // No -1 because of 0-indexing
             newestTableIndex++;
             }
         else // Seated at existing table case
@@ -8384,7 +8423,7 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
             for (j=0; j<i; j++)
                 if (allocationVector[j] == allocationVector[i])
                     numSeatedAtTable++;
-            totalProb += log (numSeatedAtTable / (alphaDir + i));
+            totalProb += log (numSeatedAtTable / (alpha + i));
             }
         }
 
@@ -8418,8 +8457,7 @@ double LnProbLatentCluster (int *latentColumn, int allocationValue, int numChars
     n = numCharsInCluster;
     m = numIntmedStates;
 
-    //if (n == 1 || m == 0)
-    if (m == 0)
+    if (n == 1 || m == 0)
         lnColumnProb = log (1.0);
     else
         {
@@ -8456,6 +8494,9 @@ double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numLatC
             currColumn[j] = latentMatrix[pos(j,i,numLatCols)];
         lnCurrProb = LnProbLatentCluster(currColumn, i, numChars, allocationVector, chain);
         lnTotalProb += lnCurrProb;
+
+        if (!isfinite(lnTotalProb))
+            printf("%d \n",i);
         }
 
     return lnTotalProb;

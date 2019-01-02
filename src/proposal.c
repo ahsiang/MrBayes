@@ -452,10 +452,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     m  = &modelSettings[param->relParts[0]];
 
     /* Get alphadir rate parameter */
-    lambda = *GetParamVals(m->alphaDir, chain, state[chain]);
+    alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
 
     /* Get alphadir */
-    alphaDir = 1.0 / lambda;
+    //alphaDir = 1.0 / lambda;
 
     /* Get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;

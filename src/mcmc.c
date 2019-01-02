@@ -6500,6 +6500,28 @@ int InitChainCondLikes (void)
         preLikeA = preLikeR + j;
         }
 
+
+    // for (i=0; i<numLocalTaxa; i++)
+    //     {
+    //     for (c=0; c<m->numChars; c++)
+    //         {
+    //         for (j=0; j<3; j++)
+    //             printf("%f ",m->condLikes[i][c+j]);
+    //         printf("\t");
+    //         }
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
+    // for checking tip cond likes
+    // for (i=0; i<numLocalTaxa; i++)
+    //     {
+    //     for (c=0; c<m->numChars*3; c++)
+    //         printf("%f ",m->condLikes[i][c]);
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
     return NO_ERROR;
 }
 
@@ -7525,7 +7547,7 @@ MrBFlt LogDirPrior (Tree *t, ModelParams *mp, int PV)
     /* PV is 2 or 3: Dirichlet priors */
     if (PV == 2 || PV == 3)
         {
-        /* partially for calculating lnPriorRatio, full part is in Â©() */
+        /* partially for calculating lnPriorRatio, full part is in ©() */
         aT = mp->brlensDir[0];
         bT = mp->brlensDir[1];
         a  = mp->brlensDir[2];

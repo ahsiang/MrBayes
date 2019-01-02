@@ -11315,7 +11315,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 {
                 /* Fill in alphadir *************************************************************************************/
                 if (p->paramId == ALPHADIR_EXP)
-                    value[0] = mp->alphaDirExp;
+                    value[0] = 1.0 / mp->alphaDirExp;
                 else if (p->paramId == ALPHADIR_FIX)
                     value[0] = mp->alphaDirFix;
                 }

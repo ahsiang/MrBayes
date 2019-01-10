@@ -443,7 +443,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
                 *rescaledAllocationVector, newNumLatCols, oldNumLatCols,
                 *updatedLatentMatrix;
-    MrBFlt      minA, alphaDir=0.0, lambda=0.0, probNewTable, randomNum;
+    MrBFlt      minA, alphaDir=0.0, probNewTable, randomNum;
     ModelParams *mp;
     ModelInfo   *m;
 

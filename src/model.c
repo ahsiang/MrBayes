@@ -21784,7 +21784,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[2] = GROWTH_NORMAL;
     mt->nApplicable = 3;
     mt->moveFxn = &Move_Growth_M;
-    mt->relProposalProb = 1.0;©
+    mt->relProposalProb = 1.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log(1.5);  /* lambda */
     mt->minimum[0] = 0.0001;

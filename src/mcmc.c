@@ -5734,7 +5734,7 @@ int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes, useBeagle,
                 clIndex, tiIndex, scalerIndex, indexStep, nStates, *allocationVector,
-                numLatCols;
+                numClusters;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -5753,12 +5753,12 @@ int InitChainCondLikes (void)
         {
         m = &modelSettings[d];
 
-        /* Get allocation vector and numLatCols if Mc model is set */
+        /* Get allocation vector and numClusters if Mc model is set */
         if (m->mcModelId == YES)
             {
             allocationVector = m->allocationVector->intValues;
-            numLatCols = m->allocationVector->subValues[0];
-            MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, numLatCols);
+            numClusters = m->allocationVector->subValues[0];
+            MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, numClusters);
             }
         else
             MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, m->numChars);
@@ -6844,7 +6844,7 @@ int InitInvCondLikes (void)
 int InitParsSets (void)
 {
     int             c, i, j, k, d, nParsStatesForCont, nIntNodes, nNodes,
-                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, numLatCols,
+                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, numClusters,
                     *allocationVector;
     BitsLong        allAmbig, x, x1, x2, x3, *longPtr, bitsLongOne;
     ModelInfo       *m;
@@ -6918,10 +6918,10 @@ int InitParsSets (void)
         m = &modelSettings[d];
         mp = &modelParams[d];
 
-        /* Get numLatCols if mcModel is set */
+        /* Get numClusters if mcModel is set */
         if (m->mcModelId == YES)
             {
-            numLatCols = (int) *GetParamSubVals(m->allocationVector,d,state[d]);
+            numClusters = (int) *GetParamSubVals(m->allocationVector,d,state[d]);
             allocationVector = GetParamIntVals(m->allocationVector,d,state[d]);
             }
 
@@ -6947,13 +6947,25 @@ int InitParsSets (void)
             }
         else if (m->nCharsPerSite == 1 && m->nParsIntsPerSite == 1)
             {
+            printf("compMatrixStart: %d\n",m->compMatrixStart);
+            printf("compMatrixStop: %d\n",m->compMatrixStop);
+            printf("numChars: %d\n",m->numChars);
+
+            for (i=0; i<numLocalTaxa; i++)
+                {
+                for (j=0; j<m->numChars; j++)
+                    printf("%d ",initialLatentMatrix[pos(i,j,m->numChars)]);
+                printf("\n");
+                }
+            printf("\n\n");
+
             allAmbig = (bitsLongOne<<mp->nStates) - 1UL;
             for (i=0; i<numLocalTaxa; i++)
                 {
                 for (c=0, j=m->compMatrixStart; j<m->compMatrixStop; j++, c++)
                     {
                     if (m->mcModelId == YES)
-                        x = (BitsLong) initialLatentMatrix[pos(i,allocationVector[j],numLatCols)];
+                        x = (BitsLong) initialLatentMatrix[pos(i,allocationVector[j],m->numChars)];
                     else
                         x = compMatrix[pos(i,j,compMatrixRowSize)];
 
@@ -7547,7 +7559,7 @@ MrBFlt LogDirPrior (Tree *t, ModelParams *mp, int PV)
     /* PV is 2 or 3: Dirichlet priors */
     if (PV == 2 || PV == 3)
         {
-        /* partially for calculating lnPriorRatio, full part is in ©() */
+        /* partially for calculating lnPriorRatio, full part is in ï¿½() */
         aT = mp->brlensDir[0];
         bT = mp->brlensDir[1];
         a  = mp->brlensDir[2];

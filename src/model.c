@@ -2393,8 +2393,7 @@ int CorrPreprocess (void)
 int CompressData (void)
 {
     int             a, c, d, i, j, k, t, col[3], isSame, newRow, newColumn,
-                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter, sameIdx,
-                    idxSeen;
+                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter, sameIdx;
     BitsLong        *tempMatrix;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -2557,7 +2556,6 @@ int CompressData (void)
 
             /* is it unique? */
             isSame = NO;
-            idxSeen = NO;
             if (mp->dataType != CONTINUOUS)
                 {
                 for (i=m->compMatrixStart; i<newColumn; i+=m->nCharsPerSite)
@@ -2576,12 +2574,8 @@ int CompressData (void)
                         }
                     if (isSame == YES)
                         {
-                        if (idxSeen == NO)
-                            {
-                            sameIdx = i;
-                            idxSeen = YES;
-                            break;
-                            }
+                        sameIdx = i;
+                        break;
                         }
                     }
                 }
@@ -2614,6 +2608,22 @@ int CompressData (void)
                 numSitesAlloc[c] = allocCounter;
                 allocCounter++;
                 }
+            else if (!strcmp(mp->mcModel,"Yes"))
+                {
+                tempSitesOfPat[numCompressedChars] = 1;
+                for (k=0; k<m->nCharsPerSite; k++)
+                    {
+                    compColPos[col[k]] = newColumn + k;
+                    compCharPos[col[k]] = numCompressedChars;
+                    tempChar[newColumn + k] = col[k];
+                    }
+                newColumn+=m->nCharsPerSite;
+                m->numChars++;
+                numCompressedChars++;
+
+                /* Update allocation patterns */
+                numSitesAlloc[c] = numSitesAlloc[sameIdx];
+                }
             else
                 {
                 /* if it is not unique then simply update tempSitesOfPat     */
@@ -2628,8 +2638,6 @@ int CompressData (void)
                     /* tempChar (pointing from compressed to uncompresed) */
                     /* can only be set for first pattern */
                     }
-                /* Update allocation patterns */
-                numSitesAlloc[c] = numSitesAlloc[sameIdx];
                 }
             }   /* next character */
 
@@ -11326,7 +11334,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     for (j=0; j<m->numChars; j++)
                         intValue[j] = j;
-                    subValue[0] = m->numChars; // This is numLatCols
+                    subValue[0] = m->numChars; // This is numClusters
                     }
                 else if (p->paramId == ALLOCATIONVECTOR_CORR)
                     {
@@ -11337,7 +11345,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                         if (numSitesAlloc[j] > maxTable)
                             maxTable = numSitesAlloc[j];
                         }
-                    subValue[0] = maxTable; // This is numLatCols
+                    subValue[0] = maxTable; // This is numClusters
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -11364,38 +11372,50 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     }
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
-                    /* Get numLatCols */
-                    int numLatCols = m->allocationVector->subValues[0];
+                    // /* Get numClusters */
+                    // int numClusters = m->allocationVector->subValues[0];
+                    //
+                    // /* Determine indices in original data matrix where each latent
+                    // pattern is located */
+                    // int indices[numClusters];
+                    // for (i=0; i<numClusters; i++)
+                    //     {
+                    //     for (j=0; j<m->numChars; j++)
+                    //         {
+                    //         if (numSitesAlloc[j] == (i+1))
+                    //             {
+                    //             indices[i] = j;
+                    //             break;
+                    //             }
+                    //         }
+                    //     }
+                    // /* Fill in latent matrix */
+                    // for (i=0; i<numTaxa; i++)
+                    //     {
+                    //     for (j=0; j<m->numChars; j++)
+                    //         {
+                    //         if (compMatrix[pos(i,indices[j],m->numChars)] == 1)
+                    //             intValue[pos(i,j,m->numChars)] = 1;
+                    //         else if (compMatrix[pos(i,indices[j],m->numChars)] == 2)
+                    // //             intValue[pos(i,j,m->numChars)] = 4;
+                    //         }
+                    //     }
 
-                    /* Determine indices in original data matrix where each latent
-                    pattern is located */
-                    int indices[numLatCols];
-                    for (i=0; i<numLatCols; i++)
+                    for (i=0; i<numTaxa; i++)
                         {
                         for (j=0; j<m->numChars; j++)
                             {
-                            if (numSitesAlloc[j] == (i+1))
-                                {
-                                indices[i] = j;
-                                break;
-                                }
+                            if (compMatrix[pos(i,j,m->numChars)] == 1)
+                                intValue[pos(i,j,m->numChars)] = 1;
+                            else if (compMatrix[pos(i,j,m->numChars)] == 2)
+                                intValue[pos(i,j,m->numChars)] = 4;
                             }
                         }
-                    /* Fill in latent matrix */
-                    for (i=0; i<numTaxa; i++)
-                        {
-                        for (j=0; j<numLatCols; j++)
-                            {
-                            if (compMatrix[pos(i,indices[j],m->numChars)] == 1)
-                                intValue[pos(i,j,numLatCols)] = 1;
-                            else if (compMatrix[pos(i,indices[j],m->numChars)] == 2)
-                                intValue[pos(i,j,numLatCols)] = 4;
-                            }
-                        }
+
                     /* Copy over latent matrix to global initialLatentMatrix */
                     for (i=0; i<numTaxa; i++)
-                        for (j=0; j<numLatCols; j++)
-                            initialLatentMatrix[pos(i,j,numLatCols)] = intValue[pos(i,j,numLatCols)];
+                        for (j=0; j<m->numChars; j++)
+                            initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
                     }
                 }
 
@@ -21764,7 +21784,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[2] = GROWTH_NORMAL;
     mt->nApplicable = 3;
     mt->moveFxn = &Move_Growth_M;
-    mt->relProposalProb = 1.0;
+    mt->relProposalProb = 1.0;©
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log(1.5);  /* lambda */
     mt->minimum[0] = 0.0001;

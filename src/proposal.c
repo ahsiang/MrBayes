@@ -395,18 +395,18 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     ModelParams *mp;
     ModelInfo   *m;
 
-    /* get tuning parameter */
-    tuning = mvp[0];
-
     /* get model params and model settings */
     mp = &modelParams[param->relParts[0]];
     m  = &modelSettings[param->relParts[0]];
 
-    /* get rate parameter of prior */
-    lambda = mp->alphaDirExp;
+    /* get tuning parameter */
+    tuning = mvp[0];
 
     /* get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;
+
+    /* get rate parameter of prior */
+    lambda = mp->alphaDirExp;
 
     /* get old value of alphadir */
     oldA = *GetParamVals(param, chain, state[chain]);
@@ -424,7 +424,7 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     *lnProposalRatio = log(newA / oldA);
 
     /* get prior ratio */
-    *lnPriorRatio = -lambda * (newA - oldA);
+    *lnPriorRatio = lambda * (oldA - newA);
 
     /* copy new alphadir value back */
     *GetParamVals(param, chain, state[chain]) = newA;
@@ -441,21 +441,16 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
-                *rescaledAllocationVector, newNumLatCols, oldNumLatCols,
+                *rescaledAllocationVector, newnumClusters, oldnumClusters,
                 *updatedLatentMatrix;
     MrBFlt      minA, alphaDir=0.0, probNewTable, randomNum;
-    ModelParams *mp;
     ModelInfo   *m;
 
-    /* Get model params and model settings */
-    mp = &modelParams[param->relParts[0]];
+    /* Get model settings */
     m  = &modelSettings[param->relParts[0]];
 
     /* Get alphadir rate parameter */
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
-
-    /* Get alphadir */
-    //alphaDir = 1.0 / lambda;
 
     /* Get minimum value for alphadir */
     minA = MIN_ALPHADIR_PARAM;
@@ -464,31 +459,15 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
     newAllocationVector = GetParamIntVals(param, chain, state[chain]);
 
-    // printf("\n--------------------------------\n");
-    //
-    // printf("Allocation vector (old):                     ");
-    // for (i=0; i<m->numChars; i++)
-    //     printf("%d ",oldAllocationVector[i]);
-    // printf("\n\n");
-    //
-    // printf("alphaDir: %f\n",alphaDir);
-    // printf("lambda: %f\n",lambda);
-
     /* Get number of tables (i.e., number of latent columns) */
     numTables = (int) *GetParamSubVals(param, chain, state[chain] ^ 1);
-
-    // printf("numTables: %d\n",numTables);
 
     /* Propose new allocation vector */
     /* Pick random character from old allocation vector */
     randCharIndex = (int) (RandomNumber(seed) * m->numChars);
 
-    // printf("randCharIndex: %d\n",randCharIndex);
-
     /* Get index of table that randomly selected character is seated at */
     oldTable = oldAllocationVector[randCharIndex];
-
-    // printf("oldTable: %d\n",oldTable);
 
     /* Get number of characters seated at each table, excluding the selected character */
     int numSeatedAtTablesWithoutSelected[numTables];
@@ -500,24 +479,12 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             numSeatedAtTablesWithoutSelected[oldAllocationVector[i]] += 1;
         }
 
-    // printf("numAtTablesWithoutSelected: ");
-    // for (i=0; i<numTables; i++)
-    //     printf("%d ",numSeatedAtTablesWithoutSelected[i]);
-    // printf("\n\n");
-
     /* Get probabilities of seating at new table and seating at all existing tables */
     MrBFlt tableProbs[numTables];
     probNewTable = alphaDir / (alphaDir + m->numChars - 1);
     for (i=0; i<numTables; i++)
         tableProbs[i] = numSeatedAtTablesWithoutSelected[i] / (alphaDir + m->numChars - 1);
     tableProbs[numTables] = probNewTable;
-
-    // printf("probNewTable: %f\n",probNewTable);
-    //
-    // printf("tableProbs: ");
-    // for (i=0; i<numTables+1; i++)
-    //     printf("%f ",tableProbs[i]);
-    // printf("\n\n");
 
     /* Get cumulative probabilities */
     MrBFlt cumulativeTableProbs[numTables + 1];
@@ -528,11 +495,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         else
             cumulativeTableProbs[i] = tableProbs[i] + cumulativeTableProbs[i-1];
         }
-
-    // printf("cumulativeProbs: ");
-    // for (i=0; i<numTables+1; i++)
-    //     printf("%f ",cumulativeTableProbs[i]);
-    // printf("\n\n");
 
     /* Randomly select a table using cumulativeTableProbs */
     randomNum = RandomNumber(seed);
@@ -546,8 +508,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         }
 
-    // printf("newTable: %d\n",newTable);
-
     /* Now get numSeatedAtTables proper */
     int numSeatedAtTables[numTables];
     for (i=0; i<numTables; i++)
@@ -555,21 +515,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     for (i=0; i<m->numChars; i++)
         numSeatedAtTables[oldAllocationVector[i]] += 1;
 
-    // printf("numAtTables: (1) ");
-    // for (i=0; i<numTables; i++)
-    //     printf("%d ",numSeatedAtTables[i]);
-    // printf("\n\n");
-
     /* If character in a cluster of 1 is seated at a "new" table, don't change allocation */
     /* Otherwise, reseat character at newTable */
     if (newTable == numTables)
         {
-        // printf("numAtTables: (2) ");
-        // for (i=0; i<numTables; i++)
-        //     printf("%d ",numSeatedAtTables[i]);
-        // printf("\n\n");
-        //
-        // printf("numSeatedAtTables[oldTable]: %d\n",numSeatedAtTables[oldTable]);
         if (numSeatedAtTables[oldTable] == 1)
             {
             newAllocationVector[randCharIndex] = oldTable;
@@ -581,36 +530,31 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     else
         newAllocationVector[randCharIndex] = newTable;
 
-    // printf("Allocation vector (reseated):                ");
-    // for (i=0; i<m->numChars; i++)
-    //     printf("%d ",newAllocationVector[i]);
-    // printf("\n\n");
-
-    /* Rescale allocation vector to fit growth function and get newNumLatCols */
+    /* Rescale allocation vector to fit growth function and get newnumClusters */
     rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
-    newNumLatCols = 1;
+    newnumClusters = 1;
     for (i=0; i<m->numChars; i++)
-        if (rescaledAllocationVector[i] == newNumLatCols)
-            newNumLatCols++;
+        if (rescaledAllocationVector[i] == newnumClusters)
+            newnumClusters++;
 
     /* Change latent matrix to reflect change in allocation vector */
     oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
-    oldNumLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
-    updatedLatentMatrix = UpdateLatentPatterns(oldAllocationVector, newAllocationVector, rescaledAllocationVector, oldLatentMatrix, compMatrix, m->numChars, newNumLatCols, oldNumLatCols, newTable, oldTable);
+    oldnumClusters = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
+    updatedLatentMatrix = UpdateLatentPatterns(oldAllocationVector, newAllocationVector, rescaledAllocationVector, oldLatentMatrix, compMatrix, m->numChars, newnumClusters, oldnumClusters, newTable, oldTable);
 
     // printf("Allocation vector (rescaled):                ");
     // for (i=0; i<m->numChars; i++)
     //     printf("%d ",rescaledAllocationVector[i]);
     // printf("\n\n");
     //
-    // printf("oldNumLatCols: %d\n",oldNumLatCols);
-    // printf("newNumLatCols: %d\n",newNumLatCols);
+    // printf("oldnumClusters: %d\n",oldnumClusters);
+    // printf("newnumClusters: %d\n",newnumClusters);
     //
     // printf("oldLatentMatrix:\n");
     // for (i=0; i<numTaxa; i++)
     //     {
-    //     for (j=0; j<oldNumLatCols; j++)
-    //         printf("%c ", WhichStand(oldLatentMatrix[pos(i,j,oldNumLatCols)]));
+    //     for (j=0; j<oldnumClusters; j++)
+    //         printf("%c ", WhichStand(oldLatentMatrix[pos(i,j,m->numChars)]));
     //     printf("\n");
     //     }
     // printf("\n\n");
@@ -619,22 +563,22 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     // printf("updatedLatentMatrix:\n");
     // for (i=0; i<numTaxa; i++)
     //     {
-    //     for (j=0; j<newNumLatCols; j++)
-    //         printf("%c ", WhichStand(updatedLatentMatrix[pos(i,j,newNumLatCols)]));
+    //     for (j=0; j<newnumClusters; j++)
+    //         printf("%c ", WhichStand(updatedLatentMatrix[pos(i,j,m->numChars)]));
     //     printf("\n");
     //     }
     // printf("\n\n");
 
-    /* Copy new allocation vector, latent matrix, and newNumLatCols back */
+    /* Copy new allocation vector, latent matrix, and newnumClusters back */
     for (i=0; i<m->numChars; i++)
         newAllocationVector[i] = rescaledAllocationVector[i];
     newLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
     for (i=0; i<numTaxa; i++)
         {
-        for (j=0; j<newNumLatCols; j++)
-            newLatentMatrix[pos(i,j,newNumLatCols)] = updatedLatentMatrix[pos(i,j,newNumLatCols)];
+        for (j=0; j<m->numChars; j++)
+            newLatentMatrix[pos(i,j,m->numChars)] = updatedLatentMatrix[pos(i,j,m->numChars)];
         }
-    *GetParamSubVals(param, chain, state[chain]) = newNumLatCols;
+    *GetParamSubVals(param, chain, state[chain]) = newnumClusters;
 
     free(updatedLatentMatrix);
 
@@ -645,8 +589,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
-
-    // getchar();
 
     return (NO_ERROR);
 }
@@ -6033,230 +5975,426 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Change latent matrix for correlation model by randomly selecting an intermediate state
        and changing it to an end state */
 
-    int         i, j, k, l, *allocationVector, numChars, *oldLatentMatrix,
-                *newLatentMatrix, numIntmedStates=0, maxCount=1, randClustIndex,
-                idx, numLatCols, numValues, numCorrClusters, randIntmedIndex,
-                numCharsInCluster, numOpposite, ciIdx;
-    MrBFlt      probForwardMove, probBackwardsMove;
+    int         i, j, k, n, r, *allocationVector, *oldLatentMatrix, numClusters,
+                *newLatentMatrix, numCharsInCluster=0, num0s, num1s, flip=NO,
+                same=YES, latentIdx=0, breakIdx, randEndIdx=0, randClustIndex,
+                numIntmed, *newLatentPattern, finalLatentPattern[numTaxa];
+    long long   p;
+    MrBFlt      probForwardMove, probBackwardsMove, lnProb, u, probSum=0.0, rand,
+                backProb, term1, term2;
     ModelInfo   *m;
 
-    /* Get numChars */
+    /* Get model settings */
     m = &modelSettings[param->relParts[0]];
-    numChars = m->numChars;
 
     /* Get allocation vector and number of latent columns */
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
-    numLatCols = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
+    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain] ^ 1);
+    numClusters = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
 
     /* Get new and old latent matrices */
     oldLatentMatrix = GetParamIntVals(param, chain, state[chain] ^ 1);
     newLatentMatrix = GetParamIntVals(param, chain, state[chain]);
 
-    /* Count number of characters in each cluster */
-    /* Initialize allocationCount to keep track of counts, setting all elements to 0 */
-    int allocationCount[numLatCols];
-    for (i=0; i<numLatCols; i++)
-        allocationCount[i] = 0;
+    /* Randomly select a cluster */
+    randClustIndex = (int) (RandomNumber(seed) * (numClusters - 1));
 
-    /* Loop through allocation vector to make counts */
-    for (i=0; i<numChars; i++)
+    // printf("allocation vector: ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",allocationVector[i]);
+    // printf("\n\n");
+    //
+    // printf("randClustIndex: %d\n", randClustIndex);
+
+    /* Get index of first column in this cluster */
+    for (i=0; i<m->numChars; i++)
         {
-        allocationCount[allocationVector[i]]++;
-        /* Also keep track of max count */
-        if (allocationCount[allocationVector[i]] > maxCount)
-            maxCount = allocationCount[allocationVector[i]];
-        }
-
-    /* Get local total number of values in latent matrix */
-    numValues = numLatCols * numTaxa;
-
-    /* Determine how many columns have count > 1 */
-    numCorrClusters = 0;
-    for (i=0; i<numLatCols; i++)
-        if (allocationCount[i] > 1)
-            numCorrClusters++;
-
-    /* Get indices of columns with count > 1 */
-    int clusterIndices[numCorrClusters];
-    int cIdx = 0;
-    for (i=0; i<numLatCols; i++)
-        {
-        if (allocationCount[i] > 1)
+        if (allocationVector[i] == randClustIndex)
             {
-            clusterIndices[cIdx] = i;
-            cIdx++;
+            latentIdx = i;
+            break;
             }
         }
 
-    /* Get latent columns where count > 1 */
-    int clusters[numTaxa * numCorrClusters];
-    for (i=0; i<numCorrClusters; i++)
-        for (j=0; j<numTaxa; j++)
-            clusters[pos(j,i,numCorrClusters)] = oldLatentMatrix[pos(j,clusterIndices[i],numLatCols)];
+    // printf("latentIdx: %d\n",latentIdx);
 
-    /* Only enter downstream processing if there exist clusters with more than 1 character */
-    /* TODO: What happens if there aren't any? Is no move made? */
-    if (maxCount > 1)
+    /* Get latent pattern associated with selected cluster */
+    int latentPattern[numTaxa];
+    for (i=0; i<numTaxa; i++)
+        latentPattern[i] = oldLatentMatrix[pos(i,latentIdx,m->numChars)];
+
+    // printf("latent pattern: ");
+    // for (i=0; i<numTaxa; i++)
+    //     printf("%d ",latentPattern[i]);
+    // printf("\n\n");
+
+    /* Get observed 0-dominant patterns for selected cluster */
+    /* First get number of characters belonging to selected cluster */
+    for (i=0; i<m->numChars; i++)
+        if (allocationVector[i] == randClustIndex)
+            numCharsInCluster++;
+
+    // printf("numCharsInCluster: %d\n",numCharsInCluster);
+
+    /* Now get column indices corresponding to selected cluster */
+    int colIndices[numCharsInCluster];
+    int idx = 0;
+    for (i=0; i<m->numChars; i++)
+        if (allocationVector[i] == randClustIndex)
+            colIndices[idx++] = i;
+
+    // printf("colIndices: ");
+    // for (i=0; i<numCharsInCluster; i++)
+    //     printf("%d ",colIndices[i]);
+    // printf("\n\n");
+
+    /* Get relevant data with structure: [C1a C1b C1c ... C2a C2b C2c ...]
+    where a, b, c... corresponds to taxa */
+    int data[numCharsInCluster * numTaxa];
+    idx = 0;
+    for (i=0; i<numTaxa; i++)
+        for (j=0; j<numCharsInCluster; j++)
+            data[idx++] = compMatrix[pos(i,colIndices[j],m->numChars)];
+
+    // printf("data: \n");
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (j=0; j<numCharsInCluster; j++)
+    //         printf("%d ",data[pos(i,j,numCharsInCluster)]);
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
+    /* Flip bits in patterns that are 1-dominant so that all patterns are 0-dominant */
+    /* This is only relevant if we have >1 characters in the dataset */
+    int dataFlipped[numCharsInCluster * numTaxa];
+    if (numCharsInCluster > 1)
         {
-        /* Subset out only those columns with count > 1 that have intermediate states in them */
-        /* First count number of columns with intermediate states */
-        int numColWithIntmed = 0;
-        int hasIntmedState[numCorrClusters];
-        for (i=0; i<numCorrClusters; i++)
+        int temp[numCharsInCluster];
+        for (i=0; i<numTaxa; i++)
             {
-            hasIntmedState[i] = 0;
-            for (j=0; j<numTaxa; j++)
+            num0s = 0;
+            num1s = 0;
+            for (j=0; j<numCharsInCluster; j++)
                 {
-                if (clusters[pos(j,i,numCorrClusters)] == 2) // Latent state 1
+                temp[j] = data[pos(i,j,numCharsInCluster)];
+                if (temp[j] == 1) // 0-case (bit coding)
+                    num0s++;
+                else
+                    num1s++;
+                }
+
+            // printf("num0s: %d\n",num0s);
+            // printf("num1s: %d\n\n",num1s);
+
+            /* Flipping is needed if number of 1s > number of 0s or if number of 1s
+            and 0s are equal but the pattern starts with a 1 instead of a 0 */
+            if ((num1s == num0s) && (temp[0] == 2))
+                flip = YES;
+            else if (num1s > num0s)
+                flip = YES;
+            /* If flipping is necessary, interchange all bits for the current pattern */
+            if (flip == YES)
+                for (j=0; j<numCharsInCluster; j++)
+                    //dataFlipped[pos(i,j,numCharsInCluster)] = 1 - temp[j] + 1;
                     {
-                    numColWithIntmed++;
-                    hasIntmedState[i] = 1;
+                    if (temp[j] == 0)
+                        dataFlipped[pos(i,j,numCharsInCluster)] = 2;
+                    else
+                        dataFlipped[pos(i,j,numCharsInCluster)] = 1;
+                    }
+            else
+                for (j=0; j<numCharsInCluster; j++)
+                    dataFlipped[pos(i,j,numCharsInCluster)] = temp[j];
+            }
+        }
+    else // If only one character in cluster, just copy data over
+        {
+        for (i=0; i<numTaxa; i++)
+            for (j=0; j<numCharsInCluster; j++)
+                dataFlipped[pos(i,j,numCharsInCluster)] = data[pos(i,j,numCharsInCluster)];
+        }
+
+    // printf("data flipped: \n");
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (j=0; j<numCharsInCluster;j++)
+    //         printf("%d ",dataFlipped[pos(i,j,numCharsInCluster)]);
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
+
+    /* Get indices of unique patterns in 0-dominant patterns */
+    int numUniquePat = 1; // First pattern is always unique
+    int uniqueIndices[numTaxa]; // Keeps track of whether pattern for a given index is unique
+    for (i=0; i<numTaxa; i++)
+        {
+        for (j=0; j<numTaxa; j++)
+            {
+            breakIdx = 0;
+            if (j == i)
+                continue;
+            else
+                {
+                for (k=0; k<numCharsInCluster; k++)
+                    {
+                    if (dataFlipped[pos(i,k,numCharsInCluster)] == dataFlipped[pos(i,j,numCharsInCluster)])
+                        same = YES;
+                    else
+                        {
+                        same = NO;
+                        break;
+                        }
+                    }
+                if (same == YES) // Pattern is not unique
+                    {
+                    breakIdx = j;
                     break;
                     }
                 }
             }
-        if (!(numColWithIntmed == 0)) // No need to do all this if there are no columns with intermediate states...
+        if (same == NO)
             {
-            /* Get indices of columns that have intermediate state(s) */
-            int clusterIntmedIndices[numColWithIntmed];
-            ciIdx = 0;
-            for (i=0; i<numCorrClusters; i++)
+            numUniquePat++;
+            uniqueIndices[i] = YES;
+            }
+        else
+            {
+            if (!(i == 0))
                 {
-                if (hasIntmedState[i] == 1)
+                if (i < breakIdx) // If pattern is the first instance of a non-unique pattern, mark it as unique
                     {
-                    clusterIntmedIndices[ciIdx] = i;
-                    ciIdx++;
+                    numUniquePat++;
+                    uniqueIndices[i] = YES;
                     }
+                else;
+                    uniqueIndices[i] = NO;
                 }
-
-            /* Get states from latent columns with count > 1 that contain intermediate state(s) */
-            int clustersWithIntmed[numTaxa * numColWithIntmed];
-            for (i=0; i<numColWithIntmed; i++)
-                for (j=0; j<numTaxa; j++)
-                    clustersWithIntmed[pos(j,i,numColWithIntmed)] = clusters[pos(j,clusterIntmedIndices[i],numCorrClusters)];
-
-            /* Randomly select a cluster where count > 1 that contains intemerdiate state(s) */
-            randClustIndex = (int) (RandomNumber(seed) * numColWithIntmed);
-
-            /* Get latent states from selected cluster */
-            int oldLatentStates[numTaxa];
-            for (i=0; i<numTaxa; i++)
-                {
-                oldLatentStates[i] = clustersWithIntmed[pos(i,randClustIndex,numColWithIntmed)];
-                /* Also count number of intermediate states present in selected cluster */
-                if (oldLatentStates[i] == 2) // Latent state 1
-                    numIntmedStates++;
-                }
-
-            /* Randomly pick a character in the selected cluster that is in the intermediate (1) state */
-            /* First, find indices of intermediate states in the selected cluster */
-            int intmedIndices[numIntmedStates];
-            idx = 0;
-            for (i=0; i<numTaxa; i++)
-                {
-                if (oldLatentStates[i] == 2) // Latent state 1
-                    {
-                    intmedIndices[idx] = i;
-                    idx++;
-                    }
-                }
-
-            /* Randomly select one of the intermediate states */
-            randIntmedIndex = (int) (RandomNumber(seed) * numIntmedStates);
-
-            /* Set the randomly selected state to an end state (0, without loss of generality) */
-            int newLatentStates[numTaxa];
-            newLatentStates[intmedIndices[randIntmedIndex]] = 1; // Latent state 0
-            int numNewIntmedStates = 0; /* Also keep track of how many intermediate states are in the new latent column */
-
-            /* Need to resolve other latent states. All former 0's and 2's become 1's... */
-            numCharsInCluster = allocationCount[clusterIndices[clusterIntmedIndices[randClustIndex]]];
-            for (i=0; i<numTaxa; i++)
-                {
-                if ((oldLatentStates[i] == 1) || (oldLatentStates[i] == 4))
-                    {
-                    newLatentStates[i] = 2;
-                    numNewIntmedStates++;
-                    }
-                /* For former 1's, the new state depends on the state that was selected
-                to become the new end state */
-                else
-                    {
-                    if (i == intmedIndices[randIntmedIndex])
-                        continue;
-                    else
-                        {
-                        int selectedData[numCharsInCluster];
-                        /* Get associated data for the selected new end state row */
-                        for (j=0; j<numChar; j++)
-                            {
-                            if (allocationVector[j] == clusterIndices[clusterIntmedIndices[randClustIndex]])
-                                for (k=0; k<numCharsInCluster; k++)
-                                    selectedData[k] = compMatrix[pos(intmedIndices[randIntmedIndex],j,m->numChars)];
-                            }
-                        /* Do the same for all the other intermediate states */
-                        for (k=0; k<numIntmedStates; k++)
-                            {
-                            if (!(intmedIndices[k] == randIntmedIndex))
-                                {
-                                int currIntmedState[numCharsInCluster];
-                                for (l=0; l<numCharsInCluster; l++)
-                                    currIntmedState[l] = compMatrix[pos(intmedIndices[k],l,m->numChars)];
-
-                                /* Change latent column state assignment as necessary */
-                                int same = TRUE;
-                                numOpposite = 0;
-                                for (l=0; l<numCharsInCluster; l++)
-                                    {
-                                    if (selectedData[l] != currIntmedState[l])
-                                        same = FALSE; // Flag if there is disagreement
-                                        numOpposite++; // Count number of opposite states
-                                    }
-                                if (same)
-                                    newLatentStates[i] = 1; // If states the same, latent state = 0
-                                else
-                                    {
-                                    if (numOpposite == numCharsInCluster)
-                                        newLatentStates[i] = 4; // If states opposite, latent state = 2
-                                    else
-                                        newLatentStates[i] = 2; // Otherwise, latent state = 1
-                                        numNewIntmedStates++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-            /* Copy over states from oldLatentMatrix to newLatentMatrix */
-            for (i=0; i<numValues; i++)
-                newLatentMatrix[i] = oldLatentMatrix[i];
-
-            /* Recode states of selected column in newLatentMatrix */
-            for (i=0; i<numTaxa; i++)
-                newLatentMatrix[pos(i,clusterIndices[clusterIntmedIndices[randClustIndex]],numLatCols)] = newLatentStates[i];
-
-            /* Copy back newLatentMatrix */
-            *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
-
-            /* Get proposal ratio */
-            probForwardMove = log((1.0 / numColWithIntmed) * (1.0 / numIntmedStates));
-            probBackwardsMove = log((1.0 / numColWithIntmed) * (1.0 / numNewIntmedStates));
-            *lnProposalRatio = probForwardMove - probBackwardsMove;
-
-            /* Update flags */
-            for (i=0; i<param->nRelParts; i++)
-                TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
+            else
+                uniqueIndices[i] = YES;
             }
         }
 
-    /* If there are no clusters with more than two characters, then all characters are independent,
-    and we do not make a move. */
-    /* TODO: How to exit in this case? */
-    //else
-    //    *lnProposalRatio = 0.0;
+    // printf("numUniquePat: %d\n",numUniquePat);
+    // printf("uniqueIndices: ");
+    // for (i=0; i<numTaxa; i++)
+    //     printf("%d ",uniqueIndices[i]);
+    // printf("\n\n");
 
-    return (NO_ERROR);
+    /* Get number of intermediate latent states for each end state possibility */
+    int numIntmedPerEndState[numUniquePat+1];
+    int origLatentStates[numUniquePat]; // Also get original latent state associated with each pattern
+    int patternIdx[numUniquePat]; // ...and index of pattern in original latent states
+    for (i=0; i<numUniquePat; i++)
+        {
+        numIntmed = 0;
+        for (j=0; j<numTaxa; j++)
+            {
+            if (uniqueIndices[j] == YES)
+                {
+                patternIdx[i] = j;
+                // If pattern is already associated with a 0 or 2 latent state,
+                // number of intermediate states doesn't change from original
+                // latent column
+                if ((latentPattern[j] == 1) || (latentPattern[j] == 4))
+                    {
+                    origLatentStates[i] = 1;
+                    for (k=0; k<numTaxa; k++)
+                        if (latentPattern[k] == 2)
+                            numIntmed++;
+                    }
+                // If pattern is associated with an intermediate latent state,
+                // then need to resolve latent states from data
+                else
+                    {
+                    origLatentStates[i] = 2;
+                    newLatentPattern = ConvertDataToLatentStates(data, j, numCharsInCluster);
+                    for (k=0; k<numTaxa; k++)
+                        if (newLatentPattern[k] == 2)
+                            numIntmed++;
+                    }
+                }
+            }
+        numIntmedPerEndState[i] = numIntmed;
+        }
+    // Final possibility is that an unseen pattern is the end state, in which case all latent states = 1
+    numIntmedPerEndState[numUniquePat] = 4;
+
+    // printf("numIntmedPerEndState: ");
+    // for(i=0; i<numUniquePat+1; i++)
+    //     printf("%d ",numIntmedPerEndState[i]);
+    // printf("\n\n");
+    //
+    // printf("origLatentStates: ");
+    // for (i=0; i<numUniquePat; i++)
+    //     printf("%d ",origLatentStates[i]);
+    // printf("\n\n");
+    //
+    // printf("patternIdx: ");
+    // for (i=0; i<numUniquePat; i++)
+    //     printf("%d ",patternIdx[i]);
+    // printf("\n\n");
+
+    if (numCharsInCluster == 1)
+        return (NO_ERROR);
+    else
+        {
+        /* Now calculate probabilities */
+        MrBFlt probs[numUniquePat+1];
+        n = numCharsInCluster;
+        p = 1ULL << n; // 2^n
+
+        // printf("n: %d\n",n);
+        // printf("p: %lld\n",p);
+
+        if (n == 2)
+            {
+            for (i=0; i<numUniquePat; i++)
+                probs[i] = (1.0 / 2.0);
+
+            // All-intermediate-state prob
+            r = numTaxa;
+            probs[numUniquePat] = 1.0 / (1ULL << r);
+            }
+        else
+            {
+            for (i=0; i<numUniquePat; i++) // Observed pattern probs
+                {
+                r = numIntmedPerEndState[i];
+                term1 = 2.0 / p;
+                term2 = 2.0 / (p - 4);
+                lnProb = log(term1) + (r * log(term2));
+                probs[i] = exp(lnProb);
+
+                // printf("r: %d\n",r);
+                // printf("term1: %f\n",term1);
+                // printf("term2: %f\n",term2);
+                // printf("lnProb: %f\n",lnProb);
+
+                }
+            // All-intermediate-state prob
+            r = numTaxa;
+            u = (p / 2.0) - numUniquePat;
+            term1 = u / p;
+            term2 = 2.0 / (p - 4);
+            lnProb = log(term1) - log(p) + (r * log(term2));
+            probs[numUniquePat] = exp(lnProb);
+
+            // printf("u: %f\n",u);
+            // printf("term1: %f\n",term1);
+            // printf("term2: %f\n",term2);
+            // printf("lnProb: %f\n",lnProb);
+            // printf("prob: %lf\n",exp(lnProb));
+
+            }
+
+
+
+
+
+        // printf("probs: ");
+        // for (i=0; i<numUniquePat+1; i++)
+        //     printf("%f ",probs[i]);
+        // printf("\n\n");
+
+        /* Normalize probabiities */
+        MrBFlt normProbs[numUniquePat+1];
+        for (i=0; i<numUniquePat+1; i++)
+            probSum += probs[i];
+        for (i=0; i<numUniquePat+1; i++)
+            normProbs[i] = probs[i] / probSum;
+
+        // printf("normProbs: ");
+        // for (i=0; i<numUniquePat+1; i++)
+        //     printf("%f ",normProbs[i]);
+        // printf("\n\n");
+
+        /* Convert to cumulative probabilities */
+        MrBFlt cProbs[numUniquePat+1];
+        for (i=0; i<numUniquePat+1; i++)
+            {
+            if (i == 0)
+                cProbs[i] = normProbs[i];
+            else
+                cProbs[i] = normProbs[i] + cProbs[i-1];
+            }
+        //
+        // printf("cProbs: ");
+        // for (i=0; i<numUniquePat+1; i++)
+        //     printf("%f ",cProbs[i]);
+        // printf("\n\n");
+
+
+        /* Randomly select new end state pattern */
+        rand = RandomNumber(seed);
+        for (i=0; i<numUniquePat+1; i++)
+            {
+            if (rand <= cProbs[i])
+                {
+                randEndIdx = i;
+                break;
+                }
+            }
+
+        /* Resolve latent patterns given randomly selected end state */
+        if (randEndIdx == numUniquePat) // All intermediate case
+            for (i=0; i<numTaxa; i++)
+                newLatentPattern[i] = 2;
+        else
+            {
+            // Need to resolve states if selected end state was originally in intermediate state
+            if (origLatentStates[randEndIdx] == 2)
+                for (k=0; k<numTaxa; k++)
+                    finalLatentPattern[k] = newLatentPattern[k];
+            else // Otherwise, latent states will resolve to original pattern
+                for (k=0; k<numTaxa; k++)
+                    finalLatentPattern[k] = latentPattern[k];
+            }
+
+        /* Copy over states from oldLatentMatrix to newLatentMatrix, replacing columns corresponding to selected cluster */
+        for (i=0; i<numTaxa; i++)
+            {
+            for (j=0; j<m->numChars; j++)
+                {
+                if (allocationVector[j] == randClustIndex)
+                    newLatentMatrix[pos(i,j,m->numChars)] = finalLatentPattern[i];
+                else
+                    newLatentMatrix[pos(i,j,m->numChars)] = oldLatentMatrix[pos(i,j,m->numChars)];
+                }
+            }
+
+        /* Copy back newLatentMatrix */
+        *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
+
+        /* Get proposal ratio */
+        probForwardMove = log(1.0 / numClusters) + log(normProbs[randEndIdx]);
+
+        // If an end state was present in the original latent pattern, then the
+        // probability of the backwards move is proportional to the probability of
+        // selecting that end state pattern; otherwise, it is proportional to the
+        // probability of selecting an unobserved pattern as the end state.
+        for (i=0; i<numUniquePat+1; i++)
+            if ((origLatentStates[i] == 1) || (origLatentStates[i] == 4))
+                {
+                backProb = normProbs[i];
+                break;
+                }
+            else
+                backProb = normProbs[numUniquePat];
+        probBackwardsMove = log(1.0 / numClusters) + log(backProb);
+
+        *lnProposalRatio = probForwardMove - probBackwardsMove;
+
+        /* Update flags */
+        for (i=0; i<param->nRelParts; i++)
+            TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
+
+        // getchar();
+
+        return (NO_ERROR);
+        }
+
+
 }
 
 
@@ -15550,6 +15688,7 @@ int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
     /* get minimum value for rho */
     minRho = MIN_RHO_PARAM;
 
+    /* get rate parameter of prior */
     lambda = mp->rhoExp;
 
     /* get old value of rho */
@@ -15568,7 +15707,7 @@ int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
     *lnProposalRatio = log(newRho / oldRho);
 
     /* get prior ratio */
-    *lnPriorRatio = -lambda * (newRho - oldRho);
+    *lnPriorRatio = lambda * (oldRho - newRho);
 
     /* copy new rho value back */
     *GetParamVals(param, chain, state[chain]) = newRho;

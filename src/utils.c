@@ -76,6 +76,7 @@ MrBFlt  BetaCf (MrBFlt a, MrBFlt b, MrBFlt x);
 MrBFlt  BetaQuantile (MrBFlt alpha, MrBFlt beta, MrBFlt x);
 MrBFlt  CdfBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r);
 MrBFlt  CdfNormal (MrBFlt x);
+int     Combination (int n, int k);
 MrBComplex Complex (MrBFlt a, MrBFlt b);
 MrBFlt  ComplexAbsoluteValue (MrBComplex a);
 MrBComplex ComplexAddition (MrBComplex a, MrBComplex b);
@@ -9687,6 +9688,23 @@ MrBFlt CdfNormal (MrBFlt x)
 
 /*---------------------------------------------------------------------------------
 |
+|   Combination
+|
+|   Returns n choose k
+|
+---------------------------------------------------------------------------------*/
+int Combination (int n, int k)
+{
+    int         comb;
+
+    comb = Factorial(n) / (Factorial(k) * Factorial(n-k));
+
+    return (comb);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
 |   Complex
 |
 |   Returns a complex number with specified real and imaginary parts.
@@ -13995,57 +14013,134 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
 
 /*---------------------------------------------------------------------------------
 |
-|   ConvertDataToLatentStates
+|   GetNumPolymorphismPatterns
 |
-|   Converts a subset of data to latent states, given an index corresponding to
-|   the end state.
+|   Calculates number of possible data patterns for a given polymorphic latent pattern
+|   and a specified number of intermediate states (>= 1) required for those patterns.
 |
 ---------------------------------------------------------------------------------*/
-int *ConvertDataToLatentStates(int *dataSubset, int endStateIndex, int numAtTable)
+int GetNumPolymorphismPatterns(int numTrimorphisms, int numDimorphisms, int numIntmedStatesRequired)
 {
-    /* TODO: Only works for binary data! */
+    int         i, d, t, e, f0, f1, n, k, s=0, total=0;
+    long long   p;
 
-    int         i, j, endState[numAtTable], *newLatentStates,
-                tempRow[numAtTable], tempRowOpp[numAtTable], numSame,
-                numOpp;
+    d = numDimorphisms;
+    t = numTrimorphisms;
+    e = numIntmedStatesRequired;
 
-    /* Find end state */
-    for (i=0; i<numAtTable; i++)
-        endState[i] = dataSubset[pos(endStateIndex,i,numAtTable)];
+    f0 = Combination(d, e);
+    f1 = 2 * f0 + Combination(d, e-1);
 
-    newLatentStates = (int *) SafeCalloc ((size_t)numTaxa, sizeof(int));
-
-    /* Loop through rows of dataSubset to find latent states */
-    for (i=0; i<numTaxa; i++)
+    for (i=1; i<numIntmedStatesRequired+1; i++)
         {
-        numSame = 0;
-        numOpp = 0;
-        for (j=0; j<numAtTable; j++)
-            {
-            tempRow[j] = dataSubset[pos(i,j,numAtTable)];
-            if (tempRow[j] == 1)
-                tempRowOpp[j] = 2;
-            else
-                tempRowOpp[j] = 1;
-            }
-
-        /* Set new latent states */
-        for (j=0; j<numAtTable; j++)
-            {
-            if (tempRow[j] == endState[j])
-                numSame++;
-            else
-                numOpp++;
-            }
-        if (numSame == numAtTable)
-            newLatentStates[i] = 1; // Latent state 0
-        else if (numOpp == numAtTable)
-            newLatentStates[i] = 4; // Latent state 2
+        n = t-i;
+        p = 1ULL << n; // = 2^n
+        if (i-1 < 0)
+            k = 0;
         else
-            newLatentStates[i] = 2; // Latent state 1
+            k = i-1;
+        s += Combination(d, e-i) * Combination(t-1, k) * p;
         }
 
-    return (newLatentStates);
+    if (t-1 > 1) // Recurse if t is not 0 or 1
+        total = 2 * GetNumPolymorphismPatterns(t-1, d, e) + s;
+    else // Return base case
+        total = f1;
+
+    return (total);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   ConvertDataToLatentStates
+|
+|   Converts subset of data that comprise a single cluster and determines
+|   the possible latent patterns that could arise, given an end state index.
+|   If end state index is negative, then the all-intermediate-state case is
+|   returned. Missing character compliant.
+|
+|   Polymorphism code for latent states:
+|       -1 = 0/1
+|       -2 = 1/2
+|       -3 = 0/1/2
+|
+---------------------------------------------------------------------------------*/
+int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex)
+{
+    int         i, j, *latentResolution, endStatePattern[numCharsInCluster],
+                bitSum[numCharsInCluster], totalBitSum=0, allMatches, allMismatches,
+                numMissingPairs;
+
+    latentResolution = (int *) SafeMalloc ((size_t)numTaxa * sizeof(int));
+    latentResolution[endStateIndex] = 0;
+
+    /* All intermediate case */
+    if (endStateIndex < 0)
+        {
+        for (i=0; i<numTaxa; i++)
+            latentResolution[i] = 2; // 1-state in bitcode
+        return (latentResolution);
+        }
+    /* All other cases */
+    else
+        {
+        /* Get end state pattern */
+        for (i=0; i<numCharsInCluster; i++)
+            endStatePattern[i] = dataSubset[pos(endStateIndex,i,numCharsInCluster)];
+
+        /* Compare all other patterns to end state pattern */
+        for (i=0; i<numTaxa; i++)
+            {
+            if (!(i == endStateIndex))
+                {
+                /* Get each non-end-state pattern in turn, and get sum of bits
+                of end state and current non-end-state patterns */
+                for (j=0; j<numCharsInCluster; j++)
+                    {
+                    bitSum[j] = endStatePattern[j] + dataSubset[pos(i,j,numCharsInCluster)];
+                    totalBitSum += bitSum[j];
+                    }
+
+                /* Loop through bit sums to determine possible latent resolutions */
+                numMissingPairs = 0;
+                allMatches = YES;
+                allMismatches = YES;
+
+                for (j=0; j<numCharsInCluster; j++)
+                    {
+                    if (bitSum[j] >= MISSING)
+                        numMissingPairs++;
+                    else if (bitSum[j] == 2)
+                        allMatches = NO;
+                    else // Case where bitSum[k] is 0 or 4
+                        allMismatches = NO;
+                    }
+                if (numMissingPairs == numCharsInCluster)
+                    latentResolution[i] = -3;
+                else
+                    {
+                    if (allMatches == YES) // Latent pattern is either 0 or 1
+                        {
+                        if (numMissingPairs > 0)
+                            latentResolution[i] = -1;
+                        else
+                            latentResolution[i] = 0;
+                        }
+                    else if (allMismatches == YES) // Latent pattern is either 1 or 2
+                        {
+                        if (numMissingPairs > 0)
+                            latentResolution[i] = -2;
+                        else
+                            latentResolution[i] = 4;
+                        }
+                    else // Mixed case - latent pattern is 1
+                        latentResolution[i] = 2;
+                    }
+                }
+            }
+        return (latentResolution);
+        }
 }
 
 
@@ -14130,9 +14225,9 @@ int *ReorderLatentMatrix(int *unscaledAllocationVector, int *rescaledAllocationV
 ---------------------------------------------------------------------------------*/
 int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *rescaledAllocationVector, int *originalLatentMatrix, BitsLong *compMatrix, int numChars, int newnumClusters, int oldnumClusters, int newTable, int oldTable)
 {
-    int         i, j, k, numAtTable, idx, currIdx, needEndStateFlip,
+    int         i, j, k, numCharsInCluster, idx, currIdx, needEndStateFlip,
                 currTable, numColsToRemove, finalnumClusters,
-                endStateIndex, *newLatentStates, tablesToProcess[2],
+                endStateIndex=-1, *newLatentStates, tablesToProcess[2],
                 tempnumClusters, *reorderedLatentMatrix, *finalLatentMatrix;
 
 
@@ -14163,10 +14258,10 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
     for (i=0; i<2; i++)
         {
         currTable = tablesToProcess[i];
-        numAtTable = numSeatedAtTables[currTable];
+        numCharsInCluster = numSeatedAtTables[currTable];
         /* If nothing at table, set entries for that latent column to -1; will be removed at end */
         numColsToRemove = 0;
-        if (numAtTable == 0)
+        if (numCharsInCluster == 0)
             {
             numColsToRemove++;
             for (j=0; j<numTaxa; j++)
@@ -14175,7 +14270,7 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
         else
             {
             /* Get column indices for characters seated at current table */
-            int colIndices[numAtTable];
+            int colIndices[numCharsInCluster];
             idx = 0;
             for (j=0; j<numChars; j++)
                 {
@@ -14187,19 +14282,19 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
                 }
 
             /* Get original data from relevant columns */
-            int tempData[numTaxa * numAtTable];
-            for (j=0; j<numAtTable; j++)
+            int tempData[numTaxa * numCharsInCluster];
+            for (j=0; j<numCharsInCluster; j++)
                 {
                 currIdx = colIndices[j];
                 for (k=0; k<numTaxa; k++)
-                    tempData[pos(k,j,numAtTable)] = compMatrix[pos(k,currIdx,numChars)];
+                    tempData[pos(k,j,numCharsInCluster)] = compMatrix[pos(k,currIdx,numChars)];
                 }
 
             /* Flip end state 2's to 0's if there are no 0's in the original latent states  */
             needEndStateFlip = YES;
             for (j=0; j<numTaxa; j++)
                 {
-                if (originalLatentMatrix[pos(j,currTable,numChars)] == 1) //Equivalent to end state 0
+                if (originalLatentMatrix[pos(j,currTable,numChars)] == 1) // Equivalent to end state 0
                     {
                     needEndStateFlip = NO;
                     break;
@@ -14208,14 +14303,14 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
             if (needEndStateFlip == YES)
                 {
                 for (j=0; j<numTaxa; j++)
-                    if (originalLatentMatrix[pos(j,currTable,numChars)] == 4) //Equivalent to end state 2
+                    if (originalLatentMatrix[pos(j,currTable,numChars)] == 4) // Equivalent to end state 2
                         originalLatentMatrix[pos(j,currTable,numChars)] = 1;
                 }
 
             /* Find index of first end state in original latent states */
             for (j=0; j<numTaxa; j++)
                 {
-                if (originalLatentMatrix[pos(j,currTable,numChars)] == 1) //Equivalent to end state 0
+                if (originalLatentMatrix[pos(j,currTable,numChars)] == 1) // Equivalent to end state 0
                     {
                     endStateIndex = j;
                     break;
@@ -14223,7 +14318,7 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
                 }
 
             /* Get new latent states from tempData and fill in column of newLatentMatrix */
-            newLatentStates = ConvertDataToLatentStates(tempData, endStateIndex, numAtTable);
+            newLatentStates = ConvertDataToLatentStates(tempData, numCharsInCluster, endStateIndex);
             for (j=0; j<numTaxa; j++)
                 newLatentMatrix[pos(j,currTable,numChars)] = newLatentStates[j];
             }
@@ -14251,6 +14346,7 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
             finalLatentMatrix[pos(i,j,numChars)] = reorderedLatentMatrix[pos(i,j,numChars)];
 
     free (reorderedLatentMatrix);
+    free (newLatentStates);
 
     return (finalLatentMatrix);
 }

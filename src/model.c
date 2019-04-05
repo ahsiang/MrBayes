@@ -11346,6 +11346,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             maxTable = numSitesAlloc[j];
                         }
                     subValue[0] = maxTable; // This is numClusters
+                    printf("maxTable: %d\n",maxTable);
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)

@@ -2029,6 +2029,9 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     //
     // printf("numClusters: %d\n",numClusters);
     //
+    // MrBFlt rho = *GetParamVals(m->rho, chain, state[chain]);
+    // printf("rho: %f\n",rho);
+    //
     // printf("CondLikeDown\n");
     // for (int i=0; i<numTaxa; i++)
     //     {
@@ -2046,7 +2049,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     update them in the original data structure */
     if ((p->left->left == NULL) && (p->left->right == NULL)) // Left is a tip
         {
-        // printf("p left: %d\n",p->left->index);
+        //printf("p left: %d\n",p->left->index);
         numTipCLs = m->numChars * 3;
         leftTipCLs = SafeMalloc(numTipCLs * sizeof(CLFlt));
         idx = 0;
@@ -2091,6 +2094,14 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
     else
         clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
 
+    // if (chain == 2)
+    //     {
+    //     printf("HELLO\n");
+    //     for (i=0; i<m->numChars*3; i++)
+    //         printf("%f ",clR[i]);
+    //     printf("\n\n");
+    //     }
+
     clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
 
     /* find transition probabilities */
@@ -2118,33 +2129,40 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             clL += 3;
             clR += 3;
 
-            // printf("character: %d\n",c);
-            // for (int i=0; i<9; i++)
-            //     printf("tiPL[%d] = %f\n",i,pL[i]);
-            // for (int i=0; i<9; i++)
-            //     printf("tiPR[%d] = %f\n",i,pR[i]);
-            // for (int i=0; i<3; i++)
-            //     printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
-            // printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+            // if (chain == 2)
+            //     {
+            //     printf("character: %d\n",c);
+            //     for (int i=0; i<9; i++)
+            //         printf("tiPL[%d] = %f\n",i,pL[i]);
+            //     for (int i=0; i<9; i++)
+            //         printf("tiPR[%d] = %f\n",i,pR[i]);
+            //     for (int i=0; i<3; i++)
+            //         printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
+            //     printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+            //     }
             }
         tiPL += 9;
         tiPR += 9;
         }
 
     //FOR DEBUGGING
-        // for (int i=0; i<9; i++)
-        //     // printf("tiPL[%d] = %f\n",i,tiPL[i]);
-        //     printf("tiPL[%d] = %f\n",i,pL[i]);
-        // for (int i=0; i<9; i++)
-        //     // printf("tiPR[%d] = %f\n",i,tiPR[i]);
-        //     printf("tiPR[%d] = %f\n",i,pR[i]);
-        //
-        // for (int i=0; i<3; i++)
-        //     printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
-        //
-        // printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+
+    // if (chain == 2)
+    //     {
+    //         for (int i=0; i<9; i++)
+    //             // printf("tiPL[%d] = %f\n",i,tiPL[i]);
+    //             printf("tiPL[%d] = %f\n",i,pL[i]);
+    //         for (int i=0; i<9; i++)
+    //             // printf("tiPR[%d] = %f\n",i,tiPR[i]);
+    //             printf("tiPR[%d] = %f\n",i,pR[i]);
     //
-    //     getchar();
+    //         for (int i=0; i<3; i++)
+    //             printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
+    //
+    //         printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+    //     }
+
+
     //
     // printf("------------condlikedown end ------------\n\n");
 
@@ -4748,7 +4766,7 @@ int CondLikeRoot_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             a, c, h, i, k, nStates=0, tipIdx, idx, currCluster,
+    int             a, c, h, i, j, k, nStates=0, tipIdx, idx, currCluster,
                     *allocationVector, *latentMatrix, numClusters, numTipCLs,
                     left=NO, right=NO;
     CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA,
@@ -4765,6 +4783,22 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
     /* flip state of node so that we are not overwriting old cond likes */
     FlipCondLikeSpace (m, chain, p->index);
 
+    // Tree *tree;
+    // tree = GetTree(m->brlens, chain, state[chain]);
+    // ShowTree(tree);
+    // printf("curr index: %d\n",p->index);
+    // printf("anc index: %d\n",p->anc->index);
+    // printf("left index: %d\n",p->left->index);
+    // printf("right index: %d\n",p->right->index);
+    //
+    // for (i=0; i<numTaxa; i++)
+    //     {
+    //     for (int j=0; j<m->numChars; j++)
+    //         printf("%d ",latentMatrix[pos(i,j,m->numChars)]);
+    //     printf("\n");
+    //     }
+    // printf("\n\n");
+
     /* Get tip conditional likelihoods from latent matrix so that we don't have to
     update them in the original data structure */
     if ((p->left->left == NULL) && (p->left->right == NULL)) // Left is a tip
@@ -4776,9 +4810,9 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
         for (i=0; i<m->numChars; i++)
             {
             currCluster = allocationVector[i];
-            for (k=0; k<3; k++)
+            for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << k)
+                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
                     leftTipCLs[idx++] = 1.0;
                 else
                     leftTipCLs[idx++] = 0.0;
@@ -4800,9 +4834,9 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
         for (i=0; i<m->numChars; i++)
             {
             currCluster = allocationVector[i];
-            for (k=0; k<3; k++)
+            for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == k)
+                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
                     rightTipCLs[idx++] = 1.0;
                 else
                     rightTipCLs[idx++] = 0.0;
@@ -4855,33 +4889,44 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
                 likeL = likeR = likeA = 0.0;
                 for (i=0; i<nStates; i++)
                     {
-                    // printf("tiPL[%d->%d] = %f\ttiPR[%d->%d] = %f\ttiPA[%d->%d] = %f\n",a,i,*(tiPL),a,i,*(tiPR),a,i,*(tiPA));
-                    // printf("clL[%d]     = %f\tclR[%d]     = %f\tclA[%d]     = %f\n\n",i,clL[i],i,clR[i],i,clA[i]);
+                    // if (chain == 2)
+                    //     {
+                    //         printf("tiPL[%d->%d] = %f\ttiPR[%d->%d] = %f\ttiPA[%d->%d] = %f\n",a,i,*(tiPL),a,i,*(tiPR),a,i,*(tiPA));
+                    //         printf("clL[%d]     = %f\tclR[%d]     = %f\tclA[%d]     = %f\n\n",i,clL[i],i,clR[i],i,clA[i]);
+                    //     }
                     likeL += *(tiPL++) * clL[i];
                     likeR += *(tiPR++) * clR[i];
                     likeA += *(tiPA++) * clA[i];
                     }
-                // printf("log likeL[%d]: %f\n",a,log(likeL));
-                // printf("log likeR[%d]: %f\n",a,log(likeR));
-                // printf("log likeA[%d]: %f\n\n",a,log(likeA));
-                // printf("clP[%d] = %f\n\n\n",a,log(likeL*likeR*likeA));
+                // if (chain == 2)
+                //     {
+                //
+                //     printf("log likeL[%d]: %f\n",a,log(likeL));
+                //     printf("log likeR[%d]: %f\n",a,log(likeR));
+                //     printf("log likeA[%d]: %f\n\n",a,log(likeA));
+                //     printf("clP[%d] = %f\n\n\n",a,log(likeL*likeR*likeA));
+                //     }
                 clP[h++] = likeL * likeR * likeA;
                 }
             clL += nStates;
             clR += nStates;
             clA += nStates;
 
-            // printf("\n\n");
+            // if (chain == 2)
+            //     {
+            //         printf("\n\n");
+            //
+            //         for (int i=0; i<9; i++)
+            //             printf("%f ",tiPL[i-9]);
+            //         printf("\n\n");
+            //
+            //         printf("character: %d\n",c);
+            //         for (i=0; i<3; i++)
+            //             printf("clL[%d] = %f\tclR[%d] = %f\tclA[%d] = %f\tclP[%d] = %f\n",i,clL[i-3],i,clR[i-3],i,clA[i-3],i,clP[i]);
+            //
+            //         printf("\n\n");
+            //     }
 
-            // for (int i=0; i<9; i++)
-            //     printf("%f ",tiPL[i-9]);
-            // printf("\n\n");
-            //
-            // printf("character: %d\n",c);
-            // for (i=0; i<3; i++)
-            //     printf("clL[%d] = %f\tclR[%d] = %f\tclA[%d] = %f\tclP[%d] = %f\n",i,clL[i-3],i,clR[i-3],i,clA[i-3],i,clP[i]);
-            //
-            // printf("\n\n");
 
             }
         }
@@ -8001,25 +8046,29 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]); /* DPMM scaling factor */
     rho = *GetParamVals(m->rho, chain, state[chain]); /* Inverse correlation factor */
 
-    // printf("allocation vector: \t");
-    // for (int i=0; i<m->numChars; i++)
-    //     printf("%d ",allocationVector[i]);
-    // printf("\n");
-    //
-    // printf("numClusters: %d\n\n",numClusters);
-    //
-    // // printf("Likelihood\n");
-    // for (int i=0; i<numTaxa; i++)
+    // if (chain == 2)
     //     {
-    //     for (j=0; j<numClusters; j++)
-    //         printf("%d ",latentMatrix[pos(i,j,m->numChars)]);
-    //     printf("\n");
-    //     }
-    // printf("\n\n");
+    //         printf("allocation vector: \t");
+    //         for (int i=0; i<m->numChars; i++)
+    //             printf("%d ",allocationVector[i]);
+    //         printf("\n");
     //
-    // printf("alphaDir: %f\n",alphaDir);
-    // printf("rho: %f\n",rho);
-    // printf("node index: %d\n",p->index);
+    //         printf("numClusters: %d\n\n",numClusters);
+    //
+    //         // printf("Likelihood\n");
+    //         for (int i=0; i<numTaxa; i++)
+    //             {
+    //             for (j=0; j<numClusters; j++)
+    //                 printf("%d ",latentMatrix[pos(i,j,m->numChars)]);
+    //             printf("\n");
+    //             }
+    //         printf("\n\n");
+    //
+    //         printf("alphaDir: %f\n",alphaDir);
+    //         printf("rho: %f\n",rho);
+    //         printf("node index: %d\n",p->index);
+    //     }
+
 
     numReps = numClusters * 3; /* 3 is the number of states in the rate matrix */
 
@@ -8086,19 +8135,15 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         {
         if (allocationVector[c] == trackTable) // Only calculate likelihood for latent columns once
             {
-            // printf("Cluster: %d\n",trackTable);
             trackTable++;
             like = 0.0;
             for (k=0; k<nRateCats; k++)
                 {
                 catLike = 0.0;
-                // printf("condlikes: ");
                 for (j=0; j<nStates; j++)
                     {
                     catLike += clP[k][j] * bs[j];
-                    // printf("%f ",log(clP[k][j]));
                     }
-                // printf("\n");
                 like += catLike * catFreq;
                 clP[k] += nStates;
                 }
@@ -8114,9 +8159,6 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
                 }
             else
                 {
-                // printf("lnScaler[%d]: %f\n",c,lnScaler[c]);
-                // printf("logLike: %f\n\n",log(like));
-                //(*lnL) += (lnScaler[c] + log(2.0 * like));
                 (*lnL) += (lnScaler[c] + log(like));
                 }
             }
@@ -8133,6 +8175,8 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     (*lnL) += LnProbAllocation(allocationVector, m->numChars, alphaDir);
 
     // if (!isfinite(*lnL))
+
+    // if ((*lnL < -1000.0))
     //     {
     //     printf("numClusters: %d\n",numClusters);
     //
@@ -8816,31 +8860,29 @@ double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
         // Calculate log likelihood of column and add to total
         lnCurrProb = LnProbEmission(currColumn, numCharsPerCluster[i]);
 
-
-
-        if (!isfinite(lnCurrProb))
-            {
-            printf("numClusters: %d\n",numClusters);
-
-            printf("latent matrix:\n");
-            for (int i=0; i<numTaxa; i++)
-                {
-                for (j=0; j<numClusters; j++)
-                    printf("%d ", latentMatrix[pos(i,j,numClusters)]);
-                printf("\n");
-                }
-            printf("\n\n");
-
-            printf("allocation vector: ");
-            for (int i=0; i<numChars; i++)
-                printf("%d ",allocationVector[i]);
-            printf("\n\n");
-
-            printf("currColumn[%d]: ", j);
-            for (j=0; j<numTaxa; j++)
-                printf("%d ",currColumn[j]);
-            printf("\n\n");
-            }
+        // if (!isfinite(lnCurrProb))
+        //     {
+        //     printf("numClusters: %d\n",numClusters);
+        //
+        //     printf("latent matrix:\n");
+        //     for (int i=0; i<numTaxa; i++)
+        //         {
+        //         for (j=0; j<numClusters; j++)
+        //             printf("%d ", latentMatrix[pos(i,j,numClusters)]);
+        //         printf("\n");
+        //         }
+        //     printf("\n\n");
+        //
+        //     printf("allocation vector: ");
+        //     for (int i=0; i<numChars; i++)
+        //         printf("%d ",allocationVector[i]);
+        //     printf("\n\n");
+        //
+        //     printf("currColumn[%d]: ", j);
+        //     for (j=0; j<numTaxa; j++)
+        //         printf("%d ",currColumn[j]);
+        //     printf("\n\n");
+        //     }
 
 
         lnTotalProb += lnCurrProb;
@@ -10228,19 +10270,14 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
 
     m = &modelSettings[division];
 
-    // printf("-----------TIPROBS-----------\n");
     /* find transition probabilities */
     tiP = m->tiProbs[m->tiProbsIndex[chain][p->index]];
-
-    // printf("node index: %d\n",p->index);
 
     /* get inverse correlation factor */
     rho = *GetParamVals(m->rho, chain, state[chain]);
 
     /* get base rate */
     baseRate = GetRate (division, chain);
-
-    // printf("baserate: %f\n",baseRate);
 
     /* get category rates */
     theRate = 1.0;
@@ -10254,11 +10291,6 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
     /* compute pis */
     pis[0] = pis[2] = 1.0 / (2.0 + rho);  /* alpha */
     pis[1] = 1.0 - (2.0 * pis[0]);         /* beta */
-
-    // printf("pis: ");
-    // for (i=0; i<3; i++)
-    //     printf("%f ",pis[i]);
-    // printf("\n\n");
 
     /* find length */
     if (m->cppEvents != NULL)
@@ -10287,8 +10319,6 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
     for (k=index=0; k<m->numRateCats; k++)
         {
         t =  length * baseRate * catRate[k];
-        // printf("t: %f\n",t);
-
         if (t < TIME_MIN)
             {
             /* Fill in identity matrix */

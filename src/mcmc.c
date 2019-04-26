@@ -6513,7 +6513,7 @@ int InitChainCondLikes (void)
     //     }
     // printf("\n\n");
 
-    // for checking tip cond likes
+    //for checking tip cond likes
     // for (i=0; i<numLocalTaxa; i++)
     //     {
     //     for (c=0; c<m->numChars*3; c++)
@@ -6947,17 +6947,17 @@ int InitParsSets (void)
             }
         else if (m->nCharsPerSite == 1 && m->nParsIntsPerSite == 1)
             {
-            printf("compMatrixStart: %d\n",m->compMatrixStart);
-            printf("compMatrixStop: %d\n",m->compMatrixStop);
-            printf("numChars: %d\n",m->numChars);
+            // printf("compMatrixStart: %d\n",m->compMatrixStart);
+            // printf("compMatrixStop: %d\n",m->compMatrixStop);
+            // printf("numChars: %d\n",m->numChars);
 
-            for (i=0; i<numLocalTaxa; i++)
-                {
-                for (j=0; j<m->numChars; j++)
-                    printf("%d ",initialLatentMatrix[pos(i,j,m->numChars)]);
-                printf("\n");
-                }
-            printf("\n\n");
+            // for (i=0; i<numLocalTaxa; i++)
+            //     {
+            //     for (j=0; j<m->numChars; j++)
+            //         printf("%d ",initialLatentMatrix[pos(i,j,m->numChars)]);
+            //     printf("\n");
+            //     }
+            // printf("\n\n");
 
             allAmbig = (bitsLongOne<<mp->nStates) - 1UL;
             for (i=0; i<numLocalTaxa; i++)
@@ -7458,7 +7458,6 @@ MrBFlt LogLike (int chain)
             return MRBFLT_NEG_MAX;
         chainLnLike += m->lnLike[2*chain + state[chain]];
         }
-
 
     /* unmark all divisions */
     if (chainHasAdgamma == YES)

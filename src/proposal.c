@@ -554,8 +554,8 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     *GetParamSubVals(param, chain, state[chain]) = newNumTables;
 
     /* get proposal ratio */
-    *lnProposalRatio += LnProbAllocation(newAllocationVector, m->numChars, alphaDir) * log(tableProbs[newTable]);
-    *lnProposalRatio -= LnProbAllocation(oldAllocationVector, m->numChars, alphaDir) * log(tableProbs[oldTable]);
+    *lnProposalRatio += LnProbAllocation(oldAllocationVector, m->numChars, alphaDir) * log(tableProbs[oldTable]);
+    *lnProposalRatio -= LnProbAllocation(newAllocationVector, m->numChars, alphaDir) * log(tableProbs[newTable]);
 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)

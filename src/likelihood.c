@@ -8660,10 +8660,11 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 ---------------------------------------------------------------------------------*/
 double LnProbEmission(int *latentPattern, int numCharsInCluster)
 {
-    int         i, j, n, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
-                idx=0, tempNumResolutions, numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
-    MrBFlt      lnEmissionProbability, term1, term2, intTerm;
-    long long   p;
+    int             i, j, n, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
+                    idx=0, tempNumResolutions, numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
+    MrBFlt          lnEmissionProbability=0.0, term1;
+    unsigned long   p;
+    long double     intTerm, term2;
 
     /* Get number of polymorphic states, number of trimorphisms, number of (non-polymorphic)
     intermediate states, and maximum number of intermediate states (K) possible */
@@ -8683,10 +8684,6 @@ double LnProbEmission(int *latentPattern, int numCharsInCluster)
             allEndStates = NO;
             }
         }
-
-    // printf("numPolymorphicStates: %d\n",numPolymorphicStates);
-    // printf("maxNumIntmedStates: %d\n",maxNumIntmedStates);
-    // printf("allEndStates: %d\n",allEndStates);
 
     /* Set up array that holds polymorphic states */
     int polymorphs[numPolymorphicStates];
@@ -8744,35 +8741,32 @@ double LnProbEmission(int *latentPattern, int numCharsInCluster)
 
     /* Calculate emission probabilities for all end state patterns present in the dataset */
     n = numCharsInCluster;
-    p = 1ULL << n; // = 2^n
+    p = 1;
+    for (i=0; i<n; i++)
+        p *= 2;
 
-    // printf("n: %d\n",n);
-    // printf("p: %lld\n",p);
-
-    term1 = log (1.0 / p);
-    term2 = 0;
-
-    // printf("term1: %f\n",term1);
+    term1 = log (1.0) - n * log(2);
 
     for (i=0; i<maxNumIntmedStates+1; i++)
         {
-        // Get the intermediate state term
+        // Get the term for i number of intermediate state(s)
         intTerm = 1.0;
-        if ((i == 0) || (p == 2))
-            intTerm = 1.0;
+        if ((i == 0) || (p == 2) || (numPossibleResolutions[i] == 0))
+            lnEmissionProbability += term1;
         else
-            for (j=0; j<i; j++)
-                intTerm *= (1.0 / (p - 2));
-        term2 += numPossibleResolutions[i] * intTerm;
-
-        // printf("intTerm: %f\n",intTerm);
-        // printf("term2: %f\n",term2);
+            {
+            if (n > 64) // "Large" n where an approximation is necessary
+                {
+                term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - n * log(2.0));
+                lnEmissionProbability += term1 + term2;
+                }
+            else
+                {
+                term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - log(p-2));
+                lnEmissionProbability += term1 + term2;
+                }
+            }
         }
-
-    lnEmissionProbability = term1 + log(term2);
-
-    // printf("lnEmissionProb: %f\n",lnEmissionProbability);
-    // getchar();
 
     if (!isfinite(lnEmissionProbability))
         {
@@ -8783,20 +8777,17 @@ double LnProbEmission(int *latentPattern, int numCharsInCluster)
 
         printf("lnEmissionProb: %f\n",lnEmissionProbability);
         printf("n: %d\n",n);
-        printf("p: %lld\n",p);
+        printf("p: %lu\n",p);
         printf("term1: %f\n",term1);
-        printf("term2: %f\n",term2);
+        printf("term2: %Lf\n",term2);
 
         printf("numPossibleResolutions: ");
         for (i=0; i<maxNumIntmedStates+1; i++)
             printf("%d ",numPossibleResolutions[i]);
         printf("\n\n");
 
-        printf("numPossibleResolutions: %d",numPossibleResolutions[0]);
-
         getchar();
         }
-
 
     return (lnEmissionProbability);
 }

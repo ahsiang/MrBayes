@@ -8141,9 +8141,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
                 {
                 catLike = 0.0;
                 for (j=0; j<nStates; j++)
-                    {
                     catLike += clP[k][j] * bs[j];
-                    }
                 like += catLike * catFreq;
                 clP[k] += nStates;
                 }
@@ -8173,10 +8171,8 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
 
     /* Account for likelihood of current alphaDir value */
     (*lnL) += LnProbAllocation(allocationVector, m->numChars, alphaDir);
-
+    //
     // if (!isfinite(*lnL))
-
-    // if ((*lnL < -1000.0))
     //     {
     //     printf("numClusters: %d\n",numClusters);
     //
@@ -8616,7 +8612,7 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
 |       vector for a particular alphadir value
 |
 -----------------------------------------------------------------*/
-double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
+MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 {
     int         i, j, newestTableIndex, numSeatedAtTable;
     MrBFlt      totalProb;
@@ -8658,13 +8654,13 @@ double LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 |   Missing character compliant.
 |
 ---------------------------------------------------------------------------------*/
-double LnProbEmission(int *latentPattern, int numCharsInCluster)
+MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
 {
     int             i, j, n, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
                     idx=0, tempNumResolutions, numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
     MrBFlt          lnEmissionProbability=0.0, term1;
     unsigned long   p;
-    long double     intTerm, term2;
+    long double     term2;
 
     /* Get number of polymorphic states, number of trimorphisms, number of (non-polymorphic)
     intermediate states, and maximum number of intermediate states (K) possible */
@@ -8741,53 +8737,57 @@ double LnProbEmission(int *latentPattern, int numCharsInCluster)
 
     /* Calculate emission probabilities for all end state patterns present in the dataset */
     n = numCharsInCluster;
-    p = 1;
+    p = 1; // This is the 2^n term
     for (i=0; i<n; i++)
         p *= 2;
-
     term1 = log (1.0) - n * log(2);
 
     for (i=0; i<maxNumIntmedStates+1; i++)
         {
         // Get the term for i number of intermediate state(s)
-        intTerm = 1.0;
-        if ((i == 0) || (p == 2) || (numPossibleResolutions[i] == 0))
-            lnEmissionProbability += term1;
+        if (numPossibleResolutions[i] == 0)
+            continue;
         else
             {
-            if (n > 64) // "Large" n where an approximation is necessary
-                {
-                term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - n * log(2.0));
-                lnEmissionProbability += term1 + term2;
-                }
+            if ((i == 0) || (p == 2))
+                lnEmissionProbability += term1;
             else
                 {
-                term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - log(p-2));
-                lnEmissionProbability += term1 + term2;
+                if (n > 64) // "Large" n where an approximation is necessary
+                    {
+                    term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - n * log(2.0));
+                    lnEmissionProbability += term1 + term2;
+                    }
+                else
+                    {
+                    term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - log(p-2));
+                    lnEmissionProbability += term1 + term2;
+                    }
                 }
             }
         }
 
-    if (!isfinite(lnEmissionProbability))
-        {
-        printf("latent pattern: ");
-        for (i=0; i<numTaxa; i++)
-            printf("%d ",latentPattern[i]);
-        printf("\n\n");
+    // if (!isfinite(lnEmissionProbability))
+        // {
+        // printf("latent pattern: ");
+        // for (i=0; i<numTaxa; i++)
+        //     printf("%d ",latentPattern[i]);
+        // printf("\n\n");
+        //
+        // printf("lnEmissionProb: %f\n",lnEmissionProbability);
+        // printf("n: %d\n",n);
+        // printf("p: %lu\n",p);
+        // printf("term1: %f\n",term1);
+        // printf("term2: %Lf\n",term2);
+        //
+        // printf("numPossibleResolutions: ");
+        // for (i=0; i<maxNumIntmedStates+1; i++)
+        //     printf("%d ",numPossibleResolutions[i]);
+        // printf("\n\n");
+        //
+        // getchar();
+        // }
 
-        printf("lnEmissionProb: %f\n",lnEmissionProbability);
-        printf("n: %d\n",n);
-        printf("p: %lu\n",p);
-        printf("term1: %f\n",term1);
-        printf("term2: %Lf\n",term2);
-
-        printf("numPossibleResolutions: ");
-        for (i=0; i<maxNumIntmedStates+1; i++)
-            printf("%d ",numPossibleResolutions[i]);
-        printf("\n\n");
-
-        getchar();
-        }
 
     return (lnEmissionProbability);
 }
@@ -8798,7 +8798,7 @@ double LnProbEmission(int *latentPattern, int numCharsInCluster)
 |   LnProbLatentMatrix: Calculate likelihood of latent matrix
 |
 -----------------------------------------------------------------*/
-double LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars)
+MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars)
 {
     int         i, j, idx=0, highest=0, clusterCols[numClusters], currColumn[numTaxa];
     MrBFlt      lnCurrProb, lnTotalProb;

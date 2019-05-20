@@ -14021,8 +14021,8 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
 ---------------------------------------------------------------------------------*/
 int GetNumPolymorphismPatterns(int numTrimorphisms, int numDimorphisms, int numIntmedStatesRequired)
 {
-    int         i, d, t, e, f0, f1, n, k, s=0, total=0;
-    long long   p;
+    int             i, d, t, e, f0, f1, n, k, s=0, total=0;
+    unsigned long   p;
 
     d = numDimorphisms;
     t = numTrimorphisms;
@@ -14034,7 +14034,10 @@ int GetNumPolymorphismPatterns(int numTrimorphisms, int numDimorphisms, int numI
     for (i=1; i<numIntmedStatesRequired+1; i++)
         {
         n = t-i;
-        p = 1ULL << n; // = 2^n
+        p = 1; // This is the 2^n term
+        for (i=0; i<n; i++)
+            p *= 2;
+
         if (i-1 < 0)
             k = 0;
         else
@@ -14073,7 +14076,8 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
                 numMissingPairs;
 
     latentResolution = (int *) SafeMalloc ((size_t)numTaxa * sizeof(int));
-    latentResolution[endStateIndex] = 0;
+    if (!latentResolution)
+        printf("ERROR: Problem with allocation in ConvertDataToLatentStates\n");
 
     /* All intermediate case */
     if (endStateIndex < 0)
@@ -14085,6 +14089,9 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
     /* All other cases */
     else
         {
+        /* Set end state to 0 */
+        latentResolution[endStateIndex] = 1;
+
         /* Get end state pattern */
         for (i=0; i<numCharsInCluster; i++)
             endStatePattern[i] = dataSubset[pos(endStateIndex,i,numCharsInCluster)];
@@ -14111,9 +14118,9 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
                     {
                     if (bitSum[j] >= MISSING)
                         numMissingPairs++;
-                    else if (bitSum[j] == 2)
+                    else if (bitSum[j] == 3)
                         allMatches = NO;
-                    else // Case where bitSum[k] is 0 or 4
+                    else // Case where bitSum[k] is 2 or 4
                         allMismatches = NO;
                     }
                 if (numMissingPairs == numCharsInCluster)
@@ -14125,7 +14132,7 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
                         if (numMissingPairs > 0)
                             latentResolution[i] = -1;
                         else
-                            latentResolution[i] = 0;
+                            latentResolution[i] = 1;
                         }
                     else if (allMismatches == YES) // Latent pattern is either 1 or 2
                         {
@@ -14156,6 +14163,8 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
     int         i, j, barrier=-1, toSwitch;
 
     int *rescaled = SafeMalloc(numChar * sizeof(int*));
+    if (!rescaled)
+        printf("ERROR: Problem with allocation in RescaleAllocationVector\n");
 
     for (i=0; i<numChar; i++)
         rescaled[i] = allocationVector[i];
@@ -14183,7 +14192,6 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
                 }
             }
         }
-
     return (rescaled);
 }
 
@@ -14201,6 +14209,8 @@ int *ReorderLatentMatrix(int *unscaledAllocationVector, int *rescaledAllocationV
 
     numValues = numChars * numTaxa;
     reorderedLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
+    if (!reorderedLatentMatrix)
+        printf("ERROR: Problem with allocation in ReorderLatentMatrix\n");
 
     for (i=0; i<numChars; i++)
         {
@@ -14336,6 +14346,8 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
     finalnumClusters = tempnumClusters - numColsToRemove;
     int numValues = numTaxa * numChars;
     finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
+    if (!finalLatentMatrix)
+        printf("ERROR: Problem with allocation in UpdateLatentPatterns\n");
 
     /* Reorder latent matrix columns according to rescaled allocation vector */
     reorderedLatentMatrix = ReorderLatentMatrix(allocationVector, rescaledAllocationVector, newLatentMatrix, tempnumClusters, finalnumClusters, numChars);
@@ -14347,6 +14359,8 @@ int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *
 
     free (reorderedLatentMatrix);
     free (newLatentStates);
+    reorderedLatentMatrix = NULL;
+    newLatentStates = NULL;
 
     return (finalLatentMatrix);
 }

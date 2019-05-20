@@ -280,7 +280,7 @@ extern CLFlt    *preLikeL;                   /* precalculated cond likes for lef
 extern CLFlt    *preLikeR;                   /* precalculated cond likes for right descendant*/
 extern CLFlt    *preLikeA;                   /* precalculated cond likes for ancestor        */
 
-/* globals used here but declared elsewhere (in command.c) */
+/* globals used here but declared elsewhere (in model.c) */
 extern int      *initialLatentMatrix;        /* initialized latent matrix at beginning       */
 extern int      writeAlloc;                  /* should .alloc file be written                */
 
@@ -6500,7 +6500,7 @@ int InitChainCondLikes (void)
         preLikeA = preLikeR + j;
         }
 
-
+    // 
     // for (i=0; i<numLocalTaxa; i++)
     //     {
     //     for (c=0; c<m->numChars; c++)
@@ -6512,8 +6512,8 @@ int InitChainCondLikes (void)
     //     printf("\n");
     //     }
     // printf("\n\n");
-
-    //for checking tip cond likes
+    //
+    // //for checking tip cond likes
     // for (i=0; i<numLocalTaxa; i++)
     //     {
     //     for (c=0; c<m->numChars*3; c++)
@@ -6975,6 +6975,8 @@ int InitParsSets (void)
                         m->parsSets[i][c] = x;
                     }
                 }
+            free (initialLatentMatrix);
+            initialLatentMatrix = NULL;
             }
         else if (!strcmp(mp->nucModel, "Doublet") && (mp->dataType == DNA || mp->dataType == RNA))
             {

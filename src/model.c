@@ -11346,7 +11346,6 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             maxTable = numSitesAlloc[j];
                         }
                     subValue[0] = maxTable; // This is numClusters
-                    printf("maxTable: %d\n",maxTable);
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -11366,7 +11365,8 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             }
                         }
                     /* Copy over latent matrix to global initialLatentMatrix */
-                    initialLatentMatrix = (int *) SafeCalloc(m->numChars * numTaxa, sizeof(int));
+                    int numValues = m->numChars * numTaxa;
+                    initialLatentMatrix = (int *) SafeMalloc((size_t)numValues * sizeof(int));
                     for (i=0; i<numTaxa; i++)
                         for (j=0; j<m->numChars; j++)
                             initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];

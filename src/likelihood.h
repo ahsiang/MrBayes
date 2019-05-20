@@ -145,9 +145,9 @@ int       Likelihood_Res_SSE (TreeNode *p, int division, int chain, MrBFlt *lnL,
 #endif
 int       Likelihood_Std (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
 int       Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
-double    LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir);
-double    LnProbEmission (int *latentPattern, int numCharsInCluster);
-double    LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numLatCols, int numChars);
+MrBFlt    LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir);
+MrBFlt    LnProbEmission (int *latentPattern, int numCharsInCluster);
+MrBFlt    LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numLatCols, int numChars);
 int       TiProbs_Fels (TreeNode *p, int division, int chain);
 int       TiProbs_Gen (TreeNode *p, int division, int chain);
 int       TiProbs_GenCov (TreeNode *p, int division, int chain);

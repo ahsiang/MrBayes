@@ -14233,133 +14233,58 @@ int *ReorderLatentMatrix(int *unscaledAllocationVector, int *rescaledAllocationV
 |   Ensures that latent patterns in latent matrix match allocation vector.
 |
 ---------------------------------------------------------------------------------*/
-int *UpdateLatentPatterns(int *oldAllocationVector, int *allocationVector, int *rescaledAllocationVector, int *originalLatentMatrix, BitsLong *compMatrix, int numChars, int newnumClusters, int oldnumClusters, int newTable, int oldTable)
+int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int newTable, int *oldLatentMatrix, int newTableIndex)
 {
-    int         i, j, k, numCharsInCluster, idx, currIdx, needEndStateFlip,
-                currTable, numColsToRemove, finalnumClusters,
-                endStateIndex=-1, *newLatentStates, tablesToProcess[2],
-                tempnumClusters, *reorderedLatentMatrix, *finalLatentMatrix;
+    int         i, j, numCharsInCluster=0, endStateIndex=-1, *newLatentStates,
+                numValues, *finalLatentMatrix, idx;
 
-
-    if (newnumClusters > oldnumClusters)
-        tempnumClusters = newnumClusters;
-    else
-        tempnumClusters = oldnumClusters;
-
-    /* Initialize newLatentMatrix */
-    int newLatentMatrix[numTaxa * numChars];
-
-    /* Get numSeatedAtTables */
-    int numSeatedAtTables[tempnumClusters];
-    for (i=0; i<tempnumClusters; i++)
-        numSeatedAtTables[i] = 0;
+    /* Get number of characters in newTable cluster*/
     for (i=0; i<numChars; i++)
-        numSeatedAtTables[allocationVector[i]]++;
+        if (newAllocationVector[i] == newTable)
+            numCharsInCluster++;
 
-    tablesToProcess[0] = newTable;
-    tablesToProcess[1] = oldTable;
-
-    int origNumSeatedAtTables[oldnumClusters];
-    for (i=0; i<oldnumClusters; i++)
-        origNumSeatedAtTables[i] = 0;
-    for (i=0; i<numChars; i++)
-        origNumSeatedAtTables[oldAllocationVector[i]]++;
-
-    for (i=0; i<2; i++)
+    /* Get data from characters that belong to the newTable cluster */
+    int data[numTaxa * numCharsInCluster];
+    for (i=0; i<numTaxa; i++)
         {
-        currTable = tablesToProcess[i];
-        numCharsInCluster = numSeatedAtTables[currTable];
-        /* If nothing at table, set entries for that latent column to -1; will be removed at end */
-        numColsToRemove = 0;
-        if (numCharsInCluster == 0)
+        idx = 0;
+        for (j=0; j<numChars; j++)
+            if (newAllocationVector[j] == newTable)
+                data[pos(i,idx++,numCharsInCluster)] = compMatrix[pos(i,j,numChars)];
+        }
+
+    /* Find end state index of original latent pattern of the newTable cluster */
+    for (i=0; i<numTaxa; i++)
+        {
+        if (oldLatentMatrix[pos(i,newTableIndex,numChars)] == 1) // Equivalent to end state 0
             {
-            numColsToRemove++;
-            for (j=0; j<numTaxa; j++)
-                newLatentMatrix[pos(j,currTable,numChars)] = -1;
-            }
-        else
-            {
-            /* Get column indices for characters seated at current table */
-            int colIndices[numCharsInCluster];
-            idx = 0;
-            for (j=0; j<numChars; j++)
-                {
-                if (allocationVector[j] == currTable)
-                    {
-                    colIndices[idx] = j;
-                    idx++;
-                    }
-                }
-
-            /* Get original data from relevant columns */
-            int tempData[numTaxa * numCharsInCluster];
-            for (j=0; j<numCharsInCluster; j++)
-                {
-                currIdx = colIndices[j];
-                for (k=0; k<numTaxa; k++)
-                    tempData[pos(k,j,numCharsInCluster)] = compMatrix[pos(k,currIdx,numChars)];
-                }
-
-            /* Flip end state 2's to 0's if there are no 0's in the original latent states  */
-            needEndStateFlip = YES;
-            for (j=0; j<numTaxa; j++)
-                {
-                if (originalLatentMatrix[pos(j,currTable,numChars)] == 1) // Equivalent to end state 0
-                    {
-                    needEndStateFlip = NO;
-                    break;
-                    }
-                }
-            if (needEndStateFlip == YES)
-                {
-                for (j=0; j<numTaxa; j++)
-                    if (originalLatentMatrix[pos(j,currTable,numChars)] == 4) // Equivalent to end state 2
-                        originalLatentMatrix[pos(j,currTable,numChars)] = 1;
-                }
-
-            /* Find index of first end state in original latent states */
-            for (j=0; j<numTaxa; j++)
-                {
-                if (originalLatentMatrix[pos(j,currTable,numChars)] == 1) // Equivalent to end state 0
-                    {
-                    endStateIndex = j;
-                    break;
-                    }
-                }
-
-            /* Get new latent states from tempData and fill in column of newLatentMatrix */
-            newLatentStates = ConvertDataToLatentStates(tempData, numCharsInCluster, endStateIndex);
-            for (j=0; j<numTaxa; j++)
-                newLatentMatrix[pos(j,currTable,numChars)] = newLatentStates[j];
+            endStateIndex = i;
+            break;
             }
         }
 
-    /* Fill in rest of latent matrix */
-    for (i=0; i<tempnumClusters; i++)
-        {
-        if (!(i == newTable) && (!(i == oldTable)))
-            for (j=0; j<numTaxa; j++)
-                    newLatentMatrix[pos(j,i,numChars)] = originalLatentMatrix[pos(j,i,numChars)];
-        }
+    /* Get new latent state resolution */
+    newLatentStates = ConvertDataToLatentStates(data, numCharsInCluster, endStateIndex);
 
-    /* Time to get final latent matrix */
-    finalnumClusters = tempnumClusters - numColsToRemove;
-    int numValues = numTaxa * numChars;
+    /* Initialize data structure to hold new latent matrix */
+    numValues = numChars * numTaxa;
     finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
     if (!finalLatentMatrix)
         printf("ERROR: Problem with allocation in UpdateLatentPatterns\n");
 
-    /* Reorder latent matrix columns according to rescaled allocation vector */
-    reorderedLatentMatrix = ReorderLatentMatrix(allocationVector, rescaledAllocationVector, newLatentMatrix, tempnumClusters, finalnumClusters, numChars);
-
-    /* copy reorderedLatentMatrix into finalLatentMatrix */
+    /* Replace appropriate columns with new latent state resolution */
     for (i=0; i<numTaxa; i++)
-        for (j=0; j<finalnumClusters; j++)
-            finalLatentMatrix[pos(i,j,numChars)] = reorderedLatentMatrix[pos(i,j,numChars)];
+        {
+        for (j=0; j<numChars; j++)
+            {
+            if (newAllocationVector[j] == newTable)
+                finalLatentMatrix[pos(i,j,numChars)] = newLatentStates[i];
+            else
+                finalLatentMatrix[pos(i,j,numChars)] = oldLatentMatrix[pos(i,j,numChars)];
+            }
+        }
 
-    free (reorderedLatentMatrix);
     free (newLatentStates);
-    reorderedLatentMatrix = NULL;
     newLatentStates = NULL;
 
     return (finalLatentMatrix);

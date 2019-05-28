@@ -9697,7 +9697,12 @@ int Combination (int n, int k)
 {
     int         comb;
 
-    comb = Factorial(n) / (Factorial(k) * Factorial(n-k));
+    if (n < k)
+        comb = 0;
+    else if (n == k)
+        comb = 1;
+    else
+        comb = Factorial(n) / (Factorial(k) * Factorial(n-k));
 
     return (comb);
 }
@@ -14019,37 +14024,37 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
 |   and a specified number of intermediate states (>= 1) required for those patterns.
 |
 ---------------------------------------------------------------------------------*/
-int GetNumPolymorphismPatterns(int numTrimorphisms, int numDimorphisms, int numIntmedStatesRequired)
+int GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired)
 {
-    int             i, d, t, e, f0, f1, n, k, s=0, total=0;
-    unsigned long   p;
+    int             d, t, i, j, k, l, term1, term2, total;
+    unsigned long   term3;
 
     d = numDimorphisms;
     t = numTrimorphisms;
-    e = numIntmedStatesRequired;
+    i = numIntStatesRequired;
 
-    f0 = Combination(d, e);
-    f1 = 2 * f0 + Combination(d, e-1);
+    printf("----begin GetNumPoly----\n");
+    printf("numDimorphisms: %d\n",d);
+    printf("numTrimorphisms: %d\n",t);
+    printf("numIntStatesRequired: %d\n",i);
 
-    for (i=1; i<numIntmedStatesRequired+1; i++)
+    total = 0;
+    for (j=0; j<=i; j++)
         {
-        n = t-i;
-        p = 1; // This is the 2^n term
-        for (i=0; i<n; i++)
-            p *= 2;
-
-        if (i-1 < 0)
-            k = 0;
-        else
-            k = i-1;
-        s += Combination(d, e-i) * Combination(t-1, k) * p;
+        term1 = Combination(d,j);
+        printf("term1: %d\n",term1);
+        term2 = Combination(t,i-j);
+        printf("term2: %d\n",term2);
+        term3 = 1;
+        l = t - (i-j);
+        for (k=0; k<l; k++)
+            term3 *= 2;
+        printf("term3: %lu\n",term3);
+        total += term1 * term2 * term3;
+        printf("total: %lu\n\n",term1*term2*term3);
         }
 
-    if (t-1 > 1) // Recurse if t is not 0 or 1
-        total = 2 * GetNumPolymorphismPatterns(t-1, d, e) + s;
-    else // Return base case
-        total = f1;
-
+    printf("----end GetNumPoly----\n");
     return (total);
 }
 
@@ -14064,9 +14069,9 @@ int GetNumPolymorphismPatterns(int numTrimorphisms, int numDimorphisms, int numI
 |   returned. Missing character compliant.
 |
 |   Polymorphism code for latent states:
-|       -1 = 0/1
-|       -2 = 1/2
-|       -3 = 0/1/2
+|       -1 = 0/i
+|       -2 = i/1
+|       -3 = 0/i/1
 |
 ---------------------------------------------------------------------------------*/
 int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex)
@@ -14127,21 +14132,11 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
                     latentResolution[i] = -3;
                 else
                     {
-                    if (allMatches == YES) // Latent pattern is either 0 or 1
-                        {
-                        if (numMissingPairs > 0)
-                            latentResolution[i] = -1;
-                        else
-                            latentResolution[i] = 1;
-                        }
-                    else if (allMismatches == YES) // Latent pattern is either 1 or 2
-                        {
-                        if (numMissingPairs > 0)
-                            latentResolution[i] = -2;
-                        else
-                            latentResolution[i] = 4;
-                        }
-                    else // Mixed case - latent pattern is 1
+                    if (allMatches == YES) // Latent pattern is either 0 or i
+                        latentResolution[i] = -1;
+                    else if (allMismatches == YES) // Latent pattern is either i or 1
+                        latentResolution[i] = -2;
+                    else // Mixed case - latent pattern is i
                         latentResolution[i] = 2;
                     }
                 }
@@ -14198,37 +14193,7 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
 
 /*---------------------------------------------------------------------------------
 |
-|   ReorderLatentMatrix
-|
-|   Reorders latent matrix to follow rescaled allocation vector
-|
----------------------------------------------------------------------------------*/
-int *ReorderLatentMatrix(int *unscaledAllocationVector, int *rescaledAllocationVector, int *latentMatrix, int orignumClusters, int finalnumClusters, int numChars)
-{
-    int         i, j, numValues, *reorderedLatentMatrix;
-
-    numValues = numChars * numTaxa;
-    reorderedLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
-    if (!reorderedLatentMatrix)
-        printf("ERROR: Problem with allocation in ReorderLatentMatrix\n");
-
-    for (i=0; i<numChars; i++)
-        {
-        if (unscaledAllocationVector[i] == rescaledAllocationVector[i])
-            for (j=0; j<numTaxa; j++)
-                reorderedLatentMatrix[pos(j,rescaledAllocationVector[i],numChars)] = latentMatrix[pos(j,rescaledAllocationVector[i],numChars)];
-        else
-            for (j=0; j<numTaxa; j++)
-                reorderedLatentMatrix[pos(j,rescaledAllocationVector[i],numChars)] = latentMatrix[pos(j,unscaledAllocationVector[i],numChars)];
-        }
-
-    return (reorderedLatentMatrix);
-}
-
-
-/*---------------------------------------------------------------------------------
-|
-|   UpdateLatentPattern
+|   UpdateLatentPatterns
 |
 |   Ensures that latent patterns in latent matrix match allocation vector.
 |

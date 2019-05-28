@@ -604,9 +604,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     //     }
     // printf("\n");
 
-
-
-    //updatedLatentMatrix = UpdateLatentPatterns(oldAllocationVector, newAllocationVector, rescaledAllocationVector, oldLatentMatrix, compMatrix, m->numChars, newNumTables, oldNumClusters, newTable, oldTable);
     updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, newTable, oldLatentMatrix, newTableIndex);
 
     /* Copy new allocation vector, latent matrix, and newNumTables back */
@@ -626,7 +623,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         *lnProposalRatio += log(1.0 / numTables) + log(probNewTable);
     else
         *lnProposalRatio += log(1.0 / numTables) + log(tableProbs[newTable]);
-        
+
     *lnProposalRatio -= log(1.0 / newNumTables) + log(tableProbs[oldTable]); // Backwards move
 
     // printf("rescaledAllocationVector: ");

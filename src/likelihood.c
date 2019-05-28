@@ -8746,11 +8746,9 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 ---------------------------------------------------------------------------------*/
 MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
 {
-    int             i, j, n, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
-                    idx=0, tempNumResolutions, numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
-    MrBFlt          lnEmissionProbability=0.0, term1;
-    unsigned long   p;
-    long double     term2;
+    int             i, n, m, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
+                    idx=0, numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
+    MrBFlt          lnEmissionProbability=0.0, term;
 
     /* Get number of polymorphic states, number of trimorphisms, number of (non-polymorphic)
     intermediate states, and maximum number of intermediate states (K) possible */
@@ -8763,7 +8761,7 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
             if (latentPattern[i] == -3)
                 numTrimorphisms++;
             }
-        if (latentPattern[i] == 2)
+        if (latentPattern[i] == 2) // Non-polymorphic i-states
             {
             maxNumIntmedStates++;
             numIntmedStates++;
@@ -8786,7 +8784,7 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
     int numPossibleResolutions[maxNumIntmedStates+1];
     for (i=0; i<maxNumIntmedStates+1; i++)
         {
-        if (numPolymorphicStates == 0) // No polymorphisms (= no missing data)
+        if (numPolymorphicStates == 0) // No polymorphisms
             {
             if (numIntmedStates == i)
                 numPossibleResolutions[i] = 1;
@@ -8795,90 +8793,25 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
             }
         else // Case with polymorphisms
             {
-            if (i == 0) // Resolutions requiring no intermediate states
-                {
-                if (allEndStates == YES) // Case where all non-polymorphic states are either 0 or 2
-                    {
-                    tempNumResolutions = 1;
-                    for (j=0; j<numPolymorphicStates; j++)
-                        if (polymorphs[j] == -3)
-                            tempNumResolutions *= 2;
-                    numPossibleResolutions[i] = tempNumResolutions;
-                    }
-                else // Case where there are non-polymorphic 1-states
-                    numPossibleResolutions[i] = 0;
-                }
-            else // Resolutions requiring 1 or more intermediate states
-                {
-                if (allEndStates == YES)
-                    numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i);
-                else
-                    {
-                    if (numIntmedStates > i) // No resolutions because there are more intermediate states than the number being asked for
-                        numPossibleResolutions[i] = 0;
-                    else if (numIntmedStates == i)
-                        numPossibleResolutions[i] = 1 + 2 * numTrimorphisms; // TODO: Check that this is correct
-                    else
-                        numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i - numIntmedStates);
-                    }
-                }
+            // Resolutions requiring 1 or more intermediate states
+            if (allEndStates == YES)
+                numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i);
+            else
+                numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i - numIntmedStates);
             }
         }
 
-    /* Calculate emission probabilities for all end state patterns present in the dataset */
+    /* Calculate total emission probability */
     n = numCharsInCluster;
-    p = 1; // This is the 2^n term
-    for (i=0; i<n; i++)
-        p *= 2;
-    term1 = log (1.0) - n * log(2);
+    term = n * log(0.5); // i.e., log ( 1/2^n )
 
-    for (i=0; i<maxNumIntmedStates+1; i++)
+    for (m=0; m<=maxNumIntmedStates; m++)
         {
-        // Get the term for i number of intermediate state(s)
-        if (numPossibleResolutions[i] == 0)
+        if (numPossibleResolutions[m] == 0)
             continue;
         else
-            {
-            if ((i == 0) || (p == 2))
-                lnEmissionProbability += term1;
-            else
-                {
-                if (n > 64) // "Large" n where an approximation is necessary
-                    {
-                    term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - n * log(2.0));
-                    lnEmissionProbability += term1 + term2;
-                    }
-                else
-                    {
-                    term2 = log(numPossibleResolutions[i]) + i * (log(1.0) - log(p-2));
-                    lnEmissionProbability += term1 + term2;
-                    }
-                }
-            }
+            lnEmissionProbability += numPossibleResolutions[m] * term; // i.e., log ( 1/2^mn )
         }
-
-    // if (!isfinite(lnEmissionProbability))
-    // if (n > 1)
-    //     {
-    //     printf("latent pattern: ");
-    //     for (i=0; i<numTaxa; i++)
-    //         printf("%d ",latentPattern[i]);
-    //     printf("\n\n");
-    //
-    //     printf("lnEmissionProb: %f\n",lnEmissionProbability);
-    //     printf("n: %d\n",n);
-    //     printf("p: %lu\n",p);
-    //     printf("term1: %f\n",term1);
-    //     printf("term2: %Lf\n",term2);
-    //
-    //     printf("numPossibleResolutions: ");
-    //     for (i=0; i<maxNumIntmedStates+1; i++)
-    //         printf("%d ",numPossibleResolutions[i]);
-    //     printf("\n\n");
-    //
-    //     getchar();
-    //     }
-
 
     return (lnEmissionProbability);
 }

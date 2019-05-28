@@ -6500,7 +6500,7 @@ int InitChainCondLikes (void)
         preLikeA = preLikeR + j;
         }
 
-    // 
+    //
     // for (i=0; i<numLocalTaxa; i++)
     //     {
     //     for (c=0; c<m->numChars; c++)
@@ -6951,6 +6951,7 @@ int InitParsSets (void)
             // printf("compMatrixStop: %d\n",m->compMatrixStop);
             // printf("numChars: %d\n",m->numChars);
 
+            // printf("initialLatentMatrix: \n");
             // for (i=0; i<numLocalTaxa; i++)
             //     {
             //     for (j=0; j<m->numChars; j++)

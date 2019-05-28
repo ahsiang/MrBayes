@@ -2056,6 +2056,8 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
                     leftTipCLs[idx++] = 1.0;
+                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                    leftTipCLs[idx++] = 1.0;
                 else
                     leftTipCLs[idx++] = 0.0;
                 }
@@ -2088,6 +2090,8 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             for (j=0; j<3; j++)
                 {
                 if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                    rightTipCLs[idx++] = 1.0;
+                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
                     rightTipCLs[idx++] = 1.0;
                 else
                     rightTipCLs[idx++] = 0.0;
@@ -4817,6 +4821,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
                     leftTipCLs[idx++] = 1.0;
+                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                    leftTipCLs[idx++] = 1.0;
                 else
                     leftTipCLs[idx++] = 0.0;
                 }
@@ -4852,6 +4858,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
             for (j=0; j<3; j++)
                 {
                 if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                    rightTipCLs[idx++] = 1.0;
+                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
                     rightTipCLs[idx++] = 1.0;
                 else
                     rightTipCLs[idx++] = 0.0;
@@ -4900,6 +4908,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
             for (j=0; j<3; j++)
                 {
                 if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                    ancTipCLs[idx++] = 1.0;
+                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
                     ancTipCLs[idx++] = 1.0;
                 else
                     ancTipCLs[idx++] = 0.0;

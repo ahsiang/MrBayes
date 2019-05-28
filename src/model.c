@@ -11362,6 +11362,8 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                                 intValue[pos(i,j,m->numChars)] = 1;
                             else if (compMatrix[pos(i,j,m->numChars)] == 2)
                                 intValue[pos(i,j,m->numChars)] = 4;
+                            else
+                                intValue[pos(i,j,m->numChars)] = MISSING;
                             }
                         }
                     /* Copy over latent matrix to global initialLatentMatrix */
@@ -11373,35 +11375,6 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     }
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
-                    // /* Get numClusters */
-                    // int numClusters = m->allocationVector->subValues[0];
-                    //
-                    // /* Determine indices in original data matrix where each latent
-                    // pattern is located */
-                    // int indices[numClusters];
-                    // for (i=0; i<numClusters; i++)
-                    //     {
-                    //     for (j=0; j<m->numChars; j++)
-                    //         {
-                    //         if (numSitesAlloc[j] == (i+1))
-                    //             {
-                    //             indices[i] = j;
-                    //             break;
-                    //             }
-                    //         }
-                    //     }
-                    // /* Fill in latent matrix */
-                    // for (i=0; i<numTaxa; i++)
-                    //     {
-                    //     for (j=0; j<m->numChars; j++)
-                    //         {
-                    //         if (compMatrix[pos(i,indices[j],m->numChars)] == 1)
-                    //             intValue[pos(i,j,m->numChars)] = 1;
-                    //         else if (compMatrix[pos(i,indices[j],m->numChars)] == 2)
-                    // //             intValue[pos(i,j,m->numChars)] = 4;
-                    //         }
-                    //     }
-
                     for (i=0; i<numTaxa; i++)
                         {
                         for (j=0; j<m->numChars; j++)
@@ -11410,6 +11383,8 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                                 intValue[pos(i,j,m->numChars)] = 1;
                             else if (compMatrix[pos(i,j,m->numChars)] == 2)
                                 intValue[pos(i,j,m->numChars)] = 4;
+                            else
+                                intValue[pos(i,j,m->numChars)] = MISSING;
                             }
                         }
 

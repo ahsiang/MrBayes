@@ -14033,28 +14033,18 @@ int GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numI
     t = numTrimorphisms;
     i = numIntStatesRequired;
 
-    printf("----begin GetNumPoly----\n");
-    printf("numDimorphisms: %d\n",d);
-    printf("numTrimorphisms: %d\n",t);
-    printf("numIntStatesRequired: %d\n",i);
-
     total = 0;
     for (j=0; j<=i; j++)
         {
         term1 = Combination(d,j);
-        printf("term1: %d\n",term1);
         term2 = Combination(t,i-j);
-        printf("term2: %d\n",term2);
         term3 = 1;
         l = t - (i-j);
         for (k=0; k<l; k++)
             term3 *= 2;
-        printf("term3: %lu\n",term3);
         total += term1 * term2 * term3;
-        printf("total: %lu\n\n",term1*term2*term3);
         }
 
-    printf("----end GetNumPoly----\n");
     return (total);
 }
 

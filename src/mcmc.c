@@ -10442,6 +10442,12 @@ int PreparePrintFiles (void)
             {
             fpAlloc = NULL;
             writeAlloc = YES;
+            fpAlloc = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
+            if (fpAlloc == NULL)
+                {
+                MrBayesPrint ("%s   Could not allocate fpAlloc in PreparePrintFiles\n", spacer);
+                return ERROR;
+                }
             }
         }
 
@@ -10466,13 +10472,6 @@ int PreparePrintFiles (void)
         }
     for (i=1; i<chainParams.numRuns; i++)
         fpTree[i] = fpTree[0] + i*numTrees;
-
-    fpAlloc = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
-    if (fpAlloc == NULL)
-        {
-        MrBayesPrint ("%s   Could not allocate fpAlloc in PreparePrintFiles\n", spacer);
-        return ERROR;
-        }
 
     /* Get root of local file name */
     strcpy (localFileName, chainParams.chainFileName);
@@ -10581,6 +10580,7 @@ int PreparePrintFiles (void)
                 return (ERROR);
                 }
             }
+
         if (chainParams.numRuns == 1)
             sprintf (fileName, "%s.p", localFileName);
         else
@@ -11802,39 +11802,45 @@ int PrintAllocationVectorToFile (int curGen)
     int         i, d, chn, coldId, runId, *allocationVector;
     ModelInfo   *m;
 
-    /* Print allocation vector (single-processor version) */
-    for (chn=0; chn<numLocalChains; chn++)
+    for (d=0; d<numCurrentDivisions; d++)
         {
-        if ((chainId[chn] % chainParams.numChains) == 0)
+        m = &modelSettings[d];
+
+        if (m->mcModelId == YES)
             {
-            coldId = chn;
-            runId = chainId[chn] / chainParams.numChains;
-
-            /* Print header if curGen == 0 */
-            if (curGen == 0)
+            /* Print allocation vector (single-processor version) */
+            for (chn=0; chn<numLocalChains; chn++)
                 {
-                MrBayesPrintf (fpAlloc[runId], "[ID: %s]\n", stamp);
-                MrBayesPrintf (fpAlloc[runId], "[   Gen                --  Generation]\n");
-                MrBayesPrintf (fpAlloc[runId], "[   Alloc              --  Allocation vector]\n");
-                MrBayesPrintf (fpAlloc[runId], "Gen\tAlloc\n");
-                fflush (fpAlloc[runId]);
+                if ((chainId[chn] % chainParams.numChains) == 0)
+                    {
+                    coldId = chn;
+                    runId = chainId[chn] / chainParams.numChains;
+
+                    /* Print header if curGen == 0 */
+                    if (curGen == 0)
+                        {
+                        MrBayesPrintf (fpAlloc[runId], "[ID: %s]\n", stamp);
+                        MrBayesPrintf (fpAlloc[runId], "[   Gen                --  Generation]\n");
+                        MrBayesPrintf (fpAlloc[runId], "[   Alloc              --  Allocation vector]\n");
+                        MrBayesPrintf (fpAlloc[runId], "Gen\tAlloc\n");
+                        fflush (fpAlloc[runId]);
+                        }
+
+                    MrBayesPrintf (fpAlloc[runId], "%d\t", curGen);
+
+                    allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
+                    for (i=0; i<m->numChars; i++)
+                        MrBayesPrintf(fpAlloc[runId], "%d ", allocationVector[i]);
+                    MrBayesPrintf(fpAlloc[runId], "\t");
+
+                    MrBayesPrintf (fpAlloc[runId], "\n");
+
+                    fflush (fpAlloc[runId]);
+                    }
                 }
-
-            MrBayesPrintf (fpAlloc[runId], "%d\t", curGen);
-
-            for (d=0; d<numCurrentDivisions; d++)
-                {
-                m = &modelSettings[d];
-                allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
-                for (i=0; i<m->numChars; i++)
-                    MrBayesPrintf(fpAlloc[runId], "%d ", allocationVector[i]);
-                MrBayesPrintf(fpAlloc[runId], "\t");
-                }
-            MrBayesPrintf (fpAlloc[runId], "\n");
-
-            fflush (fpAlloc[runId]);
             }
         }
+
     return (NO_ERROR);
 }
 
@@ -15932,7 +15938,7 @@ void ResetSiteScalers (ModelInfo *m, int chain)
 
 /*----------------------------------------------------------------------
 |
-|   ReusePreviousResults: Save old .p, .t, .ss and .mcmc files with ~ extension,
+|   ReusePreviousResults: Save old .p, .t, .ss, .alloc and .mcmc files with ~ extension,
 |      then prepare new print files with the relevant old values added in
 |      The number of samples is returned in numSamples
 |

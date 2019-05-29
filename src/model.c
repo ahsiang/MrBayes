@@ -21348,9 +21348,8 @@ void SetUpMoveTypes (void)
     mt->shortName = "Multiplier";
     mt->tuningName[0] = "Multiplier tuning parameter";
     mt->shortTuningName[0] = "lambda";
-    mt->applicableTo[0] = ALPHADIR_FIX;
-    mt->applicableTo[1] = ALPHADIR_EXP;
-    mt->nApplicable = 2;
+    mt->applicableTo[0] = ALPHADIR_EXP;
+    mt->nApplicable = 1;
     mt->moveFxn = &Move_Alphadir_M;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 1;
@@ -22673,9 +22672,8 @@ void SetUpMoveTypes (void)
     mt->shortName = "Multiplier";
     mt->tuningName[0] = "Multiplier tuning parameter";
     mt->shortTuningName[0] = "lambda";
-    mt->applicableTo[0] = RHO_FIX;
-    mt->applicableTo[1] = RHO_EXP;
-    mt->nApplicable = 2;
+    mt->applicableTo[0] = RHO_EXP;
+    mt->nApplicable = 1;
     mt->moveFxn = &Move_Rho_M;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 1;

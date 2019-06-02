@@ -1587,8 +1587,7 @@ int ChangeNumRuns (int from, int to)
         {
         mvt = moves[i]->moveType;
         moves[i]->tuningParam = (MrBFlt **) SafeRealloc ((void *) moves[i]->tuningParam, (size_t)numGlobalChains * sizeof (MrBFlt *));
-        if (mvt->numTuningParams > 0) /* TODO: Check that this is ok */
-            moves[i]->tuningParam[0] = (MrBFlt *) SafeRealloc ((void *) moves[i]->tuningParam[0], (size_t)numGlobalChains * (size_t)(mvt->numTuningParams) * sizeof (MrBFlt));
+        moves[i]->tuningParam[0] = (MrBFlt *) SafeRealloc ((void *) moves[i]->tuningParam[0], (size_t)numGlobalChains * (size_t)(mvt->numTuningParams) * sizeof (MrBFlt));
         for (j=1; j<numGlobalChains; j++)
             moves[i]->tuningParam[j] = moves[i]->tuningParam[0] + j * mvt->numTuningParams;
         moves[i]->relProposalProb = (MrBFlt *) SafeRealloc ((void *) moves[i]->relProposalProb, 4 * (size_t)numGlobalChains * sizeof (MrBFlt));
@@ -2834,7 +2833,7 @@ int DoLink (void)
     int         i, j, newLine;
 
     MrBayesPrint ("%s   Linking\n", spacer);
-
+    
     /* update status of linkTable */
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -2852,7 +2851,7 @@ int DoLink (void)
                 }
             }
         }
-
+    
 #   if 0
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -3908,7 +3907,7 @@ int DoLsetParm (char *parmName, char *tkn)
             else
                 return (ERROR);
             }
-        /* set Coding (coding) ***********************************************************/
+        /* set Coding (missingType) ***********************************************************/
         else if (!strcmp(parmName, "Coding"))
             {
             if (expecting == Expecting(EQUALSIGN))
@@ -8273,9 +8272,9 @@ int DoPrsetParm (char *parmName, char *tkn)
                     if ((activeParts[i] == YES || nApplied == 0))
                         {
                         sscanf (tkn, "%lf", &tempD);
-                        if (tempD <= 0.0 || tempD > 1.0)
+                        if (tempD < 0.0 || tempD > 1.0)
                             {
-                            MrBayesPrint ("%s   Sampleprob should be in range (0,1]\n", spacer);
+                            MrBayesPrint ("%s   Sampleprob should be in range [0,1]\n", spacer);
                             return (ERROR);
                             }
                         modelParams[i].sampleProb = tempD;
@@ -10661,7 +10660,7 @@ int DoStartvalsParm (char *parmName, char *tkn)
                         /* the test will find suitable clock rate and ages of nodes in theTree */
                         if (theTree->isClock == YES && IsClockSatisfied (theTree,0.001) == NO)
                             {
-                            MrBayesPrint ("%s   Non-calibrated tips are not at the same level after setting up starting tree branch lengthes(%s) from user tree '%s'.\n",
+                            MrBayesPrint ("%s   Non-calibrated tips are not at the same level after setting up starting tree branch lengths(%s) from user tree '%s'.\n",
                                           spacer, param->name, userTree[treeIndex]->name);
                             ShowNodes(theTree->root,0,YES);
                             return (ERROR);
@@ -10693,9 +10692,9 @@ int DoStartvalsParm (char *parmName, char *tkn)
                              param->paramType == P_IGRBRANCHRATES || param->paramType == P_MIXEDBRCHRATES)
                         {
                         if (theTree->isCalibrated == YES && theTree->fromUserTree == NO)
-                            { /* if theTree is not set from user tree then we can not garanty that branch lenghts will stay the same
+                            { /* if theTree is not set from user tree then we can not garanty that branch lengths will stay the same
                                  by the time we start mcmc run because of clockrate adjustment. */
-                            MrBayesPrint ("%s    Set starting values for branch lengthes first before setting starting values of relaxed parameters!\n", spacer);
+                            MrBayesPrint ("%s    Set starting values for branch lengths first before setting starting values of relaxed parameters!\n", spacer);
                             return (ERROR);
                             }
                         if (theTree->isCalibrated == NO && IsClockSatisfied (usrTree, 0.001) == NO) // user tree is not calibrated so do not check it if calibration is in place
@@ -11801,7 +11800,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     if (p->paramId == EXTRATE_FIX)
                         value[j] = mp->extinctionFix;
                     else
-                        value[j] = 0.5;
+                        value[j] = 0.9;
                     }
                 }
             else if (p->paramType == P_FOSLRATE)
@@ -11812,7 +11811,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     if (p->paramId == FOSLRATE_FIX)
                         value[j] = mp->fossilizationFix;
                     else
-                        value[j] = 0.2;
+                        value[j] = 0.1;
                     }
                 }
             else if (p->paramType == P_GROWTH)
@@ -18483,11 +18482,23 @@ int SetModelInfo (void)
         m->childBufferIndices = NULL;         /* array of child partial indices (unrooted)    */
         m->childTiProbIndices = NULL;         /* array of child ti prob indices (unrooted)    */
         m->cumulativeScaleIndices = NULL;     /* array of cumulative scale indices            */
-#   endif
+        m->divisionIndex = i;                 /* division index number                        */
+        m->operations = NULL;                 /* array of operations to be sent to Beagle     */
+        m->opCount = 0;                       /* partial likelihood operations count          */
+#   if defined (BEAGLE_V3_ENABLED)
+        m->numCharsAll               = 0;     /* number of compressed chars for all divisions */
+        m->logLikelihoodsAll         = NULL;  /* array of log likelihoods for all divisions   */
+        m->cijkIndicesAll            = NULL;  /* cijk array for all divisions                 */
+        m->categoryRateIndicesAll    = NULL;  /* category rate array for all divisions        */  
+        m->operationsAll             = NULL;  /* array of all operations across divisions     */
+        m->operationsByPartition     = NULL;  /* array of division operations to be sent to Beagle */
+#   endif /* BEAGLE_V3_ENABLED */
+#   endif /* BEAGLE_ENABLED */
 
         /* likelihood calculator flags */
         m->useVec = VEC_NONE;                 /* use SIMD code for this partition?            */
         m->useBeagle = NO;                    /* use Beagle for this partition?               */
+        m->useBeagleMultiPartitions = NO;     /* use one Beagle instance for all partitions?  */
 
 #if defined (SSE_ENABLED)
         m->numVecChars = 0;
@@ -21418,7 +21429,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[3] = CLOCKRATE_EXP;
     mt->nApplicable = 4;
     mt->moveFxn = &Move_ClockRate_M;
-    mt->relProposalProb = 2.0;
+    mt->relProposalProb = 3.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log (1.5);  /* lambda */
     mt->minimum[0] = 0.0001;
@@ -21474,7 +21485,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[0] = BRLENS_CLOCK_FOSSIL;
     mt->nApplicable = 1;
     mt->moveFxn = &Move_AddBranch;
-    mt->relProposalProb = 10.0;
+    mt->relProposalProb = 15.0;
     mt->numTuningParams = 0;
     mt->parsimonyBased = NO;
     mt->level =STANDARD_USER;
@@ -21488,7 +21499,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[0] = BRLENS_CLOCK_FOSSIL;
     mt->nApplicable = 1;
     mt->moveFxn = &Move_DelBranch;
-    mt->relProposalProb = 10.0;
+    mt->relProposalProb = 15.0;
     mt->numTuningParams = 0;
     mt->parsimonyBased = NO;
     mt->level =STANDARD_USER;
@@ -23011,7 +23022,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[0] = TK02BRANCHRATES;
     mt->nApplicable = 1;
     mt->moveFxn = &Move_TK02BranchRate;
-    mt->relProposalProb = 10.0;
+    mt->relProposalProb = 15.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log (1.1);  /* lambda */
     mt->minimum[0] = 0.0001;
@@ -23050,7 +23061,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[0] = IGRBRANCHRATES;
     mt->nApplicable = 1;
     mt->moveFxn = &Move_IgrBranchRate;
-    mt->relProposalProb = 10.0;
+    mt->relProposalProb = 15.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log (1.1);  /* lambda */
     mt->minimum[0] = 0.0001;
@@ -23089,7 +23100,7 @@ void SetUpMoveTypes (void)
     mt->applicableTo[0] = MIXEDBRCHRATES;
     mt->nApplicable = 1;
     mt->moveFxn = &Move_MixedBranchRate;
-    mt->relProposalProb = 10.0;
+    mt->relProposalProb = 15.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log (1.1);  /* lambda */
     mt->minimum[0] = 0.0001;
@@ -23122,8 +23133,8 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
 
     numMoveTypes = i;
-
-    assert( numMoveTypes < NUM_MOVE_TYPES);
+    
+    assert(numMoveTypes < NUM_MOVE_TYPES);
 }
 
 

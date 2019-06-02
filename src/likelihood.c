@@ -404,8 +404,8 @@ int CondLikeDown_Gen_SSE (TreeNode *p, int division, int chain)
     __m128          *clL, *clR, *clP;
     __m128          mTiPL, mTiPR, mL, mR, mAcumL, mAcumR;
     ModelInfo       *m;
-    CLFlt           *preLikeRV[4];
-    CLFlt           *preLikeLV[4];
+    CLFlt           *preLikeRV[4] = {0};
+    CLFlt           *preLikeLV[4] = {0};
 
 #   if !defined (DEBUG_NOSHORTCUTS)
     int             a, b, catStart;
@@ -1751,8 +1751,8 @@ int CondLikeDown_NY98_SSE (TreeNode *p, int division, int chain)
     __m128          *clL, *clR, *clP;
     __m128          mTiPL, mTiPR, mL, mR, mAcumL, mAcumR;
     ModelInfo       *m;
-    CLFlt           *preLikeRV[4];
-    CLFlt           *preLikeLV[4];
+    CLFlt           *preLikeRV[4] = {0};
+    CLFlt           *preLikeLV[4] = {0};
 #   if !defined (DEBUG_NOSHORTCUTS)
     int             a;
 #   endif
@@ -2613,9 +2613,9 @@ int CondLikeRoot_Gen_SSE (TreeNode *p, int division, int chain)
     __m128          *clL, *clR, *clP, *clA;
     __m128          mTiPL, mTiPR, mTiPA, mL, mR, mA, mAcumL, mAcumR, mAcumA;
     ModelInfo       *m;
-    CLFlt           *preLikeRV[4];
-    CLFlt           *preLikeLV[4];
-    CLFlt           *preLikeAV[4];
+    CLFlt           *preLikeRV[4] = {0};
+    CLFlt           *preLikeLV[4] = {0};
+    CLFlt           *preLikeAV[4] = {0};
 
 #   if !defined (DEBUG_NOSHORTCUTS)
     int a, b, catStart;
@@ -4436,9 +4436,9 @@ int CondLikeRoot_NY98_SSE (TreeNode *p, int division, int chain)
     __m128          *clL, *clR, *clP, *clA;
     __m128          mTiPL, mTiPR, mTiPA, mL, mR, mA, mAcumL, mAcumR, mAcumA;
     ModelInfo       *m;
-    CLFlt           *preLikeRV[4];
-    CLFlt           *preLikeLV[4];
-    CLFlt           *preLikeAV[4];
+    CLFlt           *preLikeRV[4] = {0};
+    CLFlt           *preLikeLV[4] = {0};
+    CLFlt           *preLikeAV[4] = {0};
 
 #   if !defined (DEBUG_NOSHORTCUTS)
     int             a;
@@ -8575,6 +8575,64 @@ int Likelihood_ParsStd (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     return (NO_ERROR);
 }
 
+#if defined(BEAGLE_V3_ENABLED)
+/*-----------------------------------------------------------------
+|
+|   LaunchLogLikeForBeagleMultiPartition: calculate the log likelihood of the 
+|       new state of the chain for all divisions with Beagle
+|
+-----------------------------------------------------------------*/
+void LaunchLogLikeForBeagleMultiPartition(int chain, MrBFlt* lnL)
+{
+    int             d, divisionCount;
+    int             *divisions;
+    ModelInfo       *m;    
+     divisions = (int *) SafeCalloc (numCurrentDivisions, sizeof(int));
+    divisionCount = 0;
+     /* Cycle through divisions and recalculate tis and cond likes as necessary. */
+    /* Code below does not try to avoid recalculating ti probs for divisions    */
+    /* that could share ti probs with other divisions.                          */
+    for (d=0; d<numCurrentDivisions; d++)
+        {
+#   if defined (BEST_MPI_ENABLED)
+        if (isDivisionActive[d] == NO)
+            continue;
+#   endif
+        m = &modelSettings[d];
+        if (m->upDateCl == YES) 
+            {   
+            if (m->upDateCijk == YES)
+                {
+                if (UpDateCijk(d, chain) == ERROR)
+                    {
+                    (*lnL) = MRBFLT_NEG_MAX; /* effectively abort the move */
+                    continue;
+                    }
+                m->upDateAll = YES;
+                }
+            divisions[divisionCount++] = d;
+#if defined (DEBUG_MB_BEAGLE_MULTIPART)
+            printf("divisions[%d] = %d\n", divisionCount-1, d);
+#endif
+            }
+        }
+     LaunchBEAGLELogLikeMultiPartition(divisions, divisionCount, chain, lnL);
+     if (divisionCount != numCurrentDivisions)
+        {
+        for (d=0; d<numCurrentDivisions; d++)
+            {
+            m = &modelSettings[d];
+            if (m->upDateCl == NO) 
+                {   
+                /* add log likelihood of divisions that were not updated */
+                (*lnL) += m->lnLike[2*chain + state[chain]];
+                }
+            }
+        }
+     free(divisions);
+     return;
+}
+#endif /* BEAGLE_MULTI_PART_ENABLED */
 
 /*-----------------------------------------------------------------
 |
@@ -11407,7 +11465,7 @@ int UpDateCijk (int whichPart, int whichChain)
     ModelInfo   *m;
     Param       *p;
 #   if defined (BEAGLE_ENABLED)
-    int         u;
+    int         u, divisionOffset;
     double      *beagleEigvecs=NULL, *beagleInverseEigvecs=NULL;
 #   endif
 
@@ -11573,8 +11631,11 @@ int UpDateCijk (int whichPart, int whichChain)
                             k++;
                             }
                         }
+                    divisionOffset = 0;
+                    if (m->useBeagleMultiPartitions == YES)
+                        divisionOffset = (numLocalChains + 1) * m->nCijkParts * m->divisionIndex;
                     beagleSetEigenDecomposition(m->beagleInstance,
-                                                m->cijkIndex[whichChain],
+                                                m->cijkIndex[whichChain] + divisionOffset,
                                                 beagleEigvecs,
                                                 beagleInverseEigvecs,
                                                 eigenValues);
@@ -11670,9 +11731,11 @@ int UpDateCijk (int whichPart, int whichChain)
                                 u++;
                                 }
                             }
-
+                        divisionOffset = 0;
+                        if (m->useBeagleMultiPartitions == YES)
+                            divisionOffset = (numLocalChains + 1) * m->nCijkParts * m->divisionIndex;
                         beagleSetEigenDecomposition(m->beagleInstance,
-                                                    m->cijkIndex[whichChain] + k,
+                                                    m->cijkIndex[whichChain] + k + divisionOffset,
                                                     beagleEigvecs,
                                                     beagleInverseEigvecs,
                                                     eigenValues);

@@ -662,7 +662,7 @@ int DoSumSs (void)
     numSamplesInStepSS = (numRows - stepBeginSS)/chainParams.numStepsSS;
     if ((numRows - stepBeginSS)%chainParams.numStepsSS!=0)
         {
-        MrBayesPrint ("%s   Error:  Number of samples could not be evenly devided among steps (%d samples among %d steps). \n", spacer,(numRows - stepBeginSS),chainParams.numStepsSS);
+        MrBayesPrint ("%s   Error:  Number of samples could not be evenly divided among steps (%d samples among %d steps). \n", spacer,(numRows - stepBeginSS),chainParams.numStepsSS);
         goto errorExit;
         }
 
@@ -718,7 +718,7 @@ sumssTable:
         MrBayesPrint ("%s   The table entrances are based on samples excluding burn-in %d samples  (%d%%)    \n", spacer, stepBurnin,(int)(100*chainParams.burninFraction));
     else
         MrBayesPrint ("%s   The table entrances are based on samples excluding burn-in %d samples      \n", spacer, stepBurnin);
-    MrBayesPrint ("%s   discarded at the begining of each step.  \n\n", spacer);
+    MrBayesPrint ("%s   discarded at the beginning of each step.  \n\n", spacer);
 
     //MrBayesPrint ("%s       Run   Marginal likelihood (ln)\n",spacer);
     //MrBayesPrint ("%s       ------------------------------\n",spacer);
@@ -820,7 +820,7 @@ sumssTable:
             {
             beginPrint=(int)(sumssParams.discardFraction*stepBeginSS);
             countPrint=stepBeginSS-beginPrint;
-            MrBayesPrint ("%s   Ploting step 0, i.e initial burn-in phase consisting of %d samples.\n", spacer,stepBeginSS);
+            MrBayesPrint ("%s   Plotting step 0, i.e initial burn-in phase consisting of %d samples.\n", spacer,stepBeginSS);
             MrBayesPrint ("%s   According to 'Discardfrac=%.2f', first %d samples are not ploted.\n", spacer,sumssParams.discardFraction,beginPrint);
             }
         else
@@ -832,7 +832,7 @@ sumssTable:
                 }
             beginPrint=stepBeginSS+(sumssParams.stepToPlot-1)*numSamplesInStepSS + (int)(sumssParams.discardFraction*numSamplesInStepSS);
             countPrint=numSamplesInStepSS-(int)(sumssParams.discardFraction*numSamplesInStepSS);
-            MrBayesPrint ("%s   Ploting step %d consisting of %d samples.\n", spacer,sumssParams.stepToPlot,numSamplesInStepSS);
+            MrBayesPrint ("%s   Plotting step %d consisting of %d samples.\n", spacer,sumssParams.stepToPlot,numSamplesInStepSS);
             MrBayesPrint ("%s   According to 'Discardfrac=%.2f', first %d samples are not ploted.\n", spacer,sumssParams.discardFraction,(int)(sumssParams.discardFraction*numSamplesInStepSS));
             }
 
@@ -1874,7 +1874,7 @@ int ExamineSumpFile (char *fileName, SumpFileInfo *fileInfo, char ***headerNames
                 {
                 MrBayesPrint ("%s   Expected header '%s' for column %d but the header for this column was '%s' in file '%s'\n", spacer, (*headerNames)[i], i+1, t, fileName);
                 MrBayesPrint ("%s   It could be that some parameter values are not numbers and the whole string containing \n",spacer); 
-                MrBayesPrint ("%s   this wrongly formated parameter is treated as a header.\n",spacer);
+                MrBayesPrint ("%s   this wrongly formatted parameter is treated as a header.\n",spacer);
                 goto errorExit;
                 }
             }
@@ -2905,6 +2905,7 @@ PartCtr *AddSumtPartition (PartCtr *r, PolyTree *t, PolyNode *p, int runId)
             {
             r->bLen [i][runId][0] = t->effectiveBrLen[i][p->index];
             r->bRate[i][runId][0] = t->effectiveBrLen[i][p->index] / p->length;
+            if (p->length == 0.0)   r->bRate[i][runId][0] = 1.0;  // deal with zero brl
             }
         if (t->popSizeSet == YES)
             r->popSize[runId][0] = t->popSize[p->index];
@@ -2948,8 +2949,8 @@ PartCtr *AddSumtPartition (PartCtr *r, PolyTree *t, PolyNode *p, int runId)
                     {
                     for (i=0; i<sumtParams.nBSets; i++)
                         {
-                        r->bRate[i][runId]   = (MrBFlt *) SafeRealloc ((void *)r->bRate[i][runId], ((size_t)n+ALLOC_LEN)*sizeof(MrBFlt));
-                        r->bLen [i][runId]   = (MrBFlt *) SafeRealloc ((void *)r->bLen [i][runId], ((size_t)n+ALLOC_LEN)*sizeof(MrBFlt));
+                        r->bRate[i][runId] = (MrBFlt *) SafeRealloc ((void *)r->bRate[i][runId], ((size_t)n+ALLOC_LEN)*sizeof(MrBFlt));
+                        r->bLen [i][runId] = (MrBFlt *) SafeRealloc ((void *)r->bLen [i][runId], ((size_t)n+ALLOC_LEN)*sizeof(MrBFlt));
                         }
                     }
                 if (sumtParams.popSizeSet == YES)
@@ -2973,8 +2974,9 @@ PartCtr *AddSumtPartition (PartCtr *r, PolyTree *t, PolyNode *p, int runId)
                 {
                 for (i=0; i<sumtParams.nBSets; i++)
                     {
-                    r->bLen [i][runId][n]   = t->effectiveBrLen[i][p->index];
-                    r->bRate[i][runId][n]   = t->effectiveBrLen[i][p->index] / p->length;
+                    r->bLen [i][runId][n] = t->effectiveBrLen[i][p->index];
+                    r->bRate[i][runId][n] = t->effectiveBrLen[i][p->index] / p->length;
+                    if (p->length == 0.0)   r->bRate[i][runId][n] = 1.0;  // deal with zero brl
                     }
                 }
             if (sumtParams.popSizeSet == YES)
@@ -7078,7 +7080,7 @@ int OpenComptFiles (void)
 int OpenSumtFiles (int treeNo)
 {
     int         i, len,  oldNoWarn, oldAutoOverwrite, previousFiles;
-    char        pFilename[120], sFilename[120], vFilename[120], cFilename[120], tFilename[120];
+    char        pFilename[145], sFilename[145], vFilename[145], cFilename[145], tFilename[145];
     FILE        *fpTemp;
 
     oldNoWarn = noWarn;
@@ -7248,7 +7250,7 @@ void PartCtrUppass (PartCtr *r, PartCtr **uppass, int *index)
 int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char *divString)
 {
     int     i, j, numPartitions, min, treeSample, runNo;
-    char    filename[100];
+    char    filename[145];
     PartCtr *x;
     FILE    *fp;
     
@@ -7261,29 +7263,29 @@ int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char
     
     /* Open file checking for over-write as appropriate */
     if ((fp = OpenNewMBPrintFile(filename)) == NULL)
-    {
+        {
         MrBayesPrint ("\n");
         return ERROR;
-    }
+        }
 
     /* count number of branch params to print */
     min = (sumtParams.minBrParamFreq * (sumtParams.numTreesSampled/sumtParams.numRuns));
     for (i=0; i<numTreeParts; i++)
-    {
+        {
         if (treeParts[i]->totCount < min)
             break;
-    }
+        }
     numPartitions = i;
     
     /* print header */
 
     /* -- header for branch lengths; NB! We skip the root branch length (i starts at 1) */
     for (i=1; i<numPartitions; ++i)
-    {
+        {
         MrBayesPrintf (fp, "length%s[%d]", divString, i);
         if (i!=numPartitions-1)
             MrBayesPrintf (fp, "\t");
-    }
+        }
     
     /* -- header for node heights */
     if (sumtParams.isClock == YES )
@@ -7299,72 +7301,71 @@ int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char
     
     /* -- header for node ages */
     if (sumtParams.isCalibrated == YES )
-    {
+        {
         MrBayesPrintf (fp, "\t");
         for (i=0; i<numPartitions; i++)
-        {
+            {
             MrBayesPrintf (fp, "age%s[%d]", divString, i);
             if (i!=numPartitions-1)
                 MrBayesPrintf (fp, "\t");
+            }
         }
-    }
 
     /* -- header for effective branch lengths and branch rates; NB! We skip the root branch (j starts at 1) */
     if (sumtParams.isRelaxed == YES)
-    {
-        for (i=0; i<sumtParams.nBSets; i++)
         {
+        for (i=0; i<sumtParams.nBSets; i++)
+            {
             MrBayesPrintf (fp, "\t");
             for (j=1; j<numPartitions; j++)
-            {
+                {
                 MrBayesPrintf (fp, "%s_length[%d]", sumtParams.bSetName[i], j);
                 MrBayesPrintf (fp, "\t");
-            }
-
+                }
             for (j=1; j<numPartitions; j++)
-            {
+                {
                 MrBayesPrintf (fp, "%s_rate[%d]", sumtParams.bSetName[i], j);
                 if (j!=numPartitions-1)
                     MrBayesPrintf (fp, "\t");
+                }
             }
-        }
         for (i=0; i<sumtParams.nESets; i++)
-        {
+            {
             MrBayesPrintf (fp, "\t");
             for (j=1; j<numPartitions; j++)
-            {
+                {
                 MrBayesPrintf (fp, "%s_nEvents[%d]", sumtParams.eSetName[i], j);
                 if (j!=numPartitions-1)
                     MrBayesPrintf (fp, "\t");
+                }
             }
         }
-    }
 
     /* finalize header line */
     MrBayesPrintf (fp, "\n");
     
     /* print values */
     for (runNo=0; runNo<sumtParams.numRuns; runNo++)
-    {
-        for (treeSample=0; treeSample<sumtParams.numTreesSampled/sumtParams.numRuns; treeSample++)
         {
+        for (treeSample=0; treeSample<sumtParams.numTreesSampled/sumtParams.numRuns; treeSample++)
+            {
             /* print branch lengths */
             for (i=1; i<numPartitions; i++)
-            {
+                {
                 x = treeParts[i];
-                if ( x->count[runNo] > treeSample )
+                if (x->count[runNo] > treeSample)
                     MrBayesPrintf (fp, "%s", MbPrintNum (x->length[runNo][treeSample]));
                 else
                     MrBayesPrintf (fp, "NA");
                 if (i!=numPartitions-1)
                     MrBayesPrintf (fp, "\t");
-            }
+                }
             /* print node heights */
             if (sumtParams.isClock == YES)
-            {
+                {
                 MrBayesPrintf (fp, "\t");
                 for (i=0; i<numPartitions; i++)
-                {
+                    {
                     x = treeParts[i];
                     if ( x->count[runNo] > treeSample )
                         MrBayesPrintf (fp, "%s", MbPrintNum (x->height[runNo][treeSample]));
@@ -7372,14 +7373,14 @@ int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char
                         MrBayesPrintf (fp, "NA");
                     if (i!=numPartitions-1)
                         MrBayesPrintf (fp, "\t");
+                    }
                 }
-            }
             /* print node ages */
             if (sumtParams.isCalibrated == YES)
-            {
+                {
                 MrBayesPrintf (fp, "\t");
                 for (i=0; i<numPartitions; i++)
-                {
+                    {
                     x = treeParts[i];
                     if ( x->count[runNo] > treeSample )
                         MrBayesPrintf (fp, "%s", MbPrintNum (x->age[runNo][treeSample]));
@@ -7387,25 +7388,25 @@ int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char
                         MrBayesPrintf (fp, "NA");
                     if (i!=numPartitions-1)
                         MrBayesPrintf (fp, "\t");
+                    }
                 }
-            }
             /* print effective branch lengths */
             if (sumtParams.isRelaxed)
-            {
-                for (i=0; i<sumtParams.nBSets; i++)
                 {
+                for (i=0; i<sumtParams.nBSets; i++)
+                    {
                     MrBayesPrintf (fp, "\t");
                     for (j=1; j<numPartitions; j++)
-                    {
+                        {
                         x = treeParts[j];
                         if ( x->count[runNo] > treeSample )
                             MrBayesPrintf (fp, "%s", MbPrintNum (x->bLen[i][runNo][treeSample]));
                         else
                             MrBayesPrintf (fp, "NA");
                         MrBayesPrintf (fp, "\t");
-                    }
+                        }
                     for (j=1; j<numPartitions; j++)
-                    {
+                        {
                         x = treeParts[j];
                         if ( x->count[runNo] > treeSample )
                             MrBayesPrintf (fp, "%s", MbPrintNum (x->bRate[i][runNo][treeSample]));
@@ -7413,13 +7414,13 @@ int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char
                             MrBayesPrintf (fp, "NA");
                         if (j!=numPartitions-1)
                             MrBayesPrintf (fp, "\t");
+                        }
                     }
-                }
                 for (i=0; i<sumtParams.nESets; i++)
-                {
+                    {
                     MrBayesPrintf (fp, "\t");
                     for (j=1; j<numPartitions; j++)
-                    {
+                        {
                         x = treeParts[j];
                         if ( x->count[runNo] > treeSample )
                             MrBayesPrintf (fp, "%d", x->nEvents[i][runNo][treeSample]);
@@ -7427,12 +7428,12 @@ int PrintBrParamsToFile (PartCtr **treeParts, int numTreeParts, int treeNo, char
                             MrBayesPrintf (fp, "NA");
                         if (j!=numPartitions-1)
                             MrBayesPrintf (fp, "\t");
+                        }
                     }
                 }
-            }
             MrBayesPrintf (fp, "\n");
-        }   // next tree sample
-    }   // next run
+            }   // next tree sample
+        }   // next run
 
     MrBayesPrint("\n");
     return NO_ERROR;
@@ -7605,40 +7606,39 @@ void PrintSumtTableLine(int numRuns, int *rowCount, Stat *theStats, MrBFlt *numP
     if (numRuns > 1)
         {
         for (j=k=0; j<numRuns; j++)
-            {
             if (rowCount[j] > 0)
                 k++;
-            if (theStats->PSRF < 0.0)
+            
+        if (theStats->PSRF < 0.0)
+            {
+            MrBayesPrint ("     NA    %3d", k);
+            MrBayesPrintf (fpVstat, "\tNA\t%d", k);
+            }
+        else
+            {
+            if (theStats->PSRF > 10.0)
                 {
-                MrBayesPrint ("     NA    %3d", k);
+                MrBayesPrint ("    >10.0  %3d", k);
                 MrBayesPrintf (fpVstat, "\tNA\t%d", k);
+                (*maxPSRF) = 10.0;
                 }
             else
                 {
-                if (theStats->PSRF > 10.0)
-                    {
-                    MrBayesPrint ("    >10.0  %3d", k);
-                    MrBayesPrintf (fpVstat, "\tNA\t%d", k);
-                    (*maxPSRF) = 10.0;
-                    }
-                else
-                    {
-                    MrBayesPrint ("  %7.3lf  %3d", theStats->PSRF, k);
-                    MrBayesPrintf (fpVstat, "\t%s\t%d", MbPrintNum(theStats->PSRF), k);
-                    (*sumPSRF) += theStats->PSRF;
-                    (*numPSRFSamples)++;
-                    if (theStats->PSRF > *maxPSRF)
-                         (*maxPSRF) = theStats->PSRF;
-                    }
+                MrBayesPrint ("  %7.3lf  %3d", theStats->PSRF, k);
+                MrBayesPrintf (fpVstat, "\t%s\t%d", MbPrintNum(theStats->PSRF), k);
+                (*sumPSRF) += theStats->PSRF;
+                (*numPSRFSamples)++;
+                if (theStats->PSRF > *maxPSRF)
+                    (*maxPSRF) = theStats->PSRF;
                 }
-
-            if (k != numRuns)
-                MrBayesPrint (" *");
             }
+
+        if (k != numRuns)
+            MrBayesPrint (" *");
         }
 
-        MrBayesPrintf (fpVstat, "\n");
-        MrBayesPrint ("\n");
+    MrBayesPrint ("\n");
+    MrBayesPrintf (fpVstat, "\n");
 }
 
 

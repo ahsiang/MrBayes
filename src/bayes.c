@@ -41,6 +41,13 @@
 #include "sumpt.h"
 #include "utils.h"
 
+/* We only do proper command line parsing if we're on a system where the
+   unistd.h header is available */
+#ifdef HAVE_UNISTD_H
+#define UNIX_COMMAND_LINE_PARSING 1
+#include <unistd.h> /* getopt() */
+#endif
+
 #ifdef HAVE_LIBREADLINE
 #  if defined(HAVE_READLINE_READLINE_H)
 #    include <readline/readline.h>
@@ -148,7 +155,7 @@ int main (int argc, char *argv[])
 #   if defined (__MWERKS__) & defined (MAC_VERSION)
     /* Set up interface when using the Metrowerks compiler. This
        should work for either Macintosh or Windows. */
-    SIOUXSetTitle("\pMrBayes v3.2");
+    SIOUXSetTitle("\pMrBayes v3.2.7");
     SIOUXSettings.fontface         = 0;  /* plain=0; bold=1 */
     SIOUXSettings.setupmenus       = 0;
     SIOUXSettings.autocloseonquit  = 1;
@@ -189,10 +196,7 @@ int main (int argc, char *argv[])
 
     /* Initialize the variables of the program. */
     InitializeMrBayes ();
-
-    /* Print the nifty header. */
-    PrintHeader ();
-
+    
     /* Go to the command line, process any arguments passed to the program
        and then wait for input. */
     i = CommandLine (argc, argv);
@@ -221,8 +225,105 @@ int CommandLine (int argc, char **argv)
     int     ierror;
 #   endif
 
-    for (i=0;i<CMD_STRING_LENGTH;i++) cmdStr[i]='\0';
+    for (i = 0; i < CMD_STRING_LENGTH; i++) cmdStr[i] = '\0';
 
+#ifdef UNIX_COMMAND_LINE_PARSING
+{
+    int ch;              /* the option character */
+    int interactive = 0; /* enable/disable interactive mode */
+
+    /* Do command line parsing on Unix-like systems */
+    while ((ch = getopt(argc, argv, "hiIv")) != -1) {
+        switch (ch) {
+        case 'h': /* help */
+            /* Display (very short) command synopsis and terminate
+             * succesfully */
+            puts("MrBayes, Bayesian Analysis of Phylogeny\n");
+            puts("Usage:");
+            printf("\t%s [-i] [filename ...]\n", argv[0]);
+            printf("\t%s -v\n", argv[0]);
+            printf("\t%s -h\n", argv[0]);
+            putchar('\n');
+            puts("Options:");
+            puts("\t-i\tForce interactive mode");
+            puts("\t\tNon-interactive mode is the default when a "
+                 "filename is given");
+            puts("\t\tInteractive mode is the default when no filename is "
+                 "given");
+            puts("\t-v\tDisplay version information and exit");
+            puts("\t-h\tDisplay this short help text and exit");
+            return NO_ERROR;
+            break; /* NOTREACHED */
+        case 'i':  /* interactive */
+        case 'I':  /* interactive */
+            /* Force enable interactive mode */
+            interactive = 1;
+            break;
+        case 'v': /* version */
+                  /* Display the same information that is displayed by the
+                   * "Version" interactive command and terminate succesfully */
+            puts("MrBayes, Bayesian Analysis of Phylogeny\n");
+            printf("Version:   %s\n", VERSION_NUMBER);
+            fputs("Features: ", stdout);
+#ifdef SSE_ENABLED
+            fputs(" SSE", stdout);
+#endif
+#ifdef AVX_ENABLED
+            fputs(" AVX", stdout);
+#endif
+#ifdef FMA_ENABLED
+            fputs(" FMA", stdout);
+#endif
+#ifdef BEAGLE_ENABLED
+            fputs(" Beagle", stdout);
+#endif
+#ifdef MPI_ENABLED
+            fputs(" MPI", stdout);
+#endif
+#ifdef HAVE_LIBREADLINE
+            fputs(" readline", stdout);
+#endif
+            putchar('\n');
+#if defined(HOST_TYPE) && defined(HOST_CPU)
+            printf("Host type: %s (CPU: %s)\n", HOST_TYPE, HOST_CPU);
+#endif
+#if defined(COMPILER_VENDOR) && defined(COMPILER_VERSION)
+            printf(
+                "Compiler:  %s %s\n", COMPILER_VENDOR, COMPILER_VERSION);
+#endif
+            return NO_ERROR;
+            break; /* NOTREACHED */
+        case '?':  /* unknown */
+        default:   /* unknown */
+            fprintf(stderr,
+                "Error in command line parsing (see '%s -h')\n", argv[0]);
+            return ERROR;
+        }
+    }
+
+    if (optind == argc) {
+        /* If no further operands are available (i.e. there are no files to
+         * process), switch to interactive mode */
+        interactive = 1;
+    }
+
+    if (interactive) {
+        mode = INTERACTIVE;
+        autoClose = NO;
+        autoOverwrite = YES;
+        noWarn = NO;
+        quitOnError = NO;
+    } else {
+        mode = NONINTERACTIVE;
+        autoClose = YES;
+        autoOverwrite = YES;
+        noWarn = YES;
+        quitOnError = YES;
+    }
+
+    nProcessedArgs = optind;
+}
+#else /* !UNIX_COMMAND_LINE_PARSING */
     /* wait for user-input commands */
     nProcessedArgs = 1; /* first argument is program name and needs not be processed */
     if (nProcessedArgs < argc)
@@ -233,10 +334,16 @@ int CommandLine (int argc, char **argv)
         noWarn = YES;
         quitOnError = YES;
         }
+#endif
+
+    /* Display MrBayes header *after* parsing the command line un Unix systems */
+    PrintHeader();
+
     for (;;)
         {
-        if (nProcessedArgs < argc)
+        if (nProcessedArgs < argc) 
             {
+#ifndef UNIX_COMMAND_LINE_PARSING
             /* we are here only if a command that has been passed
                into the program remains to be processed */
             if (nProcessedArgs == 1 && (strcmp(argv[1],"-i") == 0 || strcmp(argv[1],"-I") == 0))
@@ -248,6 +355,102 @@ int CommandLine (int argc, char **argv)
                 quitOnError = NO;
                 }
             else
+#endif
+                sprintf (cmdStr, "Execute %s", argv[nProcessedArgs]);
+            nProcessedArgs++;
+            }
+        else
+            {
+            /* first check if we are in noninteractive mode and quit if so */
+            if (mode == NONINTERACTIVE)
+                {
+                MrBayesPrint ("%s   Tasks completed, exiting program because mode is noninteractive\n", spacer);
+                MrBayesPrint ("%s   To return control to the command line after completion of file processing, \n", spacer);
+                MrBayesPrint ("%s   set mode to interactive with 'mb -i <filename>' (i is for interactive)\n", spacer);
+                MrBayesPrint ("%s   or use 'set mode=interactive'\n\n", spacer);
+                return (NO_ERROR);
+                }
+            /* normally, we simply wait at the prompt for a
+               user action */
+#   if defined (MPI_ENABLED)
+            if (proc_id == 0)
+                {
+                /* do not use readline because OpenMPI does not handle it */
+                MrBayesPrint ("MrBayes > ");
+                fflush (stdin);
+                if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
+                    {
+                    if (feof(stdin))
+                        MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
+                    else
+                        MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
+                    strcpy (cmdStr,"quit;\n");
+                    }
+                }
+            ierror = MPI_Bcast (&cmdStr, CMD_STRING_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+            if (ierror != MPI_SUCCESS)
+                {
+                MrBayesPrint ("%s   Problem broadcasting command string\n", spacer);
+                }
+#   else
+#       ifdef HAVE_LIBREADLINE
+            cmdStrP = readline("MrBayes > ");
+            if (cmdStrP!=NULL) 
+                    {
+                    strncpy (cmdStr,cmdStrP,CMD_STRING_LENGTH - 2);
+                    if (*cmdStrP) 
+                        add_history (cmdStrP);
+                    free (cmdStrP);
+                    }
+            else /* fall through to if (feof(stdin))..*/
+#       else
+            MrBayesPrint ("MrBayes > ");
+            fflush (stdin);
+            if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
+#       endif
+                {
+                if (feof(stdin))
+                    MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
+                else
+                    MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
+                strcpy (cmdStr,"quit;\n");
+                }
+#   endif
+            }
+        i = 0;
+        while (cmdStr[i] != '\0' && cmdStr[i] != '\n')
+    /* wait for user-input commands */
+    nProcessedArgs = 1; /* first argument is program name and needs not be processed */
+    if (nProcessedArgs < argc)
+        {
+        mode = NONINTERACTIVE;  /* when a command is passed into the program, the default is to exit without listening to stdin */
+        autoClose = YES;
+        autoOverwrite = YES;
+        noWarn = YES;
+        quitOnError = YES;
+        }
+#endif
+
+    /* Display MrBayes header *after* parsing the command line un Unix systems */
+    PrintHeader();
+
+    for (;;)
+        {
+        if (nProcessedArgs < argc)
+            {
+#ifndef UNIX_COMMAND_LINE_PARSING
+            /* we are here only if a command that has been passed
+               into the program remains to be processed */
+            if (nProcessedArgs == 1 && (strcmp(argv[1],"-i") == 0 || strcmp(argv[1],"-I") == 0))
+                {
+                mode = INTERACTIVE;
+                autoClose = NO;
+                autoOverwrite = YES;
+                noWarn = NO;
+                quitOnError = NO;
+                }
+            else
+#endif
                 sprintf (cmdStr, "Execute %s", argv[nProcessedArgs]);
             nProcessedArgs++;
             }
@@ -423,7 +626,7 @@ void GetTimeSeed (void)
     globalSeed  = (RandLong)curTime;
     if (globalSeed < 0)
         globalSeed = -globalSeed;
-
+        
     /* Note: swapSeed will often be the same as globalSeed */
     curTime = time(NULL);
     swapSeed  = (RandLong)curTime;
@@ -435,7 +638,7 @@ void GetTimeSeed (void)
     runIDSeed  = (RandLong)curTime;
     if (runIDSeed < 0)
         runIDSeed = -runIDSeed;
-
+        
 #   endif
 }
 
@@ -486,9 +689,19 @@ int InitializeMrBayes (void)
 #       if defined (WIN_VERSION)
     tryToUseBEAGLE = NO;                             /* try to use the BEAGLE library (NO until SSE code works in Win) */
 #       else
-    tryToUseBEAGLE = NO;                             /* try to use the BEAGLE library if not Win (NO untill SSE single prec. works) */
+
+/* Try using Beagle */
+/*
+ * Note: The old (2015) comment from Chi says that there is some issue with
+ * single precision SSE code.  This issue is unknown to us at this point
+ * in time (2019, four years later).
+ *
+ * */
+
+    tryToUseBEAGLE = YES;                             /* try to use the BEAGLE library if not Win (NO untill SSE single prec. works) */
+
 #       endif
-    beagleScalingScheme = MB_BEAGLE_SCALE_ALWAYS;    /* use BEAGLE always scaling                     */
+    beagleScalingScheme = MB_BEAGLE_SCALE_DYNAMIC;   /* use BEAGLE dynamic scaling                     */
     beagleFlags = BEAGLE_FLAG_PROCESSOR_CPU;         /* default to generic CPU                        */
     beagleResourceNumber = 99;                       /* default to auto-resource selection            */
     // SSE instructions do not work in Windows environment
@@ -497,6 +710,15 @@ int InitializeMrBayes (void)
     beagleResourceCount = 0;                         /* default has no list */
     beagleInstanceCount = 0;                         /* no BEAGLE instances */
     beagleScalingFrequency = 1000;
+
+    beagleFlags &= ~BEAGLE_FLAG_PRECISION_DOUBLE;   /* Use Beagle in single precision mode */
+    beagleFlags |= BEAGLE_FLAG_PRECISION_SINGLE;
+
+#   if defined (BEAGLE_V3_ENABLED)
+    beagleFlags |= BEAGLE_FLAG_THREADING_CPP;         /* default to use threads on CPU */
+    beagleThreadCount = 99;                           /* default to auto threading */
+    beagleAllFloatTips = NO;                          /* default to using compact tips */
+#   endif
 #   endif
 
     /* set the proposal information */
@@ -706,11 +928,11 @@ int InitializeMrBayes (void)
     defaultModel.speciationUni[1] = 1000.0;
     defaultModel.speciationExp = 10.0;
     strcpy(defaultModel.extinctionPr, "Beta");          /* prior on extinction rate (turnover)          */
-    defaultModel.extinctionFix = 0.5;
+    defaultModel.extinctionFix = 0.9;
     defaultModel.extinctionBeta[0] = 1;
     defaultModel.extinctionBeta[1] = 1;
     strcpy(defaultModel.fossilizationPr, "Beta");       /* prior on fossilization rate (sampling proportion) */
-    defaultModel.fossilizationFix = 0.5;
+    defaultModel.fossilizationFix = 0.1;
     defaultModel.fossilizationBeta[0] = 1;
     defaultModel.fossilizationBeta[1] = 1;
     strcpy(defaultModel.sampleStrat, "Random");         /* taxon sampling strategy                      */

@@ -1,6 +1,28 @@
 #ifndef __BAYES_H__
 #define __BAYES_H__
 
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#   define VERSION_NUMBER  PACKAGE_VERSION
+#elif !defined (XCODE_VERSION) /* some defaults that would otherwise be guessed by configure */
+#   define PACKAGE_NAME "MrBayes"
+#   define PACKAGE_VERSION "3.2.7"
+#   define HOST_CPU "x86_64"
+#   define VERSION_NUMBER  PACKAGE_VERSION
+#   undef  HAVE_LIBREADLINE
+#   define UNIX_VERSION 1
+#   define SSE_ENABLED  1
+#   undef  AVX_ENABLED
+#   undef  FMA_ENABLED
+#   undef  MPI_ENABLED
+#   undef  BEAGLE_ENABLED
+#endif
+
+#ifdef HAVE_UNISTD_H
+#define _XOPEN_SOURCE
+#include <unistd.h>
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include <float.h>
@@ -12,23 +34,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
-
-#ifdef HAVE_CONFIG_H
-#   include "config.h"
-#   define VERSION_NUMBER  PACKAGE_VERSION
-#elif !defined (XCODE_VERSION) /* some defaults that would otherwise be guessed by configure */
-#   define PACKAGE_NAME "MrBayes"
-#   define PACKAGE_VERSION "3.2.7-dev"
-#   define HOST_CPU "x86_64"
-#   define VERSION_NUMBER  PACKAGE_VERSION
-#   undef  HAVE_LIBREADLINE
-#   define UNIX_VERSION 1
-#   define SSE_ENABLED  1
-#   undef  AVX_ENABLED
-#   undef  FMA_ENABLED
-#   undef  MPI_ENABLED
-#   undef  BEAGLE_ENABLED
-#endif
 
 /* Set SSE_ENABLED if SSE SIMD extensions available. */
 #ifdef HAVE_SSE
@@ -609,11 +614,15 @@ typedef struct
     int             nLocks;             /*!< number of constrained (locked) nodes         */
     TreeNode        **allDownPass;      /*!< downpass array of all nodes                  */
     TreeNode        **intDownPass;      /*!< downpass array of interior nodes (including upper but excluding lower root in rooted trees) */
+#if defined (BEAGLE_V3_ENABLED)
+    int             levelPassEnabled;   /*!< are we also doing a level-order traversal?   */
+    TreeNode        **intDownPassLevel; /*!< level order downpass array of interior nodes (including upper but excluding lower root in rooted trees) */
+#endif
     TreeNode        *root;              /*!< pointer to root (lower root in rooted trees) */
     TreeNode        *nodes;             /*!< array containing the nodes                   */
     BitsLong        *bitsets;           /*!< pointer to bitsets describing splits         */
     BitsLong        *flags;             /*!< pointer to cond like flags                   */
-    int             fromUserTree;       /*!< YES is set for the trees whoes branch lengthes are set from user tree(as start tree or fix branch length prior), NO otherwise */
+    int             fromUserTree;       /*!< YES is set for the trees whoes branch lengths are set from user tree(as start tree or fix branch length prior), NO otherwise */       
     }
     Tree;
 
@@ -1392,6 +1401,7 @@ typedef struct modelinfo
 
     /* likelihood calculator flags and variables */
     int         useBeagle;                  /* use Beagle for this partition?               */
+    int         useBeagleMultiPartitions;   /* use one Beagle instance for all partitions?  */
     int         useVec;                     /* use SSE for this partition?                  */
     int*        rescaleFreq;                /* rescale frequency for each chain             */
 
@@ -1411,12 +1421,25 @@ typedef struct modelinfo
     int*        cumulativeScaleIndices;     /* array of cumulative scale indices            */
     int         rescaleBeagleAll;           /* set to rescale all nodes                     */
     int         rescaleFreqOld;             /* holds rescale frequency of current state     */
+    int         rescaleFreqNew;             /* holds temporary new rescale frequency        */
     int         recalculateScalers;         /* shoud we recalculate scalers for current state YES/NO */
-    int*        succesCount;                /* count number of succesful computation since last reset of scalers */
+    int*        successCount;               /* count of successful computations since last reset of scalers */
     int**       isScalerNode;               /* for each node and chain set to YES if scaled node */
     int*        isScalerNodeScratch;        /* scratch space to hold isScalerNode of proposed state*/
     long*       beagleComputeCount;         /* count of number of calls to likelihood       */
-#endif
+    int         divisionIndex;              /* division index number                        */
+    BeagleOperation* operations;            /* array of operations to be sent to Beagle     */
+    int         opCount;                    /* partial likelihood operations count          */
+    int*        scaleFactorsOps;            /* array of scaler indices for Beagle operations*/
+#if defined (BEAGLE_V3_ENABLED)
+    int         numCharsAll;                /* number of compressed chars for all divisions */
+    MrBFlt*     logLikelihoodsAll;          /* array of log likelihoods for all divisions   */
+    int*        cijkIndicesAll;             /* cijk array for all divisions                 */
+    int*        categoryRateIndicesAll;     /* category rate array for all divisions        */
+    BeagleOperationByPartition* operationsAll; /* array of all operations across divisions  */
+    BeagleOperationByPartition* operationsByPartition; /* array of division operations to be sent to Beagle     */
+#endif /* BEAGLE_V3_ENABLED */
+#endif /* BEAGLE_ENABLED */
 
     } ModelInfo;
 
@@ -1773,6 +1796,10 @@ extern int              beagleInstanceCount;                    /* total number 
 extern int              beagleScalingScheme;                    /* BEAGLE dynamic scaling                        */
 extern int              beagleScalingFrequency;                 /* BEAGLE rescaling frequency                    */
 extern int              recalcScalers;                      /* shoud we recalculate scalers for one of divisions for current state YES/NO */
+#if defined (BEAGLE_V3_ENABLED)
+extern int              beagleThreadCount;                      /* max number of BEAGLE CPU threads  */
+extern int              beagleAllFloatTips;                     /* use floating-point represantion for all tips  */
+#endif
 #endif
 
 /* Aamodel parameters */

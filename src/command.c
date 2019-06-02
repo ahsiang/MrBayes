@@ -47,7 +47,7 @@
 #endif
 
 #define NUMCOMMANDS                     62    /* The total number of commands in the program  */
-#define NUMPARAMS                       282   /* The total number of parameters  */
+#define NUMPARAMS                       284   /* The total number of parameters  */
 #define PARAM(i, s, f, l)               p->string = s;    \
                                         p->fp = f;        \
                                         p->valueList = l; \
@@ -331,7 +331,7 @@ CmdType     commands[] =
             { 35,            "Quit",  NO,            DoQuit,  0,                                                                                             {-1},       32,                                          "Quits the program",  IN_CMD, SHOW },
             { 36,          "Report",  NO,          DoReport,  9,                                                            {122,123,124,125,134,135,136,192,217},        4,                 "Controls how model parameters are reported",  IN_CMD, SHOW },
             { 37,         "Restore", YES,         DoRestore,  1,                                                                                             {48},    49152,                                              "Restores taxa",  IN_CMD, SHOW },
-            { 38,             "Set",  NO,             DoSet, 23,   {13,14,94,145,170,171,179,181,182,216,229,233,234,235,236,238,239,240,245,268,275,278,279},        4,      "Sets run conditions and defines active data partition",  IN_CMD, SHOW },
+            { 38,             "Set",  NO,             DoSet, 23,       {13,14,94,145,170,171,179,181,182,216,229,233,234,235,236,238,239,240,245,268,275,282,285},        4,      "Sets run conditions and defines active data partition",  IN_CMD, SHOW },
             { 39,      "Showbeagle",  NO,      DoShowBeagle,  0,                                                                                             {-1},       32,                            "Show available BEAGLE resources",  IN_CMD, SHOW },
             { 40,      "Showmatrix",  NO,      DoShowMatrix,  0,                                                                                             {-1},       32,                             "Shows current character matrix",  IN_CMD, SHOW },
             { 41,   "Showmcmctrees",  NO,   DoShowMcmcTrees,  0,                                                                                             {-1},       32,                          "Shows trees used in mcmc analysis",  IN_CMD, SHOW },
@@ -12229,7 +12229,7 @@ int GetUserHelp (char *helpTkn)
         MrBayesPrint ("                   same as the length of each of the subsequent steps.           \n");
         MrBayesPrint ("   Nsteps       -- Number of steps in the stepping-stone algorithm. Typically, a \n");
         MrBayesPrint ("                   number above 30 is sufficient for accurate results.           \n");
-        MrBayesPrint ("   FromPrior    -- If it is set to 'Yes', it indicates that in the first step we \n"); 
+        MrBayesPrint ("   FromPrior    -- If it is set to 'Yes', it indicates that in the first step we \n");
         MrBayesPrint ("                   sample from the prior, with each consecutive step we sample   \n");
         MrBayesPrint ("                   closer to the posterior. 'No' indicates the opposite direction\n");
         MrBayesPrint ("                   of power posterior change, i.e. in the first step we sample   \n");
@@ -12394,10 +12394,10 @@ else if (!strcmp(helpTkn, "Set"))
         MrBayesPrint ("   Beaglescaling      Always/Dynamic        %s                                   \n", beagleScalingScheme == MB_BEAGLE_SCALE_ALWAYS ? "Always" : "Dynamic");
         MrBayesPrint ("   Beaglesse          Yes/No                %s                                   \n", beagleFlags & BEAGLE_FLAG_VECTOR_SSE ? "Yes" : "No");
 #   if defined (BEAGLE_V3_ENABLED)
-        MrBayesPrint ("   Beaglethreads      Yes/No                %s                                   \n", beagleFlags & BEAGLE_FLAG_THREADING_CPP ? "Yes" : "No"); 
-        MrBayesPrint ("   Beaglethreadcount  <number>              %d                                   \n", beagleThreadCount); 
-        MrBayesPrint ("   Beaglefloattips    Yes/No                %s                                   \n", beagleAllFloatTips ? "Yes" : "No"); 
-#   endif       
+        MrBayesPrint ("   Beaglethreads      Yes/No                %s                                   \n", beagleFlags & BEAGLE_FLAG_THREADING_CPP ? "Yes" : "No");
+        MrBayesPrint ("   Beaglethreadcount  <number>              %d                                   \n", beagleThreadCount);
+        MrBayesPrint ("   Beaglefloattips    Yes/No                %s                                   \n", beagleAllFloatTips ? "Yes" : "No");
+#   endif
 #   endif
         MrBayesPrint ("                                                                                 \n");
         MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
@@ -12407,7 +12407,7 @@ else if (!strcmp(helpTkn, "Set"))
         MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
         MrBayesPrint ("   Charset                                                                       \n");
         MrBayesPrint ("                                                                                 \n");
-        MrBayesPrint ("   This command defines a character set. The format for the charset command      \n"); 
+        MrBayesPrint ("   This command defines a character set. The format for the charset command      \n");
         MrBayesPrint ("                                                                                 \n");
         MrBayesPrint ("      charset <name> = <character numbers>                                       \n");
         MrBayesPrint ("                                                                                 \n");
@@ -14712,20 +14712,12 @@ void SetUpParms (void)
     //PARAM (283, "Burnin",         DoSumaParm,        "\0");
     //PARAM (284, "Relburnin",      DoSumaParm,        "Yes|No|\0");
     //PARAM (285, "Burninfrac",     DoSumaParm,        "\0");
-
-
-    /* NOTE: If a change is made to the parameter table, make certain you change
-            NUMPARAMS (now 282; one more than last index) at the top of this file. */
-    /* CmdType commands[] */
-            NUMPARAMS (now 284; one more than last ndex) at the top of this file. */
-=======
     PARAM (282, "Beaglethreadcount",  DoSetParm,     "\0");
     PARAM (283, "Beaglefloattips",DoSetParm,  "Yes|No|\0");
 
 
     /* NOTE: If a change is made to the parameter table, make certain you change
-            NUMPARAMS (now 280; one more than last index) at the top of this file. */
->>>>>>> develop
+            NUMPARAMS (now 284; one more than last index) at the top of this file. */
     /* CmdType commands[] */
 }
 

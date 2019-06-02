@@ -196,7 +196,7 @@ int main (int argc, char *argv[])
 
     /* Initialize the variables of the program. */
     InitializeMrBayes ();
-    
+
     /* Go to the command line, process any arguments passed to the program
        and then wait for input. */
     i = CommandLine (argc, argv);
@@ -341,101 +341,6 @@ int CommandLine (int argc, char **argv)
 
     for (;;)
         {
-        if (nProcessedArgs < argc) 
-            {
-#ifndef UNIX_COMMAND_LINE_PARSING
-            /* we are here only if a command that has been passed
-               into the program remains to be processed */
-            if (nProcessedArgs == 1 && (strcmp(argv[1],"-i") == 0 || strcmp(argv[1],"-I") == 0))
-                {
-                mode = INTERACTIVE;
-                autoClose = NO;
-                autoOverwrite = YES;
-                noWarn = NO;
-                quitOnError = NO;
-                }
-            else
-#endif
-                sprintf (cmdStr, "Execute %s", argv[nProcessedArgs]);
-            nProcessedArgs++;
-            }
-        else
-            {
-            /* first check if we are in noninteractive mode and quit if so */
-            if (mode == NONINTERACTIVE)
-                {
-                MrBayesPrint ("%s   Tasks completed, exiting program because mode is noninteractive\n", spacer);
-                MrBayesPrint ("%s   To return control to the command line after completion of file processing, \n", spacer);
-                MrBayesPrint ("%s   set mode to interactive with 'mb -i <filename>' (i is for interactive)\n", spacer);
-                MrBayesPrint ("%s   or use 'set mode=interactive'\n\n", spacer);
-                return (NO_ERROR);
-                }
-            /* normally, we simply wait at the prompt for a
-               user action */
-#   if defined (MPI_ENABLED)
-            if (proc_id == 0)
-                {
-                /* do not use readline because OpenMPI does not handle it */
-                MrBayesPrint ("MrBayes > ");
-                fflush (stdin);
-                if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
-                    {
-                    if (feof(stdin))
-                        MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
-                    else
-                        MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
-                    strcpy (cmdStr,"quit;\n");
-                    }
-                }
-            ierror = MPI_Bcast (&cmdStr, CMD_STRING_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
-            if (ierror != MPI_SUCCESS)
-                {
-                MrBayesPrint ("%s   Problem broadcasting command string\n", spacer);
-                }
-#   else
-#       ifdef HAVE_LIBREADLINE
-            cmdStrP = readline("MrBayes > ");
-            if (cmdStrP!=NULL) 
-                    {
-                    strncpy (cmdStr,cmdStrP,CMD_STRING_LENGTH - 2);
-                    if (*cmdStrP) 
-                        add_history (cmdStrP);
-                    free (cmdStrP);
-                    }
-            else /* fall through to if (feof(stdin))..*/
-#       else
-            MrBayesPrint ("MrBayes > ");
-            fflush (stdin);
-            if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
-#       endif
-                {
-                if (feof(stdin))
-                    MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
-                else
-                    MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
-                strcpy (cmdStr,"quit;\n");
-                }
-#   endif
-            }
-        i = 0;
-        while (cmdStr[i] != '\0' && cmdStr[i] != '\n')
-    /* wait for user-input commands */
-    nProcessedArgs = 1; /* first argument is program name and needs not be processed */
-    if (nProcessedArgs < argc)
-        {
-        mode = NONINTERACTIVE;  /* when a command is passed into the program, the default is to exit without listening to stdin */
-        autoClose = YES;
-        autoOverwrite = YES;
-        noWarn = YES;
-        quitOnError = YES;
-        }
-#endif
-
-    /* Display MrBayes header *after* parsing the command line un Unix systems */
-    PrintHeader();
-
-    for (;;)
-        {
         if (nProcessedArgs < argc)
             {
 #ifndef UNIX_COMMAND_LINE_PARSING
@@ -468,91 +373,91 @@ int CommandLine (int argc, char **argv)
             /* normally, we simply wait at the prompt for a
                user action */
 #   if defined (MPI_ENABLED)
-            if (proc_id == 0)
-                {
-                /* do not use readline because OpenMPI does not handle it */
-                MrBayesPrint ("MrBayes > ");
-                fflush (stdin);
-                if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
-                    {
-                    if (feof(stdin))
-                        MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
-                    else
-                        MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
-                    strcpy (cmdStr,"quit;\n");
-                    }
-                }
-            ierror = MPI_Bcast (&cmdStr, CMD_STRING_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
-            if (ierror != MPI_SUCCESS)
-                {
-                MrBayesPrint ("%s   Problem broadcasting command string\n", spacer);
-                }
+           if (proc_id == 0)
+               {
+               /* do not use readline because OpenMPI does not handle it */
+               MrBayesPrint ("MrBayes > ");
+               fflush (stdin);
+               if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
+                   {
+                   if (feof(stdin))
+                       MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
+                   else
+                       MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
+                   strcpy (cmdStr,"quit;\n");
+                   }
+               }
+           ierror = MPI_Bcast (&cmdStr, CMD_STRING_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+           if (ierror != MPI_SUCCESS)
+               {
+               MrBayesPrint ("%s   Problem broadcasting command string\n", spacer);
+               }
 #   else
 #       ifdef HAVE_LIBREADLINE
-            cmdStrP = readline("MrBayes > ");
-            if (cmdStrP!=NULL)
-                    {
-                    strncpy (cmdStr,cmdStrP,CMD_STRING_LENGTH - 2);
-                    if (*cmdStrP)
-                        add_history (cmdStrP);
-                    free (cmdStrP);
-                    }
-            else /* fall through to if (feof(stdin))..*/
+           cmdStrP = readline("MrBayes > ");
+           if (cmdStrP!=NULL)
+                   {
+                   strncpy (cmdStr,cmdStrP,CMD_STRING_LENGTH - 2);
+                   if (*cmdStrP)
+                       add_history (cmdStrP);
+                   free (cmdStrP);
+                   }
+           else /* fall through to if (feof(stdin))..*/
 #       else
-            MrBayesPrint ("MrBayes > ");
-            fflush (stdin);
-            if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
+           MrBayesPrint ("MrBayes > ");
+           fflush (stdin);
+           if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
 #       endif
-                {
-                if (feof(stdin))
-                    MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
-                else
-                    MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
-                strcpy (cmdStr,"quit;\n");
-                }
+               {
+               if (feof(stdin))
+                   MrBayesPrint ("%s   End of File encountered on stdin; quitting\n", spacer);
+               else
+                   MrBayesPrint ("%s   Could not read command from stdin; quitting\n", spacer);
+               strcpy (cmdStr,"quit;\n");
+               }
 #   endif
-            }
-        i = 0;
-        while (cmdStr[i] != '\0' && cmdStr[i] != '\n')
-            i++;
-        cmdStr[i++] = ';';
-        cmdStr[i] = '\0';
-        MrBayesPrint ("\n");
-        if (cmdStr[0] != ';')
-            {
-            /* check that all characters in the string are valid */
-            if (CheckStringValidity (cmdStr) == ERROR)
-                {
-                MrBayesPrint ("   Unknown character in command string\n\n");
-                }
-            else
-                {
-                expecting = Expecting(COMMAND);
-                message = ParseCommand (cmdStr);
+           }
+       i = 0;
+       while (cmdStr[i] != '\0' && cmdStr[i] != '\n')
+           i++;
+       cmdStr[i++] = ';';
+       cmdStr[i] = '\0';
+       MrBayesPrint ("\n");
+       if (cmdStr[0] != ';')
+           {
+           /* check that all characters in the string are valid */
+           if (CheckStringValidity (cmdStr) == ERROR)
+               {
+               MrBayesPrint ("   Unknown character in command string\n\n");
+               }
+           else
+               {
+               expecting = Expecting(COMMAND);
+               message = ParseCommand (cmdStr);
 
-                if (message == NO_ERROR_QUIT)
-                    return (NO_ERROR);
+               if (message == NO_ERROR_QUIT)
+                   return (NO_ERROR);
 
-                if (message == ERROR && quitOnError == YES)
-                    {
-                    MrBayesPrint ("%s   Will exit with signal 1 (error) because quitonerror is set to yes\n", spacer);
-                    MrBayesPrint ("%s   If you want control to be returned to the command line on error,\n", spacer);
-                    MrBayesPrint ("%s   use 'mb -i <filename>' (i is for interactive) or use 'set quitonerror=no'\n\n", spacer);
-                    return (ERROR);
-                    }
+               if (message == ERROR && quitOnError == YES)
+                   {
+                   MrBayesPrint ("%s   Will exit with signal 1 (error) because quitonerror is set to yes\n", spacer);
+                   MrBayesPrint ("%s   If you want control to be returned to the command line on error,\n", spacer);
+                   MrBayesPrint ("%s   use 'mb -i <filename>' (i is for interactive) or use 'set quitonerror=no'\n\n", spacer);
+                   return (ERROR);
+                   }
 
 #   if defined (MPI_ENABLED)
-                ierror = MPI_Barrier (MPI_COMM_WORLD);
-                if (ierror != MPI_SUCCESS)
-                    {
-                    MrBayesPrint ("%s   Problem at command barrier\n", spacer);
-                    }
+               ierror = MPI_Barrier (MPI_COMM_WORLD);
+               if (ierror != MPI_SUCCESS)
+                   {
+                   MrBayesPrint ("%s   Problem at command barrier\n", spacer);
+                   }
 #   endif
 
-                MrBayesPrint ("\n");
-                }
-            }
-        }
+               MrBayesPrint ("\n");
+               }
+           }
+       }
 }
 
 
@@ -561,14 +466,14 @@ extern char *command_generator(const char *text, int state);
 
 char **readline_completion (const char *text, int start, int stop)
 {
-    char **matches = (char **) NULL;
+   char **matches = (char **) NULL;
 
 #   ifdef COMPLETIONMATCHES
-    if (start == 0)
-            matches = rl_completion_matches (text, command_generator);
+   if (start == 0)
+           matches = rl_completion_matches (text, command_generator);
 #   endif
 
-    return (matches);
+   return (matches);
 }
 #endif
 
@@ -626,7 +531,7 @@ void GetTimeSeed (void)
     globalSeed  = (RandLong)curTime;
     if (globalSeed < 0)
         globalSeed = -globalSeed;
-        
+
     /* Note: swapSeed will often be the same as globalSeed */
     curTime = time(NULL);
     swapSeed  = (RandLong)curTime;
@@ -638,7 +543,7 @@ void GetTimeSeed (void)
     runIDSeed  = (RandLong)curTime;
     if (runIDSeed < 0)
         runIDSeed = -runIDSeed;
-        
+
 #   endif
 }
 

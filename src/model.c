@@ -2489,7 +2489,7 @@ int CompressData (void)
             if (!strcmp(mp->mcModel, "Yes"))
                 {
                 CorrPreprocess();
-                numSitesAlloc = SafeCalloc (m->numChars, sizeof(int));
+                numSitesAlloc = SafeCalloc (numLocalChar, sizeof(int));
                 allocCounter = 1;
                 }
             }
@@ -11294,7 +11294,6 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             maxTable = numSitesAlloc[j];
                         }
                     subValue[0] = maxTable; // This is numClusters
-                    free (numSitesAlloc);
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -11305,14 +11304,14 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     for (i=0; i<numTaxa; i++)
                         {
-                        for (j=0; j<m->numChars; j++)
+                        for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
                             {
-                            if (compMatrix[pos(i,j,m->numChars)] == 1)
-                                intValue[pos(i,j,m->numChars)] = 1;
-                            else if (compMatrix[pos(i,j,m->numChars)] == 2)
-                                intValue[pos(i,j,m->numChars)] = 4;
+                            if (compMatrix[pos(i,j,numCompressedChars)] == 1)
+                                intValue[pos(i,c,m->numChars)] = ENDSTATE;
+                            else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
+                                intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
                             else
-                                intValue[pos(i,j,m->numChars)] = MISSING;
+                                intValue[pos(i,c,m->numChars)] = TRIMORPH;
                             }
                         }
                     /* Copy over latent matrix to global initialLatentMatrix */
@@ -11326,17 +11325,16 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     {
                     for (i=0; i<numTaxa; i++)
                         {
-                        for (j=0; j<m->numChars; j++)
+                        for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
                             {
-                            if (compMatrix[pos(i,j,m->numChars)] == 1)
-                                intValue[pos(i,j,m->numChars)] = 1;
-                            else if (compMatrix[pos(i,j,m->numChars)] == 2)
-                                intValue[pos(i,j,m->numChars)] = 4;
+                            if (compMatrix[pos(i,j,numCompressedChars)] == 1)
+                                intValue[pos(i,j,m->numChars)] = ENDSTATE;
+                            else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
+                                intValue[pos(i,j,m->numChars)] = OPPENDSTATE;
                             else
-                                intValue[pos(i,j,m->numChars)] = MISSING;
+                                intValue[pos(i,j,m->numChars)] = TRIMORPH;
                             }
                         }
-
                     /* Copy over latent matrix to global initialLatentMatrix */
                     for (i=0; i<numTaxa; i++)
                         for (j=0; j<m->numChars; j++)

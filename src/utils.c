@@ -1087,8 +1087,8 @@ void MeanVariance (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt *var)
 @param vals    pointer to values in log scale
 @param nVals   number of "vals", minimum 1
 @param mean    address of variable where computed mean is returned by the function
-@param var     address of variable where computed variance is returned by the function. Could be set to NULL if this value need not to be returned. 
-@param varEst  address of variable where computed estimate of the population variance is returned, could be set to NULL if this value need not to be returned. 
+@param var     address of variable where computed variance is returned by the function. Could be set to NULL if this value need not to be returned.
+@param varEst  address of variable where computed estimate of the population variance is returned, could be set to NULL if this value need not to be returned.
                Could be set to NULL if this value need not to be returened.
 Note: We devide by nVals or by (nVals-1) when var and varEst is calculated from the sum of square differences. */
 void MeanVarianceLog (MrBFlt *vals, int nVals, MrBFlt *mean, MrBFlt *var, MrBFlt *varEst)
@@ -2117,7 +2117,7 @@ Tree *AllocateFixedTree (int numTaxa, int isRooted)
 #if defined (BEAGLE_V3_ENABLED)
     t->levelPassEnabled = 0;
 #endif
-    
+
     /* initialize nodes and set index and memoryIndex */
     for (i=0; i<t->memNodes; i++)
         {
@@ -3685,7 +3685,7 @@ void UpdateTreeWithClockrate (Tree *t, MrBFlt clockRate)
 |
 |   findAllowedClockrate: Finds the range of clock rates allowed for the tree.
 |
-|   @param t        - tree to check (IN)  
+|   @param t        - tree to check (IN)
 |   @minClockRate   - address where minimum allowed clock rate is stored (OUT)
 |   @maxClockRate   - address where maximum allowed clock rate is stored (OUT)
 |
@@ -3828,7 +3828,7 @@ void FreeTree (Tree *t)
         free (t->allDownPass);
 #if defined (BEAGLE_V3_ENABLED)
         free (t->intDownPassLevel);
-#endif 
+#endif
         free (t->nodes);
         free (t);
         }
@@ -3944,7 +3944,7 @@ int Height(TreeNode *p)
         /* compute the height of each subtree */
         int lheight = Height(p->left);
         int rheight = Height(p->right);
- 
+
         /* use the larger one */
         if (lheight > rheight)
             return(lheight+1);
@@ -3957,7 +3957,7 @@ void ReverseLevelOrder(Tree *t, TreeNode *p, int *i)
 {
     int h = Height(p);
     int l;
-    for (l=h; l>=1; l--) 
+    for (l=h; l>=1; l--)
         StoreGivenLevel(t, p, l, i);
 }
  /* Store nodes at a given level */
@@ -14130,9 +14130,9 @@ int GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numI
 |   returned. Missing character compliant.
 |
 |   Polymorphism code for latent states:
-|       -1 = 0/i
-|       -2 = i/1
-|       -3 = 0/i/1
+|       -1 = 0/i   = Z (DIMORPH0)
+|       -2 = i/1   = O (TRIMORPH)
+|       -3 = 0/i/1 = T (DIMORPH1)
 |
 ---------------------------------------------------------------------------------*/
 int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex)
@@ -14149,14 +14149,14 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
     if (endStateIndex < 0)
         {
         for (i=0; i<numTaxa; i++)
-            latentResolution[i] = 2; // 1-state in bitcode
+            latentResolution[i] = INTSTATE;
         return (latentResolution);
         }
     /* All other cases */
     else
         {
         /* Set end state to 0 */
-        latentResolution[endStateIndex] = 1;
+        latentResolution[endStateIndex] = ENDSTATE;
 
         /* Get end state pattern */
         for (i=0; i<numCharsInCluster; i++)
@@ -14190,15 +14190,15 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
                         allMismatches = NO;
                     }
                 if (numMissingPairs == numCharsInCluster)
-                    latentResolution[i] = -3;
+                    latentResolution[i] = TRIMORPH;
                 else
                     {
                     if (allMatches == YES) // Latent pattern is either 0 or i
-                        latentResolution[i] = -1;
+                        latentResolution[i] = DIMORPH0;
                     else if (allMismatches == YES) // Latent pattern is either i or 1
-                        latentResolution[i] = -2;
+                        latentResolution[i] = DIMORPH1;
                     else // Mixed case - latent pattern is i
-                        latentResolution[i] = 2;
+                        latentResolution[i] = INTSTATE;
                     }
                 }
             }
@@ -14314,4 +14314,32 @@ int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int newTable, 
     newLatentStates = NULL;
 
     return (finalLatentMatrix);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|  PrintLatentMatrix
+|
+|  Prints latent matrix.
+|
+---------------------------------------------------------------------------------*/
+int PrintLatentMatrix(int numChars, int *latentMatrix)
+{
+    int         i, j;
+
+    MrBayesPrint("Latent matrix:\n");
+    for (i=0; i<numTaxa; i++)
+        {
+        MrBayesPrint("\t");
+        for (j=0; j<numChars; j++)
+            MrBayesPrint("%c ",WhichStand(latentMatrix[pos(i,j,numChars)]));
+        MrBayesPrint("\n");
+        }
+    MrBayesPrint("\n\n");
+
+    MrBayesPrint ("Press return to continue\n");
+    getchar();
+
+    return NO_ERROR;
 }

@@ -291,5 +291,6 @@ int      GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int
 int      *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex);
 int      *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);
 int      *UpdateLatentPatterns(int *newAllocationVector, int numChars, int newTable, int *oldLatentMatrix, int newTableIndex);
+int      PrintLatentMatrix(int numChars, int *latentMatrix);
 
 #endif  /* __UTILS_H__ */

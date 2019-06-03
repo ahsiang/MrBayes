@@ -2010,7 +2010,7 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             c, i, j, k, currCluster, idx, *allocationVector,
+    int             c, i, j, k, currCluster, currEntry, idx, *allocationVector,
                     *latentMatrix, tipIdx, numTipCLs, left=NO, right=NO;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR, *leftTipCLs, *rightTipCLs;
     ModelInfo       *m;
@@ -2039,9 +2039,10 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             currCluster = allocationVector[i];
             for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                currEntry = latentMatrix[pos(tipIdx,currCluster,m->numChars)];
+                if (currEntry == 1 << j)
                     leftTipCLs[idx++] = 1.0;
-                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
                     leftTipCLs[idx++] = 1.0;
                 else
                     leftTipCLs[idx++] = 0.0;
@@ -2064,9 +2065,10 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
             currCluster = allocationVector[i];
             for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                currEntry = latentMatrix[pos(tipIdx,currCluster,m->numChars)];
+                if (currEntry == 1 << j)
                     rightTipCLs[idx++] = 1.0;
-                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
                     rightTipCLs[idx++] = 1.0;
                 else
                     rightTipCLs[idx++] = 0.0;
@@ -2116,7 +2118,7 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 // for (int i=0; i<3; i++)
                 //     printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
                 // printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
-                //printf("%f\t%f\t%f\n",log(clP[0-3]),log(clP[1-3]),log(clP[2-3]));
+                // printf("%f\t%f\t%f\n",log(clP[0-3]),log(clP[1-3]),log(clP[2-3]));
             //     }
             }
         tiPL += 9;
@@ -2127,17 +2129,17 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 
     // if (chain == 2)
     //     {
-    //         for (int i=0; i<9; i++)
-    //             // printf("tiPL[%d] = %f\n",i,tiPL[i]);
-    //             printf("tiPL[%d] = %f\n",i,pL[i]);
-    //         for (int i=0; i<9; i++)
-    //             // printf("tiPR[%d] = %f\n",i,tiPR[i]);
-    //             printf("tiPR[%d] = %f\n",i,pR[i]);
-    //
-    //         for (int i=0; i<3; i++)
-    //             printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
-    //
-    //         printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
+            // for (int i=0; i<9; i++)
+            //     // printf("tiPL[%d] = %f\n",i,tiPL[i]);
+            //     printf("tiPL[%d] = %f\n",i,pL[i]);
+            // for (int i=0; i<9; i++)
+            //     // printf("tiPR[%d] = %f\n",i,tiPR[i]);
+            //     printf("tiPR[%d] = %f\n",i,pR[i]);
+            //
+            // for (int i=0; i<3; i++)
+            //     printf("clL[%d] = %f\tclR[%d] = %f\n",i,clL[i-3],i,clR[i-3]);
+            //
+            // printf("%f\t%f\t%f\n",clP[0-3],clP[1-3],clP[2-3]);
     //     }
     //
     // printf("------------condlikedown end ------------\n\n");
@@ -4742,9 +4744,9 @@ int CondLikeRoot_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             a, c, h, i, j, k, nStates=3, tipIdx, idx, currCluster,
-                    *allocationVector, *latentMatrix, numTipCLs, left=NO,
-                    right=NO, anc=NO;
+    int             a, c, h, i, j, k, nStates=3, tipIdx, currEntry, idx, currCluster,
+                    *allocationVector, *latentMatrix, numTipCLs, left=NO, right=NO,
+                    anc=NO;
     CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA,
                     likeL, likeR, likeA, *leftTipCLs, *rightTipCLs, *ancTipCLs;
     ModelInfo       *m;
@@ -4771,9 +4773,10 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
             currCluster = allocationVector[i];
             for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                currEntry = latentMatrix[pos(tipIdx,currCluster,m->numChars)];
+                if (currEntry == 1 << j)
                     leftTipCLs[idx++] = 1.0;
-                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
                     leftTipCLs[idx++] = 1.0;
                 else
                     leftTipCLs[idx++] = 0.0;
@@ -4797,9 +4800,10 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
             currCluster = allocationVector[i];
             for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                currEntry = latentMatrix[pos(tipIdx,currCluster,m->numChars)];
+                if (currEntry == 1 << j)
                     rightTipCLs[idx++] = 1.0;
-                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
                     rightTipCLs[idx++] = 1.0;
                 else
                     rightTipCLs[idx++] = 0.0;
@@ -4823,9 +4827,10 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
             currCluster = allocationVector[i];
             for (j=0; j<3; j++)
                 {
-                if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == 1 << j)
+                currEntry = latentMatrix[pos(tipIdx,currCluster,m->numChars)];
+                if (currEntry == 1 << j)
                     ancTipCLs[idx++] = 1.0;
-                else if (latentMatrix[pos(tipIdx,currCluster,m->numChars)] == MISSING)
+                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
                     ancTipCLs[idx++] = 1.0;
                 else
                     ancTipCLs[idx++] = 0.0;
@@ -8109,6 +8114,9 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             clP[k] += nStates; // If latent column already seen, increment pointer to skip it
             }
         }
+
+    PrintLatentMatrix(m->numChars,latentMatrix);
+
 
     /* Account for likelihood of emitting observed states from current latent matrix */
     (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, numClusters, m->numChars);

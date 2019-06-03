@@ -6929,7 +6929,7 @@ int InitInvCondLikes (void)
 int InitParsSets (void)
 {
     int             c, i, j, k, d, nParsStatesForCont, nIntNodes, nNodes,
-                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, *allocationVector;
+                    nuc1, nuc2, nuc3, codingNucCode, allNucCode;
     BitsLong        allAmbig, x, x1, x2, x3, *longPtr, bitsLongOne;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -7002,10 +7002,6 @@ int InitParsSets (void)
         m = &modelSettings[d];
         mp = &modelParams[d];
 
-        /* Get allocation vector if mcModel is set */
-        if (m->mcModelId == YES)
-            allocationVector = GetParamIntVals(m->allocationVector,d,state[d]);
-
         if (mp->dataType == CONTINUOUS)
             {
             /* Note: This is only a placeholder since continuous characters are not implemented yet.
@@ -7033,12 +7029,12 @@ int InitParsSets (void)
                 {
                 for (c=0, j=m->compMatrixStart; j<m->compMatrixStop; j++, c++)
                     {
-                    if (m->mcModelId == YES)
-                        x = (BitsLong) initialLatentMatrix[pos(i,allocationVector[j],m->numChars)];
+                    if ((mp->dataType == STANDARD) && (m->mcModelId == YES))
+                        x = initialLatentMatrix[pos(i,c,m->numChars)];
                     else
                         x = compMatrix[pos(i,j,compMatrixRowSize)];
 
-                    if (x == MISSING || x == GAP)
+                    if (x == MISSING || x == GAP || x == TRIMORPH)
                         m->parsSets[i][c] = allAmbig;
                     else
                         m->parsSets[i][c] = x;

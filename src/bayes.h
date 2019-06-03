@@ -276,6 +276,13 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define MISSING                 100000000
 #define GAP                     100000001
 
+#define ENDSTATE                1 /* latent end state in Mc model */
+#define INTSTATE                2 /* latent intermediate state in Mc model */
+#define OPPENDSTATE             4 /* latent opposite end state in Mc model */
+#define DIMORPH0                -1 /* 0/i dimorphism in Mc model latent states */
+#define DIMORPH1                -2 /* i/1 dimorphism in Mc model latent states */
+#define TRIMORPH                -3 /* 0/i/1 trimorphism in Mc model latent states */
+
 #define UNORD                   0
 #define ORD                     1
 #define DOLLO                   2
@@ -622,7 +629,7 @@ typedef struct
     TreeNode        *nodes;             /*!< array containing the nodes                   */
     BitsLong        *bitsets;           /*!< pointer to bitsets describing splits         */
     BitsLong        *flags;             /*!< pointer to cond like flags                   */
-    int             fromUserTree;       /*!< YES is set for the trees whoes branch lengths are set from user tree(as start tree or fix branch length prior), NO otherwise */       
+    int             fromUserTree;       /*!< YES is set for the trees whoes branch lengths are set from user tree(as start tree or fix branch length prior), NO otherwise */
     }
     Tree;
 

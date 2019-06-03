@@ -393,11 +393,9 @@ int Move_Alphadir_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     MrBFlt      oldA, newA, minA, lambda=0.0, ran, factor, tuning;
     ModelParams *mp;
-    ModelInfo   *m;
 
     /* get model params and model settings */
     mp = &modelParams[param->relParts[0]];
-    m  = &modelSettings[param->relParts[0]];
 
     /* get tuning parameter */
     tuning = mvp[0];
@@ -441,9 +439,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
-                *rescaledAllocationVector, newNumTables, oldNumClusters,
-                *updatedLatentMatrix;
-    MrBFlt      minA, alphaDir=0.0, probNewTable, randomNum;
+                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix,
+                oldNumClusters;
+    MrBFlt      alphaDir=0.0, minA, probNewTable, randomNum;
     ModelInfo   *m;
 
     /* Get model settings */
@@ -546,63 +544,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         if (rescaledAllocationVector[i] == newNumTables)
             newNumTables++;
 
-
-
-            // printf("oldAllocationVector: ");
-            // for (i=0; i<m->numChars; i++)
-            //     printf("%d ",oldAllocationVector[i]);
-            // printf("\n");
-            //
-            // printf("numTables: %d\n",numTables);
-            // printf("randCharIndex: %d\n",randCharIndex);
-            // printf("oldTable: %d\n",oldTable);
-            //
-            // printf("numSeatedAtTablesWithoutSelected: ");
-            // for (i=0; i<numTables+1; i++)
-            //     printf("%d ",numSeatedAtTablesWithoutSelected[i]);
-            // printf("\n");
-            //
-            // printf("tableProbs: ");
-            // for (i=0; i<numTables+1; i++)
-            //     printf("%f ",tableProbs[i]);
-            // printf("\n");
-            //
-            // printf("cumulativeTableProbs: ");
-            // for (i=0; i<numTables+1; i++)
-            //     printf("%f ",cumulativeTableProbs[i]);
-            // printf("\n");
-            //
-            // printf("randomNum: %f\n",randomNum);
-            // printf("newTable: %d\n",newTable);
-            //
-            // printf("numSeatedAtTables: ");
-            // for (i=0; i<numTables+1; i++)
-            //     printf("%d ",numSeatedAtTables[i]);
-            // printf("\n");
-            //
-            // printf("newAllocationVector: ");
-            // for (i=0; i<m->numChars; i++)
-            //     printf("%d ",newAllocationVector[i]);
-            // printf("\n");
-            //
-            // printf("newNumTables: %d\n\n",newNumTables);
-
-
-
-
-
     /* Change latent matrix to reflect change in allocation vector */
     oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
     oldNumClusters = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
-
-    // printf("oldLatentMatrix: \n");
-    // for (i=0; i<numTaxa; i++)
-    //     {
-    //     for (j=0; j<m->numChars; j++)
-    //         printf("%d ",oldLatentMatrix[pos(i,j,m->numChars)]);
-    //     printf("\n");
-    //     }
-    // printf("\n");
 
     updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, newTable, oldLatentMatrix, newTableIndex);
 
@@ -625,36 +569,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         *lnProposalRatio += log(1.0 / numTables) + log(tableProbs[newTable]);
 
     *lnProposalRatio -= log(1.0 / newNumTables) + log(tableProbs[oldTable]); // Backwards move
-
-    // printf("rescaledAllocationVector: ");
-    // for (i=0; i<m->numChars; i++)
-    //     printf("%d ",rescaledAllocationVector[i]);
-    // printf("\n");
-    //
-    // printf("newLatentMatrix: \n");
-    // for (i=0; i<numTaxa; i++)
-    //     {
-    //     for (j=0; j<m->numChars; j++)
-    //         printf("%d ",newLatentMatrix[pos(i,j,m->numChars)]);
-    //     printf("\n");
-    //     }
-    // printf("\n");
-    //
-    // printf("newLatentMatrix (calculated columns only:)\n");
-    // for (i=0; i<numTaxa; i++)
-    //     {
-    //     int ind = 0;
-    //     for (j=0; j<m->numChars; j++)
-    //         {
-    //         if (rescaledAllocationVector[j] == ind)
-    //             {
-    //             printf("%d ",newLatentMatrix[pos(i,j,m->numChars)]);
-    //             ind++;
-    //             }
-    //         }
-    //     printf("\n");
-    //     }
-    // printf("\n\n");
 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
@@ -6110,12 +6024,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             data[idx++] = compMatrix[pos(i,colIndices[j],m->numChars)];
 
     /* Get emission probabilities for every end state possibility */
-    int currDataPattern[numCharsInCluster];
     MrBFlt lnEmissionProbabilities[numTaxa+1]; // This holds the emission probabilities when pattern i %in% numTaxa = end state
     for (i=0; i<numTaxa; i++) // First loop through observed patterns
         {
-        for (j=0; j<numCharsInCluster; j++)
-            currDataPattern[j] = data[pos(i,j,numCharsInCluster)];
         // Get latent resolution when the current data pattern is the end state
         latentResolution = ConvertDataToLatentStates(data, numCharsInCluster, i);
         // Get emission probability for the latent resolution

@@ -1750,13 +1750,13 @@ void CalcPartFreqStats (PFNODE *p, STATS *stat)
         sum += f;
         sumsq += f * f;
         }
-    
+
     f = (sumsq - sum * sum / n) / (n - 1);
     if (f < 0.0)
         stdev = 0.0;
     else
         stdev = sqrt (f);
-    
+
     stat->sum += stdev;
     if (stdev > stat->max)
         stat->max = stdev;
@@ -2116,7 +2116,7 @@ void CopySiteScalers (ModelInfo *m, int chain)
                                                          &j,
                                                          1,
                                                          m->siteScalerIndex[chain] + i,
-                                                         m->divisionIndex);                        
+                                                         m->divisionIndex);
                 }
 #   endif /* BEAGLE_V3_ENABLED */
             j++;
@@ -5779,8 +5779,7 @@ int InitAugmentedModels (void)
 int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes, useBeagle,
-                clIndex, tiIndex, scalerIndex, indexStep, nStates, *allocationVector,
-                numClusters;
+                clIndex, tiIndex, scalerIndex, indexStep, nStates, numClusters;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -5806,7 +5805,6 @@ int InitChainCondLikes (void)
         /* Get allocation vector and numClusters if Mc model is set */
         if (m->mcModelId == YES)
             {
-            allocationVector = m->allocationVector->intValues;
             numClusters = m->allocationVector->subValues[0];
             MrBayesPrint ("%s   Division %d has %d unique site patterns\n", spacer, d+1, numClusters);
             }
@@ -6017,7 +6015,7 @@ int InitChainCondLikes (void)
                     else
                         numReps = m->numRateCats * m->numOmegaCats;
                     k = m->numVecChars * m->numFloatsPerVec * m->numModelStates * numReps;
-                    
+
                     if (m->useVec == VEC_AVX || m->useVec == VEC_FMA)
                         m->condLikes[i] = (CLFlt*) AlignedMalloc (k * sizeof(CLFlt), 32);
                     else
@@ -6389,7 +6387,7 @@ int InitChainCondLikes (void)
                                                  m->inWeights);
                         }
                     }
-                
+
                 }
 #   endif
 
@@ -6600,28 +6598,6 @@ int InitChainCondLikes (void)
         preLikeR = preLikeL + j;
         preLikeA = preLikeR + j;
         }
-
-    //
-    // for (i=0; i<numLocalTaxa; i++)
-    //     {
-    //     for (c=0; c<m->numChars; c++)
-    //         {
-    //         for (j=0; j<3; j++)
-    //             printf("%f ",m->condLikes[i][c+j]);
-    //         printf("\t");
-    //         }
-    //     printf("\n");
-    //     }
-    // printf("\n\n");
-    //
-    // //for checking tip cond likes
-    // for (i=0; i<numLocalTaxa; i++)
-    //     {
-    //     for (c=0; c<m->numChars*3; c++)
-    //         printf("%f ",m->condLikes[i][c]);
-    //     printf("\n");
-    //     }
-    // printf("\n\n");
 
     return NO_ERROR;
 }
@@ -6953,8 +6929,7 @@ int InitInvCondLikes (void)
 int InitParsSets (void)
 {
     int             c, i, j, k, d, nParsStatesForCont, nIntNodes, nNodes,
-                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, numClusters,
-                    *allocationVector;
+                    nuc1, nuc2, nuc3, codingNucCode, allNucCode, *allocationVector;
     BitsLong        allAmbig, x, x1, x2, x3, *longPtr, bitsLongOne;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -7027,12 +7002,9 @@ int InitParsSets (void)
         m = &modelSettings[d];
         mp = &modelParams[d];
 
-        /* Get numClusters if mcModel is set */
+        /* Get allocation vector if mcModel is set */
         if (m->mcModelId == YES)
-            {
-            numClusters = (int) *GetParamSubVals(m->allocationVector,d,state[d]);
             allocationVector = GetParamIntVals(m->allocationVector,d,state[d]);
-            }
 
         if (mp->dataType == CONTINUOUS)
             {
@@ -7056,19 +7028,6 @@ int InitParsSets (void)
             }
         else if (m->nCharsPerSite == 1 && m->nParsIntsPerSite == 1)
             {
-            // printf("compMatrixStart: %d\n",m->compMatrixStart);
-            // printf("compMatrixStop: %d\n",m->compMatrixStop);
-            // printf("numChars: %d\n",m->numChars);
-
-            // printf("initialLatentMatrix: \n");
-            // for (i=0; i<numLocalTaxa; i++)
-            //     {
-            //     for (j=0; j<m->numChars; j++)
-            //         printf("%d ",initialLatentMatrix[pos(i,j,m->numChars)]);
-            //     printf("\n");
-            //     }
-            // printf("\n\n");
-
             allAmbig = (bitsLongOne<<mp->nStates) - 1UL;
             for (i=0; i<numLocalTaxa; i++)
                 {
@@ -7586,7 +7545,7 @@ MrBFlt LogLike (int chain)
 #   endif
 #if defined (DEBUG_MB_BEAGLE_MULTIPART)
     printf("chainLnLike = %f\n", chainLnLike);
-#endif          
+#endif
     /* unmark all divisions */
     if (chainHasAdgamma == YES)
         {
@@ -8767,7 +8726,7 @@ MrBFlt LnP0_fossil (MrBFlt t, MrBFlt lambda, MrBFlt mu, MrBFlt psi, MrBFlt c1, M
     // c1 = sqrt(pow(lambda-mu-psi, 2) + 4*lambda*psi);
     // c2 = (-lambda + mu + 2*lambda*rho + psi) / c1;
     other = (exp(-c1 *t) * (1 - c2) - (1 + c2)) / (exp(-c1 *t) * (1 - c2) + (1 + c2));
-    
+
     return log(lambda + mu + psi + c1 * other) - log(2.0*lambda);
 }
 
@@ -8933,7 +8892,7 @@ int LnFossilizedBDPriorFossilTip (Tree *t, MrBFlt clockRate, MrBFlt *prob, MrBFl
 
     /* condition on sampling at least one individual in both subtrees leading to the root */
     (*prob) -= 2.0 * log(1 - exp(LnP0_fossil(tmrca, lambda, mu, psi, c1, c2)));
-    
+
     /* condition on tmrca, calibrations are dealt with separately */
     mp = &modelParams[t->relParts[0]];
     if (t->root->left->isDated == NO)

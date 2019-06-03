@@ -61,7 +61,7 @@ int       AllocateTreeParams (void);
 void      CheckCharCodingType (Matrix *m, CharInfo *ci);
 int       CheckExpandedModels (void);
 int       CompressData (void);
-int       CorrPreprocess (void);
+int       CorrPreprocess ();
 int       InitializeChainTrees (Param *p, int from, int to, int isRooted);
 int       FillBrlensSubParams (Param *param, int chn, int state);
 void      FreeCppEvents (Param *p);
@@ -2344,42 +2344,53 @@ void CodingToString(int coding, char* string)
 /*------------------------------------------------------------------------
 |
 |   CorrPreprocess: Preprocess data matrix for correlation model (set all
-|   first taxon states to 0,
+|   first taxon states to 0 for standard characters)
 |
 -------------------------------------------------------------------------*/
-int CorrPreprocess (void)
+int CorrPreprocess ()
 {
-    int             i, j, d, *tempMatrix;
+    int             i, j, *tempMatrix;
 
-    for (d=0; d<numCurrentDivisions; d++)
+    /* Allocate space for temporary preprocessed matrix */
+    tempMatrix = SafeCalloc (numChar * numTaxa, sizeof(BitsLong));
+    if (!tempMatrix)
         {
-        /* Allocate space for temporary preprocessed matrix */
-        tempMatrix = SafeCalloc (numChar * numTaxa, sizeof(BitsLong));
+        MrBayesPrint ("%s   Problem allocating tempMatrix in CorrPreprocess (%d)\n", spacer, numChar * numTaxa * sizeof(int));
+        return (ERROR);
+        }
 
-        /* Initialize vector keeping track of original states of first taxon... */
-        int firstTaxonStates[numChar];
+    /* Initialize vector keeping track of original states of first taxon... */
+    int firstTaxonStates[numChar];
 
-        /* ...and copy over states */
-        for (i=0; i<numChar; i++)
-            firstTaxonStates[i] = matrix[pos(0,i,numChar)];
+    /* ...and copy over states */
+    for (i=0; i<numChar; i++)
+        firstTaxonStates[i] = matrix[pos(0,i,numChar)];
 
-        /* Copy original data over, flipping bits such that the first taxon has all state 0 */
-        for (i=0; i<numTaxa; i++)
-            for (j=0; j<numChar; j++)
+    /* Copy original data over, flipping bits such that the first taxon has all state 0 */
+    for (i=0; i<numTaxa; i++)
+        for (j=0; j<numChar; j++)
+            {
+            if (charInfo[j].charType == STANDARD)
                 {
-                if (firstTaxonStates[j] == 2) /* Case where all bits need to be flipped */
+                if (firstTaxonStates[j] == 2) // Case where all bits need to be flipped
                     {
                     if (matrix[pos(i,j,numChar)] == 1)
                         tempMatrix[pos(i,j,numChar)] = 2;
                     else
                         tempMatrix[pos(i,j,numChar)] = 1;
                     }
-                else /* Case where no bits need to be flipped */
+                else // Case where no bits need to be flipped
                     tempMatrix[pos(i,j,numChar)] = matrix[pos(i,j,numChar)];
                 }
-        /* Set matrix to tempMatrix */
-        matrix = tempMatrix;
-        }
+            else // If not standard data, just copy it over
+                tempMatrix[pos(i,j,numChar)] = matrix[pos(i,j,numChar)];
+            }
+    /* Copy values from tempMatrix to matrix */
+    for (i=0; i<numTaxa; i++)
+        for (j=0; j<numChar; j++)
+            matrix[pos(i,j,numChar)] = tempMatrix[pos(i,j,numChar)];
+
+    free (tempMatrix);
 
     return (NO_ERROR);
 }
@@ -2473,10 +2484,15 @@ int CompressData (void)
         mp = &modelParams[d];
 
         /* Preprocess matrix and initialize allocation counter if correlation model is set */
-        if (!strcmp(mp->mcModel,"Yes"))
-            CorrPreprocess();
-        numSitesAlloc = SafeCalloc (numChar, sizeof(int));
-        allocCounter = 1;
+        if (mp->dataType == STANDARD)
+            {
+            if (!strcmp(mp->mcModel, "Yes"))
+                {
+                CorrPreprocess();
+                numSitesAlloc = SafeCalloc (m->numChars, sizeof(int));
+                allocCounter = 1;
+                }
+            }
 
         /* set column offset for this division in compressed matrix */
         m->compMatrixStart = newColumn;
@@ -2603,39 +2619,47 @@ int CompressData (void)
                 m->numChars++;
                 numCompressedChars++;
 
-                /* Update allocation patterns */
-                numSitesAlloc[c] = allocCounter;
-                allocCounter++;
-                }
-            else if (!strcmp(mp->mcModel,"Yes"))
-                {
-                tempSitesOfPat[numCompressedChars] = 1;
-                for (k=0; k<m->nCharsPerSite; k++)
+                /* If Mc model is set, we need to update allocation patterns */
+                if ((mp->dataType == STANDARD) && (m->mcModelId == YES))
                     {
-                    compColPos[col[k]] = newColumn + k;
-                    compCharPos[col[k]] = numCompressedChars;
-                    tempChar[newColumn + k] = col[k];
+                    numSitesAlloc[c] = allocCounter;
+                    allocCounter++;
                     }
-                newColumn+=m->nCharsPerSite;
-                m->numChars++;
-                numCompressedChars++;
-
-                /* Update allocation patterns */
-                numSitesAlloc[c] = numSitesAlloc[sameIdx];
                 }
-            else
+            else // Same pattern case
                 {
-                /* if it is not unique then simply update tempSitesOfPat     */
-                /* calculate compressed character position and put it into a */
-                /* (i points to compressed column position)                  */
-                a = m->compCharStart + ((i - m->compMatrixStart) / m->nCharsPerSite);
-                tempSitesOfPat[a]++;
-                for (k=0; k<m->nCharsPerSite; k++)
+                /* If Mc model is set, we need to update allocation patterns */
+                /* and also increase the number of characters because we do not */
+                /* actually compress any */
+                if ((mp->dataType == STANDARD) && (m->mcModelId == YES))
                     {
-                    compColPos[col[k]] = i;
-                    compCharPos[col[k]] = a;
-                    /* tempChar (pointing from compressed to uncompresed) */
-                    /* can only be set for first pattern */
+                    tempSitesOfPat[numCompressedChars] = 1;
+                    numSitesAlloc[c] = numSitesAlloc[sameIdx];
+
+                    for (k=0; k<m->nCharsPerSite; k++)
+                        {
+                        compColPos[col[k]] = newColumn + k;
+                        compCharPos[col[k]] = numCompressedChars;
+                        tempChar[newColumn + k] = col[k];
+                        }
+                    newColumn+=m->nCharsPerSite;
+                    m->numChars++;
+                    numCompressedChars++;
+                    }
+                else
+                    {
+                    /* if it is not unique then simply update tempSitesOfPat     */
+                    /* calculate compressed character position and put it into a */
+                    /* (i points to compressed column position)                  */
+                    a = m->compCharStart + ((i - m->compMatrixStart) / m->nCharsPerSite);
+                    tempSitesOfPat[a]++;
+                    for (k=0; k<m->nCharsPerSite; k++)
+                        {
+                        compColPos[col[k]] = i;
+                        compCharPos[col[k]] = a;
+                        /* tempChar (pointing from compressed to uncompresed) */
+                        /* can only be set for first pattern */
+                        }
                     }
                 }
             }   /* next character */
@@ -2650,141 +2674,66 @@ int CompressData (void)
 
         m->compCharStop = m->compCharStart + m->numChars;
         m->compMatrixStop = newColumn;
-
         } /* next division */
 
     compMatrixRowSize = newColumn;
 
-
-    /* Fill in numSitesOfPat, origChar, and compMatrix if we're not using the correlation model */
-    if (!strcmp(mp->mcModel,"No"))
+    /* now we know the size, so we can allocate space for the compressed matrix ... */
+    if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
         {
-        /* now we know the size, so we can allocate space for the compressed matrix ... */
-        if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
-            {
-            free (numSitesOfPat);
-            numSitesOfPat = NULL;
-            memAllocs[ALLOC_NUMSITESOFPAT] = NO;
-            }
-        numSitesOfPat = (CLFlt *) SafeCalloc (numCompressedChars, sizeof(CLFlt));
-        if (!numSitesOfPat)
-            {
-            MrBayesPrint ("%s   Problem allocating numSitesOfPat (%d)\n", spacer, numCompressedChars * sizeof(MrBFlt));
-            goto errorExit;
-            }
-        memAllocs[ALLOC_NUMSITESOFPAT] = YES;
+        free (numSitesOfPat);
+        numSitesOfPat = NULL;
+        memAllocs[ALLOC_NUMSITESOFPAT] = NO;
+        }
+    numSitesOfPat = (CLFlt *) SafeCalloc (numCompressedChars, sizeof(CLFlt));
+    if (!numSitesOfPat)
+        {
+        MrBayesPrint ("%s   Problem allocating numSitesOfPat (%d)\n", spacer, numCompressedChars * sizeof(MrBFlt));
+        goto errorExit;
+        }
+    memAllocs[ALLOC_NUMSITESOFPAT] = YES;
 
-        /* Fill in numSitesOfPat */
-        for (i=0; i<numCompressedChars; i++)
-            numSitesOfPat[i] = (CLFlt) tempSitesOfPat[i];
+    /* Fill in numSitesOfPat */
+    for (i=0; i<numCompressedChars; i++)
+        numSitesOfPat[i] = (CLFlt) tempSitesOfPat[i];
 
-        if (memAllocs[ALLOC_ORIGCHAR] == YES)
-            {
-            free (origChar);
-            origChar = NULL;
-            memAllocs[ALLOC_ORIGCHAR] = NO;
-            }
-        origChar = (int *)SafeMalloc((size_t)compMatrixRowSize * sizeof(int));
-        if (!origChar)
-            {
-            MrBayesPrint ("%s   Problem allocating origChar (%d)\n", spacer, numCompressedChars * sizeof(int));
-            goto errorExit;
-            }
-        memAllocs[ALLOC_ORIGCHAR] = YES;
+    if (memAllocs[ALLOC_ORIGCHAR] == YES)
+        {
+        free (origChar);
+        origChar = NULL;
+        memAllocs[ALLOC_ORIGCHAR] = NO;
+        }
+    origChar = (int *)SafeMalloc((size_t)compMatrixRowSize * sizeof(int));
+    if (!origChar)
+        {
+        MrBayesPrint ("%s   Problem allocating origChar (%d)\n", spacer, numCompressedChars * sizeof(int));
+        goto errorExit;
+        }
+    memAllocs[ALLOC_ORIGCHAR] = YES;
 
-        /* Fill in origChar */
-        for (i=0; i<compMatrixRowSize; i++)
-            origChar[i] = tempChar[i];
+    /* Fill in origChar */
+    for (i=0; i<compMatrixRowSize; i++)
+        origChar[i] = tempChar[i];
 
-        if (memAllocs[ALLOC_COMPMATRIX] == YES)
-            {
-            free (compMatrix);
-            compMatrix = NULL;
-            memAllocs[ALLOC_COMPMATRIX] = NO;
-            }
-
-        compMatrix = (BitsLong *) SafeCalloc (compMatrixRowSize * numLocalTaxa, sizeof(BitsLong));
-        if (!compMatrix)
-            {
-            MrBayesPrint ("%s   Problem allocating compMatrix (%d)\n", spacer, compMatrixRowSize * numLocalTaxa * sizeof(BitsLong));
-            goto errorExit;
-            }
-        memAllocs[ALLOC_COMPMATRIX] = YES;
-
-        /* Copy compMatrix data into allocated matrix */
-        for (i=0; i<numLocalTaxa; i++)
-            for (j=0; j<compMatrixRowSize; j++)
-                compMatrix[pos(i,j,compMatrixRowSize)] = tempMatrix[pos(i,j,numLocalChar)];
+    if (memAllocs[ALLOC_COMPMATRIX] == YES)
+        {
+        free (compMatrix);
+        compMatrix = NULL;
+        memAllocs[ALLOC_COMPMATRIX] = NO;
         }
 
-    /* If we are using the correlation model, copy over the preprocessed matrix to compMatrix */
-    /* We still call it compMatrix so that we don't have to change a bunch of downstream code */
-    /* We're doing this at the end here because we still need to run CompressData to get numSitesAlloc */
-    /* Also fill in numSitesOfPat and origChar to reflect uncompressed matrix */
-    else
+    compMatrix = (BitsLong *) SafeCalloc (compMatrixRowSize * numLocalTaxa, sizeof(BitsLong));
+    if (!compMatrix)
         {
-        m->numChars = numChar;
-        m->compMatrixStart = 0;
-        m->compMatrixStop = numChar;
-        m->compCharStart = 0;
-        compMatrixRowSize = numChar;
-        numCompressedChars = numChar;
-
-        if (memAllocs[ALLOC_NUMSITESOFPAT] == YES)
-            {
-            free (numSitesOfPat);
-            numSitesOfPat = NULL;
-            memAllocs[ALLOC_NUMSITESOFPAT] = NO;
-            }
-        numSitesOfPat = (CLFlt *) SafeCalloc (numCompressedChars, sizeof(CLFlt));
-        if (!numSitesOfPat)
-            {
-            MrBayesPrint ("%s   Problem allocating numSitesOfPat (%d)\n", spacer, numCompressedChars * sizeof(MrBFlt));
-            goto errorExit;
-            }
-        memAllocs[ALLOC_NUMSITESOFPAT] = YES;
-
-        /* Fill in numSitesOfPat */
-        for (i=0; i<numCompressedChars; i++)
-            numSitesOfPat[i] = (CLFlt) 1.0;
-
-        if (memAllocs[ALLOC_ORIGCHAR] == YES)
-            {
-            free (origChar);
-            origChar = NULL;
-            memAllocs[ALLOC_ORIGCHAR] = NO;
-            }
-        origChar = (int *)SafeMalloc((size_t)compMatrixRowSize * sizeof(int));
-        if (!origChar)
-            {
-            MrBayesPrint ("%s   Problem allocating origChar (%d)\n", spacer, numCompressedChars * sizeof(int));
-            goto errorExit;
-            }
-        memAllocs[ALLOC_ORIGCHAR] = YES;
-
-        /* Fill in origChar */
-        for (i=0; i<compMatrixRowSize; i++)
-            origChar[i] = matrix[i];
-
-        if (memAllocs[ALLOC_COMPMATRIX] == YES)
-            {
-            free (compMatrix);
-            compMatrix = NULL;
-            memAllocs[ALLOC_COMPMATRIX] = NO;
-            }
-        compMatrix = (BitsLong *) SafeCalloc (numChar * numLocalTaxa, sizeof(BitsLong));
-        if (!compMatrix)
-            {
-            MrBayesPrint ("%s   Problem allocating compMatrix (%d)\n", spacer, numChar * numLocalTaxa * sizeof(BitsLong));
-            goto errorExit;
-            }
-        memAllocs[ALLOC_COMPMATRIX] = YES;
-
-        /* Copy preproccesed matrix data into allocated compMatrix */
-        for (i=0; i<numLocalTaxa; i++)
-            for (j=0; j<numChar; j++)
-                compMatrix[pos(i,j,numChar)] = matrix[pos(i,j,numLocalChar)];
+        MrBayesPrint ("%s   Problem allocating compMatrix (%d)\n", spacer, compMatrixRowSize * numLocalTaxa * sizeof(BitsLong));
+        goto errorExit;
         }
+    memAllocs[ALLOC_COMPMATRIX] = YES;
+
+    /* Copy compMatrix data into allocated matrix */
+    for (i=0; i<numLocalTaxa; i++)
+        for (j=0; j<compMatrixRowSize; j++)
+            compMatrix[pos(i,j,compMatrixRowSize)] = tempMatrix[pos(i,j,numLocalChar)];
 
     #   if defined (DEBUG_COMPRESSDATA)
         if (PrintCompMatrix() == ERROR)
@@ -2833,7 +2782,7 @@ int DoLink (void)
     int         i, j, newLine;
 
     MrBayesPrint ("%s   Linking\n", spacer);
-    
+
     /* update status of linkTable */
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -2851,7 +2800,7 @@ int DoLink (void)
                 }
             }
         }
-    
+
 #   if 0
     for (j=0; j<NUM_LINKED; j++)
         {
@@ -11345,6 +11294,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             maxTable = numSitesAlloc[j];
                         }
                     subValue[0] = maxTable; // This is numClusters
+                    free (numSitesAlloc);
                     }
                 }
             else if (p->paramType == P_LATENTMATRIX)
@@ -16040,10 +15990,10 @@ int PrintCompMatrix (void)
         if (mp->dataType == CONTINUOUS)
             k /= 4;
 
-        /* If correlation model is set, make sure that compMatrixRowSize is
-        equal to total number of characters */
-        if (!strcmp(mp->mcModel,"Yes"))
-            compMatrixRowSize = numChar;
+        // /* If correlation model is set, make sure that compMatrixRowSize is
+        // equal to total number of characters */
+        // if (!strcmp(mp->mcModel,"Yes"))
+        //     compMatrixRowSize = numChar;
 
         for (c=m->compMatrixStart; c<m->compMatrixStop; c+=k)
             {
@@ -18489,7 +18439,7 @@ int SetModelInfo (void)
         m->numCharsAll               = 0;     /* number of compressed chars for all divisions */
         m->logLikelihoodsAll         = NULL;  /* array of log likelihoods for all divisions   */
         m->cijkIndicesAll            = NULL;  /* cijk array for all divisions                 */
-        m->categoryRateIndicesAll    = NULL;  /* category rate array for all divisions        */  
+        m->categoryRateIndicesAll    = NULL;  /* category rate array for all divisions        */
         m->operationsAll             = NULL;  /* array of all operations across divisions     */
         m->operationsByPartition     = NULL;  /* array of division operations to be sent to Beagle */
 #   endif /* BEAGLE_V3_ENABLED */
@@ -23133,7 +23083,7 @@ void SetUpMoveTypes (void)
     mt->level = STANDARD_USER;
 
     numMoveTypes = i;
-    
+
     assert(numMoveTypes < NUM_MOVE_TYPES);
 }
 

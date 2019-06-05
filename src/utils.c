@@ -14259,10 +14259,10 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
 |   Ensures that latent patterns in latent matrix match allocation vector.
 |
 ---------------------------------------------------------------------------------*/
-int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int newTable, int *oldLatentMatrix, int newTableIndex)
+int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex)
 {
     int         i, j, numCharsInCluster=0, endStateIndex=-1, *newLatentStates,
-                numValues, *finalLatentMatrix, idx;
+                numValues, *finalLatentMatrix, idx, compMatrixIdx;
 
     /* Get number of characters in newTable cluster*/
     for (i=0; i<numChars; i++)
@@ -14276,7 +14276,10 @@ int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int newTable, 
         idx = 0;
         for (j=0; j<numChars; j++)
             if (newAllocationVector[j] == newTable)
-                data[pos(i,idx++,numCharsInCluster)] = compMatrix[pos(i,j,numChars)];
+                {
+                compMatrixIdx = j + compMatrixStart;
+                data[pos(i,idx++,numCharsInCluster)] = compMatrix[pos(i,compMatrixIdx,numCompressedChars)];
+                }
         }
 
     /* Find end state index of original latent pattern of the newTable cluster */

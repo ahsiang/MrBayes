@@ -548,7 +548,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
     oldNumClusters = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
 
-    updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, newTable, oldLatentMatrix, newTableIndex);
+    updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, m->compMatrixStart, newTable, oldLatentMatrix, newTableIndex);
 
     /* Copy new allocation vector, latent matrix, and newNumTables back */
     for (i=0; i<m->numChars; i++)
@@ -5969,7 +5969,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     int         i, j, *allocationVector, *oldLatentMatrix, numClusters, latentIdx=0,
                 *newLatentMatrix, numCharsInCluster=0, randEndIdx=0, randClustIndex,
                 *newLatentPattern, *latentResolution, origLatentStates[numTaxa],
-                *allIntLatentResolution, numProbs;
+                *allIntLatentResolution, numProbs, compMatrixIdx;
     MrBFlt      probForwardMove, probBackwardsMove, probSum=0.0, rand, backProb=0.0,
                 epsilon=1.0e-16, threshold, maxLogProb;
     ModelInfo   *m;
@@ -5998,11 +5998,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             }
         }
 
-    // printf("---START---\n");
-    // printf("numClusters: %d\n",numClusters);
-    // printf("randClustIndex: %d\n",randClustIndex);
-    // printf("latentIdx: %d\n",latentIdx);
-
     /* First get number of characters belonging to selected cluster */
     for (i=0; i<m->numChars; i++)
         if (allocationVector[i] == randClustIndex)
@@ -6020,8 +6015,13 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     int data[numCharsInCluster * numTaxa];
     idx = 0;
     for (i=0; i<numTaxa; i++)
+        {
         for (j=0; j<numCharsInCluster; j++)
-            data[idx++] = compMatrix[pos(i,colIndices[j],m->numChars)];
+            {
+            compMatrixIdx = colIndices[j] + m->compMatrixStart; // Accounting for compMatrix offset
+            data[idx++] = compMatrix[pos(i,compMatrixIdx,numCompressedChars)];
+            }
+        }
 
     /* Get emission probabilities for every end state possibility */
     MrBFlt lnEmissionProbabilities[numTaxa+1]; // This holds the emission probabilities when pattern i %in% numTaxa = end state
@@ -6111,15 +6111,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         // printf("\n");
         //
         // printf("oldLatentMatrix: \n");
-        // for (i=0; i<numTaxa; i++)
-        //     {
-        //     for (j=0; j<m->numChars; j++)
-        //         {
-        //         printf("%d ",oldLatentMatrix[pos(i,j,m->numChars)]);
-        //         }
-        //     printf("\n");
-        //     }
-        // printf("\n\n");
+        // PrintLatentMatrix(m->numChars,oldLatentMatrix);
         //
         // printf("randClustIndex: %d\n",randClustIndex);
         //
@@ -6181,8 +6173,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         // for (i=0; i<numTaxa; i++)
         //     printf("%d ",newLatentPattern[i]);
         // printf("\n");
-
-
     //     }
 
     /* Copy over states from oldLatentMatrix to newLatentMatrix, replacing columns corresponding to selected cluster */
@@ -6197,20 +6187,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             }
         }
 
-
     // printf("newLatentMatrix: \n");
-    // for (i=0; i<numTaxa; i++)
-    //     {
-    //     for (j=0; j<m->numChars; j++)
-    //         {
-    //         printf("%d ",newLatentMatrix[pos(i,j,m->numChars)]);
-    //         }
-    //     printf("\n");
-    //     }
-    // printf("\n\n");
-    //
+    // PrintLatentMatrix(m->numChars,newLatentMatrix);
     // getchar();
-
 
     /* Copy back newLatentMatrix */
     *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;

@@ -8115,9 +8115,6 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         }
 
-    PrintLatentMatrix(m->numChars,latentMatrix);
-
-
     /* Account for likelihood of emitting observed states from current latent matrix */
     (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, numClusters, m->numChars);
 

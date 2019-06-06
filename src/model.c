@@ -11302,7 +11302,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 /* Fill in latentmatrix *************************************************************************************/
                 if (p->paramId == LATENTMATRIX_UNCORR)
                     {
-                    for (i=0; i<numTaxa; i++)
+                    for (i=0; i<numLocalTaxa; i++)
                         {
                         for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
                             {
@@ -11315,15 +11315,15 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             }
                         }
                     /* Copy over latent matrix to global initialLatentMatrix */
-                    int numValues = m->numChars * numTaxa;
+                    int numValues = m->numChars * numLocalTaxa;
                     initialLatentMatrix = (int *) SafeMalloc((size_t)numValues * sizeof(int));
-                    for (i=0; i<numTaxa; i++)
+                    for (i=0; i<numLocalTaxa; i++)
                         for (j=0; j<m->numChars; j++)
                             initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
                     }
                 else if (p->paramId == LATENTMATRIX_CORR)
                     {
-                    for (i=0; i<numTaxa; i++)
+                    for (i=0; i<numLocalTaxa; i++)
                         {
                         for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
                             {
@@ -11336,7 +11336,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             }
                         }
                     /* Copy over latent matrix to global initialLatentMatrix */
-                    for (i=0; i<numTaxa; i++)
+                    for (i=0; i<numLocalTaxa; i++)
                         for (j=0; j<m->numChars; j++)
                             initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
                     }
@@ -19084,8 +19084,8 @@ int SetModelParams (void)
             /* Set up latentMatrix for correlation model DPMM ***********************************************************/
             p->paramType = P_LATENTMATRIX;
             p->nSubValues = 0;
-            p->nIntValues = m->numChars * numTaxa; // Maximum size of latent matrix
-            p->min = 0;
+            p->nIntValues = m->numChars * numLocalTaxa; // Maximum size of latent matrix
+            p->min = TRIMORPH;
             p->max = 2;
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)

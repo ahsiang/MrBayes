@@ -554,7 +554,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     for (i=0; i<m->numChars; i++)
         newAllocationVector[i] = rescaledAllocationVector[i];
     newLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         {
         for (j=0; j<m->numChars; j++)
             newLatentMatrix[pos(i,j,m->numChars)] = updatedLatentMatrix[pos(i,j,m->numChars)];
@@ -5968,7 +5968,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     int         i, j, *allocationVector, *oldLatentMatrix, numClusters, latentIdx=0,
                 *newLatentMatrix, numCharsInCluster=0, randEndIdx=0, randClustIndex,
-                *newLatentPattern, *latentResolution, origLatentStates[numTaxa],
+                *newLatentPattern, *latentResolution, origLatentStates[numLocalTaxa],
                 *allIntLatentResolution, numProbs, compMatrixIdx;
     MrBFlt      probForwardMove, probBackwardsMove, probSum=0.0, rand, backProb=0.0,
                 epsilon=1.0e-16, threshold, maxLogProb;
@@ -6012,9 +6012,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     /* Get relevant data with structure: [C1a C1b C1c ... C2a C2b C2c ...]
     where a, b, c... corresponds to taxa */
-    int data[numCharsInCluster * numTaxa];
+    int data[numCharsInCluster * numLocalTaxa];
     idx = 0;
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         {
         for (j=0; j<numCharsInCluster; j++)
             {
@@ -6024,8 +6024,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         }
 
     /* Get emission probabilities for every end state possibility */
-    MrBFlt lnEmissionProbabilities[numTaxa+1]; // This holds the emission probabilities when pattern i %in% numTaxa = end state
-    for (i=0; i<numTaxa; i++) // First loop through observed patterns
+    MrBFlt lnEmissionProbabilities[numLocalTaxa+1]; // This holds the emission probabilities when pattern i %in% numLocalTaxa = end state
+    for (i=0; i<numLocalTaxa; i++) // First loop through observed patterns
         {
         // Get latent resolution when the current data pattern is the end state
         latentResolution = ConvertDataToLatentStates(data, numCharsInCluster, i);
@@ -6037,14 +6037,14 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     // Last possibility is that an unobserved pattern is the end state and all latent states are 1
     if (numCharsInCluster == 1) // If there is only one character in the cluster, the all-1s state is impossible
         {
-        lnEmissionProbabilities[numTaxa] = 0;
-        numProbs = numTaxa;
+        lnEmissionProbabilities[numLocalTaxa] = 0;
+        numProbs = numLocalTaxa;
         }
     else
         {
-        numProbs = numTaxa + 1;
+        numProbs = numLocalTaxa + 1;
         allIntLatentResolution = ConvertDataToLatentStates(data, numCharsInCluster, -1); // Negative index returns all intermediate states
-        lnEmissionProbabilities[numTaxa] = LnProbEmission(allIntLatentResolution, numCharsInCluster);
+        lnEmissionProbabilities[numLocalTaxa] = LnProbEmission(allIntLatentResolution, numCharsInCluster);
         free (allIntLatentResolution);
         }
 
@@ -6098,85 +6098,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         }
 
     /* Get new latent pattern resulting from the newly selected end state */
-    if (randEndIdx == numTaxa) // This is the case when the end state is not observed in the data
+    if (randEndIdx == numLocalTaxa) // This is the case when the end state is not observed in the data
         randEndIdx = -1;
     newLatentPattern = ConvertDataToLatentStates(data, numCharsInCluster, randEndIdx);
 
-    // if (TRUE)
-    //     {
-        //
-        // printf("allocationVector: ");
-        // for (i=0; i<m->numChars; i++)
-        //     printf("%d ",allocationVector[i]);
-        // printf("\n");
-        //
-        // printf("oldLatentMatrix: \n");
-        // PrintLatentMatrix(m->numChars,oldLatentMatrix);
-        //
-        // printf("randClustIndex: %d\n",randClustIndex);
-        //
-        // printf("latentIdx: %d\n",latentIdx);
-        //
-        // printf("numCharsInCluster: %d\n",numCharsInCluster);
-        //
-        // printf("colIndices: ");
-        // for (i=0; i<numCharsInCluster; i++)
-        //     printf("%d ",colIndices[i]);
-        // printf("\n");
-        //
-        // printf("data: \n");
-        // for (i=0; i<numTaxa; i++)
-        //     {
-        //     for (j=0; j<numCharsInCluster; j++)
-        //         {
-        //         printf("%d ",data[pos(i,j,numCharsInCluster)]);
-        //         }
-        //     printf("\n");
-        //     }
-        // printf("\n\n");
-        //
-        //
-        // printf("lnEmissionProbs: ");
-        // for (i=0; i<numProbs; i++)
-        //     printf("%f ",lnEmissionProbabilities[i]);
-        // printf("\n");
-        //
-        // printf("maxLogProb: %f\n",maxLogProb);
-        //
-        // printf("differences: ");
-        // for (i=0; i<numProbs; i++)
-        //     printf("%f ",differences[i]);
-        // printf("\n");
-        //
-        // printf("threshold: %f\n",threshold);
-        //
-        // printf("threshProbs: ");
-        // for (i=0; i<numProbs; i++)
-        //     printf("%f ",threshProbs[i]);
-        // printf("\n");
-        //
-        // printf("normProbs: ");
-        // for (i=0; i<numProbs; i++)
-        //     printf("%f ",normProbs[i]);
-        // printf("\n");
-        //
-        // printf("cProbs: ");
-        // for (i=0; i<numProbs; i++)
-        //     printf("%f ",cProbs[i]);
-        // printf("\n");
-        //
-        // printf("rand: %f\n",rand);
-        //
-        // printf("randEndIdx: %d\n",randEndIdx);
-        //
-        // printf("newLatentPattern: ");
-        // for (i=0; i<numTaxa; i++)
-        //     printf("%d ",newLatentPattern[i]);
-        // printf("\n");
-    //     }
-
     /* Copy over states from oldLatentMatrix to newLatentMatrix, replacing columns corresponding to selected cluster */
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         {
         for (j=0; j<m->numChars; j++)
             {
@@ -6186,10 +6113,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
                 newLatentMatrix[pos(i,j,m->numChars)] = oldLatentMatrix[pos(i,j,m->numChars)];
             }
         }
-
-    // printf("newLatentMatrix: \n");
-    // PrintLatentMatrix(m->numChars,newLatentMatrix);
-    // getchar();
 
     /* Copy back newLatentMatrix */
     *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
@@ -6201,13 +6124,13 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     // probability of the backwards move is equal to the probability of
     // selecting that end state pattern; otherwise, it is equal to the
     // probability of selecting an unobserved pattern as the end state.
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         origLatentStates[i] = oldLatentMatrix[pos(i,latentIdx,m->numChars)];
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         if (origLatentStates[i] == 1)
             backProb += normProbs[i];
     if (backProb == 0.0) // Case where there are no end states in original latent pattern
-        backProb = normProbs[numTaxa];
+        backProb = normProbs[numLocalTaxa];
     probBackwardsMove = log(backProb);
 
     /* get proposal ratio */

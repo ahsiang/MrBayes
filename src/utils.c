@@ -14141,14 +14141,14 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
                 bitSum[numCharsInCluster], totalBitSum=0, allMatches, allMismatches,
                 numMissingPairs;
 
-    latentResolution = (int *) SafeMalloc ((size_t)numTaxa * sizeof(int));
+    latentResolution = (int *) SafeMalloc ((size_t)numLocalTaxa * sizeof(int));
     if (!latentResolution)
         printf("ERROR: Problem with allocation in ConvertDataToLatentStates\n");
 
     /* All intermediate case */
     if (endStateIndex < 0)
         {
-        for (i=0; i<numTaxa; i++)
+        for (i=0; i<numLocalTaxa; i++)
             latentResolution[i] = INTSTATE;
         return (latentResolution);
         }
@@ -14163,7 +14163,7 @@ int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endSt
             endStatePattern[i] = dataSubset[pos(endStateIndex,i,numCharsInCluster)];
 
         /* Compare all other patterns to end state pattern */
-        for (i=0; i<numTaxa; i++)
+        for (i=0; i<numLocalTaxa; i++)
             {
             if (!(i == endStateIndex))
                 {
@@ -14270,8 +14270,8 @@ int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrix
             numCharsInCluster++;
 
     /* Get data from characters that belong to the newTable cluster */
-    int data[numTaxa * numCharsInCluster];
-    for (i=0; i<numTaxa; i++)
+    int data[numLocalTaxa * numCharsInCluster];
+    for (i=0; i<numLocalTaxa; i++)
         {
         idx = 0;
         for (j=0; j<numChars; j++)
@@ -14283,7 +14283,7 @@ int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrix
         }
 
     /* Find end state index of original latent pattern of the newTable cluster */
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         {
         if (oldLatentMatrix[pos(i,newTableIndex,numChars)] == 1) // Equivalent to end state 0
             {
@@ -14296,13 +14296,13 @@ int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrix
     newLatentStates = ConvertDataToLatentStates(data, numCharsInCluster, endStateIndex);
 
     /* Initialize data structure to hold new latent matrix */
-    numValues = numChars * numTaxa;
+    numValues = numChars * numLocalTaxa;
     finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
     if (!finalLatentMatrix)
         printf("ERROR: Problem with allocation in UpdateLatentPatterns\n");
 
     /* Replace appropriate columns with new latent state resolution */
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         {
         for (j=0; j<numChars; j++)
             {
@@ -14332,7 +14332,7 @@ int PrintLatentMatrix(int numChars, int *latentMatrix)
     int         i, j;
 
     MrBayesPrint("Latent matrix:\n");
-    for (i=0; i<numTaxa; i++)
+    for (i=0; i<numLocalTaxa; i++)
         {
         MrBayesPrint("\t");
         for (j=0; j<numChars; j++)

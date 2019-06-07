@@ -11300,46 +11300,24 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
             /* TODO: Multi-state support missing, currently binary only */
                 {
                 /* Fill in latentmatrix *************************************************************************************/
-                if (p->paramId == LATENTMATRIX_UNCORR)
+                for (i=0; i<numLocalTaxa; i++)
                     {
-                    for (i=0; i<numLocalTaxa; i++)
+                    for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
                         {
-                        for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
-                            {
-                            if (compMatrix[pos(i,j,numCompressedChars)] == 1)
-                                intValue[pos(i,c,m->numChars)] = ENDSTATE;
-                            else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
-                                intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
-                            else
-                                intValue[pos(i,c,m->numChars)] = TRIMORPH;
-                            }
+                        if (compMatrix[pos(i,j,numCompressedChars)] == 1)
+                            intValue[pos(i,c,m->numChars)] = ENDSTATE;
+                        else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
+                            intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
+                        else
+                            intValue[pos(i,c,m->numChars)] = TRIMORPH;
                         }
-                    /* Copy over latent matrix to global initialLatentMatrix */
-                    int numValues = m->numChars * numLocalTaxa;
-                    initialLatentMatrix = (int *) SafeMalloc((size_t)numValues * sizeof(int));
-                    for (i=0; i<numLocalTaxa; i++)
-                        for (j=0; j<m->numChars; j++)
-                            initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
                     }
-                else if (p->paramId == LATENTMATRIX_CORR)
-                    {
-                    for (i=0; i<numLocalTaxa; i++)
-                        {
-                        for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
-                            {
-                            if (compMatrix[pos(i,j,numCompressedChars)] == 1)
-                                intValue[pos(i,j,m->numChars)] = ENDSTATE;
-                            else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
-                                intValue[pos(i,j,m->numChars)] = OPPENDSTATE;
-                            else
-                                intValue[pos(i,j,m->numChars)] = TRIMORPH;
-                            }
-                        }
-                    /* Copy over latent matrix to global initialLatentMatrix */
-                    for (i=0; i<numLocalTaxa; i++)
-                        for (j=0; j<m->numChars; j++)
-                            initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
-                    }
+                /* Copy over latent matrix to global initialLatentMatrix */
+                int numValues = m->numChars * numLocalTaxa;
+                initialLatentMatrix = (int *) SafeMalloc((size_t)numValues * sizeof(int));
+                for (i=0; i<numLocalTaxa; i++)
+                    for (j=0; j<m->numChars; j++)
+                        initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
                 }
 
             else if (p->paramType == P_REVMAT)
@@ -19096,10 +19074,7 @@ int SetModelParams (void)
             SafeStrcat(&p->name, partString);
 
             /* find the parameter x prior type */
-            if (!strcmp(mp->corrPr,"Correlated"))
-                p->paramId = LATENTMATRIX_CORR;
-            else
-                p->paramId = LATENTMATRIX_UNCORR;
+            p->paramId = LATENTMATRIX;
 
             p->printParam = NO;
 
@@ -21732,9 +21707,8 @@ void SetUpMoveTypes (void)
     mt = &moveTypes[i++];
     mt->name = "Switch intemediate latent state to end state";
     mt->shortName = "SwitchLatent";
-    mt->applicableTo[0] = LATENTMATRIX_UNCORR;
-    mt->applicableTo[1] = LATENTMATRIX_CORR;
-    mt->nApplicable = 2;
+    mt->applicableTo[0] = LATENTMATRIX;
+    mt->nApplicable = 1;
     mt->moveFxn = &Move_Latent;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 0;

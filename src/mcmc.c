@@ -7040,8 +7040,6 @@ int InitParsSets (void)
                         m->parsSets[i][c] = x;
                     }
                 }
-            free (initialLatentMatrix);
-            initialLatentMatrix = NULL;
             }
         else if (!strcmp(mp->nucModel, "Doublet") && (mp->dataType == DNA || mp->dataType == RNA))
             {

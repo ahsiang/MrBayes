@@ -884,10 +884,9 @@ typedef struct param
 #define RHO_FIX                         149
 #define ALPHADIR_EXP                    150
 #define ALPHADIR_FIX                    151
-#define LATENTMATRIX_UNCORR             152
-#define LATENTMATRIX_CORR               153
-#define ALLOCATIONVECTOR_UNCORR         154
-#define ALLOCATIONVECTOR_CORR           155
+#define LATENTMATRIX                    152
+#define ALLOCATIONVECTOR_UNCORR         153
+#define ALLOCATIONVECTOR_CORR           154
 
 #if defined (BEAGLE_ENABLED)
 #define MB_BEAGLE_SCALE_ALWAYS          0

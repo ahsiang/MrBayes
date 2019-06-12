@@ -8747,24 +8747,12 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
         else
             {
             factor = numPossibleResolutions[m] * n;
-
-            //term = ExponentBySquaring(2.0,(MrBFlt) factor); // i.e., 2^mn
-
-            term = 1.0;
-            for (i=0; i<factor; i++)
-                term *= 2.0;
-
+            term = SmartExponentiation(2.0,factor);
             emissionProbability += (1.0 / term); // i.e., (1/2)^mn
             }
         }
 
     finalLnProbability = log (1.0 / totalResolutions) + log(emissionProbability);
-
-    if (finalLnProbability > 0)
-        {
-        printf("finalLnProbability: %Lf\n",finalLnProbability);
-        getchar();
-        }
 
     return ( finalLnProbability );
 }

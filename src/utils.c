@@ -14134,6 +14134,39 @@ MrBLFlt ExponentBySquaring(MrBLFlt base, MrBLFlt exp)
 
 /*---------------------------------------------------------------------------------
 |
+|   SmartExponentiation
+|
+|   Wrapper function for exponentation which picks the best method depending on the
+|   magnitude of the exponentiation required.
+|
+---------------------------------------------------------------------------------*/
+MrBLFlt SmartExponentiation(MrBLFlt base, MrBLFlt exp)
+{
+    int       i, b, e;
+    MrBLFlt   result=1.0;
+
+    b = (int) base;
+    e = (int) exp;
+
+    if ((b == 2) && (e < 64)) // Use bitshifting for smaller powers of 2
+        result = (MrBLFlt) (1ULL << (BitsLong) exp);
+    else
+        {
+        if (e < 64) // Use naive looping for small values of exp
+            {
+            for (i=0; i<e; i++)
+                result *= base;
+            }
+        else // Use exponentiation by squaring for large values of exp
+            result = ExponentBySquaring(base, exp);
+        }
+
+    return (result);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
 |   GetNumPolymorphismPatterns
 |
 |   Calculates number of possible data patterns for a given polymorphic latent pattern
@@ -14142,7 +14175,7 @@ MrBLFlt ExponentBySquaring(MrBLFlt base, MrBLFlt exp)
 ---------------------------------------------------------------------------------*/
 BitsLong GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired)
 {
-    int             d, t, i, j, k;
+    int        d, t, i, j, k;
     BitsLong   term1, term2, term3, total;
 
     d = numDimorphisms;

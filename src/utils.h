@@ -288,6 +288,7 @@ int       cmpMrBFlt(const void *a, const void *b);
 
 /* correlation model utility functions */
 MrBLFlt ExponentBySquaring(MrBLFlt base, MrBLFlt exp);
+MrBLFlt SmartExponentiation(MrBLFlt base, MrBLFlt exp);
 BitsLong      GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired);
 int      *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex);
 int      *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);

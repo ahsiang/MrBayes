@@ -76,7 +76,7 @@ MrBFlt  BetaCf (MrBFlt a, MrBFlt b, MrBFlt x);
 MrBFlt  BetaQuantile (MrBFlt alpha, MrBFlt beta, MrBFlt x);
 MrBFlt  CdfBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r);
 MrBFlt  CdfNormal (MrBFlt x);
-int     Combination (int n, int k);
+unsigned long Combination (int n, int k);
 MrBComplex Complex (MrBFlt a, MrBFlt b);
 MrBFlt  ComplexAbsoluteValue (MrBComplex a);
 MrBComplex ComplexAddition (MrBComplex a, MrBComplex b);
@@ -101,6 +101,7 @@ void    ElmHes (int dim, int low, int high, MrBFlt **a, int *interchanged);
 void    ElTran (int dim, int low, int high, MrBFlt **a, int *interchanged, MrBFlt **z);
 void    Exchange (int j, int k, int l, int m, int n, MrBFlt **a, MrBFlt *scale);
 MrBFlt  Factorial (int x);
+unsigned long BigFactorial (int x);
 void    ForwardSubstitutionRow (int dim, MrBFlt **L, MrBFlt *b);
 MrBFlt  GammaRandomVariable (MrBFlt a, MrBFlt b, RandLong *seed);
 void    GaussianElimination (int dim, MrBFlt **a, MrBFlt **bMat, MrBFlt **xMat);
@@ -9764,16 +9765,16 @@ MrBFlt CdfNormal (MrBFlt x)
 |   Returns n choose k
 |
 ---------------------------------------------------------------------------------*/
-int Combination (int n, int k)
+BitsLong Combination (int n, int k)
 {
-    int         comb;
+    BitsLong   comb;
 
     if (n < k)
         comb = 0;
     else if (n == k)
         comb = 1;
     else
-        comb = Factorial(n) / (Factorial(k) * Factorial(n-k));
+        comb = BigFactorial(n) / (BigFactorial(k) * BigFactorial(n-k));
 
     return (comb);
 }
@@ -11014,6 +11015,28 @@ MrBFlt Factorial (int x)
 {
     int         i;
     MrBFlt      fac;
+
+    fac = 1.0;
+    for (i=0; i<x; i++)
+        {
+        fac *= (i+1);
+        }
+
+    return (fac);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   BigFactorial
+|
+|   Returns x! as an unsigned long (for big numbers)
+|
+---------------------------------------------------------------------------------*/
+unsigned long BigFactorial (int x)
+{
+    int             i;
+    unsigned long   fac;
 
     fac = 1.0;
     for (i=0; i<x; i++)
@@ -14089,16 +14112,38 @@ void TiProbsUsingPadeApprox (int dim, MrBFlt **qMat, MrBFlt v, MrBFlt r, MrBFlt 
 
 /*---------------------------------------------------------------------------------
 |
+|   ExponentBySquaring
+|
+|   Carries out exponentiation using the exponentiation by squaring algorithm.
+|
+---------------------------------------------------------------------------------*/
+MrBLFlt ExponentBySquaring(MrBLFlt base, MrBLFlt exp)
+{
+    if (exp < 0)
+        return ( ExponentBySquaring(1.0/base, -exp) );
+    else if ((int) exp == 0)
+        return ( 1 );
+    else if ((int) exp == 1)
+        return ( base );
+    else if ((int) exp % 2 != 0) // Odd exponent case
+        return ( base * ExponentBySquaring(base*base, (exp-1.0)/2.0) );
+    else // Even exponent case
+        return ( ExponentBySquaring(base*base, exp/2.0) );
+}
+
+
+/*---------------------------------------------------------------------------------
+|
 |   GetNumPolymorphismPatterns
 |
 |   Calculates number of possible data patterns for a given polymorphic latent pattern
 |   and a specified number of intermediate states (>= 1) required for those patterns.
 |
 ---------------------------------------------------------------------------------*/
-int GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired)
+BitsLong GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired)
 {
-    int             d, t, i, j, k, l, term1, term2, total;
-    unsigned long   term3;
+    int             d, t, i, j, k;
+    BitsLong   term1, term2, term3, total;
 
     d = numDimorphisms;
     t = numTrimorphisms;
@@ -14109,10 +14154,15 @@ int GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numI
         {
         term1 = Combination(d,j);
         term2 = Combination(t,i-j);
-        term3 = 1;
-        l = t - (i-j);
-        for (k=0; k<l; k++)
-            term3 *= 2;
+
+        k = t - (i-j);
+        //term3 = ExponentBySquaring(2.0,k);
+
+        term3 = 1.0;
+        for (int x=0; x<k; x++)
+            term3 *= 2.0;
+
+
         total += term1 * term2 * term3;
         }
 

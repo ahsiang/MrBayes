@@ -8689,7 +8689,8 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
 {
     int             i, n, m, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
                     numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
-    MrBFlt          lnEmissionProbability=0.0, term;
+    BitsLong  factor, totalResolutions=0;
+    MrBLFlt     term, emissionProbability=0.0, finalLnProbability;
 
     /* Get number of polymorphic states, number of trimorphisms, number of (non-polymorphic)
     intermediate states, and maximum number of intermediate states (K) possible */
@@ -8716,8 +8717,8 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
     /* Determine number of possible resolutions for each number of intermediate states 0,1,...,E
     (i.e., index 0 = number of resolutions for resolutions with no intermediate states;
     index 1 = number of resolutions for resolutions with 1 intermediate state; etc.) */
-    int numPossibleResolutions[maxNumIntmedStates+1];
-    for (i=0; i<maxNumIntmedStates+1; i++)
+    BitsLong numPossibleResolutions[maxNumIntmedStates+1];
+    for (i=0; i<=maxNumIntmedStates; i++)
         {
         if (numPolymorphicStates == 0) // No polymorphisms
             {
@@ -8734,21 +8735,38 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
             else
                 numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i - numIntmedStates);
             }
+        totalResolutions += numPossibleResolutions[i];
         }
 
     /* Calculate total emission probability */
     n = numCharsInCluster;
-    term = n * log(0.5); // i.e., log ( 1/2^n )
-
     for (m=0; m<=maxNumIntmedStates; m++)
         {
         if (numPossibleResolutions[m] == 0)
             continue;
         else
-            lnEmissionProbability += numPossibleResolutions[m] * term; // i.e., log ( 1/2^mn )
+            {
+            factor = numPossibleResolutions[m] * n;
+
+            //term = ExponentBySquaring(2.0,(MrBFlt) factor); // i.e., 2^mn
+
+            term = 1.0;
+            for (i=0; i<factor; i++)
+                term *= 2.0;
+
+            emissionProbability += (1.0 / term); // i.e., (1/2)^mn
+            }
         }
 
-    return (lnEmissionProbability);
+    finalLnProbability = log (1.0 / totalResolutions) + log(emissionProbability);
+
+    if (finalLnProbability > 0)
+        {
+        printf("finalLnProbability: %Lf\n",finalLnProbability);
+        getchar();
+        }
+
+    return ( finalLnProbability );
 }
 
 

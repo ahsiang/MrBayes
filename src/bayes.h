@@ -110,6 +110,7 @@ typedef double MrBFlt;      /* double used for parameter values and generally fo
 typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt) to increase speed and reduce memory requirement */
                             /* set CLFlt to double if you want increased precision */
                             /* NOTE: CLFlt = double not compatible with SSE_ENABLED, AVX_ENABLED or FMA_ENABLED */
+typedef long double MrBLFlt;
 
 /*
  * Make sure we define SIMD instruction flags in a stepwise manner. That is, if we have FMA, make sure we have AVX;

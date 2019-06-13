@@ -10751,6 +10751,16 @@ int DoStartvalsParm (char *parmName, char *tkn)
                 theValueMin = ETA;
                 theValueMax = 1.0;
                 }
+            if (param->paramType==P_ALLOCATIONVECTOR && nValuesRead==numExpectedValues && useSubvalues == NO)
+                {
+                /* continue with subvalues */
+                nValuesRead = 0;
+                numExpectedValues = 1;
+                useIntValues = NO;
+                useSubvalues = YES;
+                theValueMin = 0;
+                theValueMax = POS_INFINITY;
+                }
             if (param->paramType==P_OMEGA && nValuesRead==numExpectedValues && useSubvalues == NO)
                 {
                 /* continue with subvalues */
@@ -10784,6 +10794,8 @@ int DoStartvalsParm (char *parmName, char *tkn)
                 {
                 if (param->paramType == P_OMEGA)
                     MrBayesPrint ("%s   Only %d values were expected for parameter '%s'\n", spacer, param->nValues+param->nSubValues/2, param->name);
+                else if (param->paramType == P_ALLOCATIONVECTOR)
+                    MrBayesPrint("%s   Only %d values were expected for parameter '%s'\n", spacer, param->nValues+param->nSubValues, param->name);
                 else if (param->nIntValues > 0)
                     MrBayesPrint ("%s   Only %d values were expected for parameter '%s'\n", spacer, param->nValues+param->nIntValues, param->name);
                 else
@@ -19032,6 +19044,7 @@ int SetModelParams (void)
             {
             /* Set up allocationVector for correlation model DPMM ***********************************************************/
             p->paramType = P_ALLOCATIONVECTOR;
+            p->nValues = 0;
             p->nIntValues = m->numChars;
             p->nSubValues = 1;
             p->min = 0;
@@ -19050,8 +19063,7 @@ int SetModelParams (void)
             else
                 p->paramId = ALLOCATIONVECTOR_UNCORR;
 
-            p->printParam = NO;
-            /* TODO: Printing for allocation vector and latent matrix */
+            p->printParam = YES;
 
             /* report alloctionVector */
             SafeStrcat (&p->paramHeader,"allocationVector");
@@ -19061,8 +19073,9 @@ int SetModelParams (void)
             {
             /* Set up latentMatrix for correlation model DPMM ***********************************************************/
             p->paramType = P_LATENTMATRIX;
+            p->nValues = 0;
+            p->nIntValues = m->numChars * numLocalTaxa;
             p->nSubValues = 0;
-            p->nIntValues = m->numChars * numLocalTaxa; // Maximum size of latent matrix
             p->min = TRIMORPH;
             p->max = 2;
             for (i=0; i<numCurrentDivisions; i++)
@@ -19076,7 +19089,7 @@ int SetModelParams (void)
             /* find the parameter x prior type */
             p->paramId = LATENTMATRIX;
 
-            p->printParam = NO;
+            p->printParam = YES;
 
             /* report latentMatrix */
             SafeStrcat (&p->paramHeader,"latentMatrix");

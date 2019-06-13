@@ -14189,12 +14189,7 @@ BitsLong GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int
         term2 = Combination(t,i-j);
 
         k = t - (i-j);
-        //term3 = ExponentBySquaring(2.0,k);
-
-        term3 = 1.0;
-        for (int x=0; x<k; x++)
-            term3 *= 2.0;
-
+        term3 = SmartExponentiation(2.0,k);
 
         total += term1 * term2 * term3;
         }
@@ -14213,9 +14208,9 @@ BitsLong GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int
 |   returned. Missing character compliant.
 |
 |   Polymorphism code for latent states:
-|       -1 = 0/i   = Z (DIMORPH0)
-|       -2 = i/1   = O (TRIMORPH)
-|       -3 = 0/i/1 = T (DIMORPH1)
+|       600 = 0/i   = Z (DIMORPH0)
+|       700 = i/1   = O (TRIMORPH)
+|       800 = 0/i/1 = T (DIMORPH1)
 |
 ---------------------------------------------------------------------------------*/
 int *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex)

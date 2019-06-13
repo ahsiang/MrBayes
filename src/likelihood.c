@@ -8696,14 +8696,14 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
     intermediate states, and maximum number of intermediate states (K) possible */
     for (i=0; i<numLocalTaxa; i++)
         {
-        if (latentPattern[i] < 0)
+        if (latentPattern[i] > OPPENDSTATE)
             {
             numPolymorphicStates++;
             maxNumIntmedStates++;
-            if (latentPattern[i] == -3)
+            if (latentPattern[i] == TRIMORPH)
                 numTrimorphisms++;
             }
-        if (latentPattern[i] == 2) // Non-polymorphic i-states
+        if (latentPattern[i] == INTSTATE) // Non-polymorphic i-states
             {
             maxNumIntmedStates++;
             numIntmedStates++;

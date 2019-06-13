@@ -6407,17 +6407,54 @@ int InitChainCondLikes (void)
                     /* Loop through characters to fill in tip conditional likelihoods */
                     for (c=0; c<m->numChars; c++)
                         {
-                        if (m->nStates[c] == 2)
-                            numReps = m->numBetaCats;
-                        else
-                            numReps = 1;
-                        for (k=0; k<numReps; k++)
+                        if (m->mcModelId == YES)
                             {
-                            for (s=0; s<m->nStates[c]; s++)
+                            if (charBits[c] == DIMORPH0)
                                 {
-                                if (IsBitSet(s, charBits))
-                                    (*cL) = 1.0;
-                                cL++;
+                                for (s=0; s<m->nStates[c]; s++)
+                                    {
+                                    if (s == 0 || s == 1)
+                                        (*cL) = 1.0;
+                                    else
+                                        (*cL) = 0.0;
+                                    cL++;
+                                    }
+                                }
+                            else if (charBits[c] == DIMORPH1)
+                                {
+                                for (s=0; s<m->nStates[c]; s++)
+                                    {
+                                    if (s == 1 || s == 2)
+                                        (*cL) = 1.0;
+                                    else
+                                        (*cL) = 0.0;
+                                    cL++;
+                                    }
+                                }
+                            else
+                                {
+                                for (s=0; s<m->nStates[c]; s++)
+                                    {
+                                    if (IsBitSet(s, charBits))
+                                        (*cL) = 1.0;
+                                    cL++;
+                                    }
+                                }
+                            }
+                        else
+                            {
+                            if (m->nStates[c] == 2)
+                                numReps = m->numBetaCats;
+                            else
+                                numReps = 1;
+                            for (k=0; k<numReps; k++)
+                                {
+                                for (s=0; s<m->nStates[c]; s++)
+                                    {
+                                    if (IsBitSet(s, charBits))
+                                        (*cL) = 1.0;
+                                    cL++;
+                                    }
                                 }
                             }
                         charBits += m->nParsIntsPerSite;
@@ -11727,35 +11764,72 @@ if (proc_id == 0)
                 value = GetParamSubVals (p, j, state[j]);
                 nValues = p->nSubValues;
                 }
+            else if ((p->paramType == P_ALLOCATIONVECTOR) || (p->paramType == P_LATENTMATRIX))
+                {
+                intValue = GetParamIntVals (p, j, state[j]);
+                nValues = p->nIntValues;
+                }
             else
                 {
                 value = GetParamVals (p, j, state[j]);
                 nValues = p->nValues;
                 }
-            if (nErrors == 0 && SafeSprintf (&tempString, &tempStrSize, "\t\t%s(%d,%d)=(%.15le", p->name, run, chn, value[0]) == ERROR)
-                nErrors++;
-            if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
-                nErrors++;
-            for (k=1; k<nValues; k++)
+
+            if (((p->paramType == P_ALLOCATIONVECTOR) || (p->paramType == P_LATENTMATRIX)))
                 {
-                if (nErrors==0 && SafeSprintf (&tempString, &tempStrSize, ",%.15le", value[k]) == ERROR)
+                if (nErrors == 0 && SafeSprintf (&tempString, &tempStrSize, "\t\t%s(%d,%d)=(%d", p->name, run, chn, intValue[0]) == ERROR)
                     nErrors++;
                 if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
                     nErrors++;
-                }
-            /* print int values if present */
-            if (p->nIntValues > 0)
-                {
-                intValue = GetParamIntVals (p, j, state[j]);
-                nValues  = p->nIntValues;
-                for (k=0; k<nValues; k++)
+                for (k=1; k<nValues; k++)
                     {
                     if (nErrors==0 && SafeSprintf (&tempString, &tempStrSize, ",%d", intValue[k]) == ERROR)
                         nErrors++;
                     if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
                         nErrors++;
                     }
+                /* print extra params for allocation vector */
+                if (p->paramType == P_ALLOCATIONVECTOR)
+                    {
+                    value = GetParamSubVals (p, j, state[j]);
+                    nValues = p->nSubValues;
+                    for (k=0; k<nValues; k++)
+                        {
+                        if (nErrors==0 && SafeSprintf (&tempString, &tempStrSize, ",%f", value[k]) == ERROR)
+                            nErrors++;
+                        if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
+                            nErrors++;
+                        }
+                    }
                 }
+            else
+                {
+                if (nErrors == 0 && SafeSprintf (&tempString, &tempStrSize, "\t\t%s(%d,%d)=(%.15le", p->name, run, chn, value[0]) == ERROR)
+                    nErrors++;
+                if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
+                    nErrors++;
+                for (k=1; k<nValues; k++)
+                    {
+                    if (nErrors==0 && SafeSprintf (&tempString, &tempStrSize, ",%.15le", value[k]) == ERROR)
+                        nErrors++;
+                    if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
+                        nErrors++;
+                    }
+                /* print int values if present */
+                if (p->nIntValues > 0)
+                    {
+                    intValue = GetParamIntVals (p, j, state[j]);
+                    nValues  = p->nIntValues;
+                    for (k=0; k<nValues; k++)
+                        {
+                        if (nErrors==0 && SafeSprintf (&tempString, &tempStrSize, ",%d", intValue[k]) == ERROR)
+                            nErrors++;
+                        if (nErrors == 0 && AddToPrintString (tempString) == ERROR)
+                            nErrors++;
+                        }
+                    }
+                }
+
             /* print extra params for symdir multistate */
             if (p->nSympi > 0)
                 {
@@ -16050,8 +16124,19 @@ int ReusePreviousResults (int *numSamples, int steps)
     fpSS = NULL;
     fpParm = NULL;
     fpTree = NULL;
+
+    /* Deal with alloc file(s) for Mc model */
     if (writeAlloc == YES)
+        {
         fpAlloc = NULL;
+        fpAlloc = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
+        if (fpAlloc == NULL)
+            {
+            MrBayesPrint ("%s   Could not allocate fpAlloc in ReusePreviousResults\n", spacer);
+            return ERROR;
+            }
+        }
+
     fpParm = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
     if (fpParm == NULL)
         {
@@ -16113,7 +16198,7 @@ int ReusePreviousResults (int *numSamples, int steps)
                 return ERROR;
                 }
 
-            if ((fpParm[n] = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
+            if ((fpAlloc[n] = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
                 return (ERROR);
             else if (CopyResults(fpAlloc[n],bkupName+strlen(workingDir),numPreviousGen) == ERROR)
                 return (ERROR);

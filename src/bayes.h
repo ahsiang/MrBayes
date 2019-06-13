@@ -280,9 +280,9 @@ typedef long double MrBLFlt;
 #define ENDSTATE                1 /* latent end state in Mc model */
 #define INTSTATE                2 /* latent intermediate state in Mc model */
 #define OPPENDSTATE             4 /* latent opposite end state in Mc model */
-#define DIMORPH0                -1 /* 0/i dimorphism in Mc model latent states */
-#define DIMORPH1                -2 /* i/1 dimorphism in Mc model latent states */
-#define TRIMORPH                -3 /* 0/i/1 trimorphism in Mc model latent states */
+#define DIMORPH0                600 /* 0/i dimorphism in Mc model latent states */
+#define DIMORPH1                700 /* i/1 dimorphism in Mc model latent states */
+#define TRIMORPH                800 /* 0/i/1 trimorphism in Mc model latent states */
 
 #define UNORD                   0
 #define ORD                     1

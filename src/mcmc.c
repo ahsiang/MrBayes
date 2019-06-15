@@ -1914,7 +1914,7 @@ void CloseMBPrintFiles (void)
         SafeFclose (&fpDump[n]);
 #endif
         if (writeAlloc == YES)
-            SafeFclose (&fpParm[n]);
+            SafeFclose (&fpAlloc[n]);
 
         for (i=0; i<numTrees; i++)
             {
@@ -11945,6 +11945,73 @@ errorExit:
 }
 
 
+int PrintAllocationVector (int curGen, int coldId)
+{
+    int             i, tempStrSize, *allocationVector;
+    ModelInfo       *m;
+    char            *tempStr;
+
+    /* allocate the print string */
+    printStringSize = tempStrSize = TEMPSTRSIZE;
+    printString = (char *)SafeMalloc((size_t)printStringSize * sizeof(char));
+    if (!printString)
+        {
+        MrBayesPrint ("%s   Problem allocating printString (%d)\n", spacer, printStringSize * sizeof(char));
+        return (ERROR);
+        }
+    *printString = '\0';
+
+    tempStr = (char *) SafeMalloc((size_t)tempStrSize * sizeof(char));
+    if (!tempStr)
+        {
+        MrBayesPrint ("%s   Problem allocating tempString (%d)\n", spacer, tempStrSize * sizeof(char));
+        return (ERROR);
+        }
+    *tempStr = '\0';
+
+    for (i=0; i<numCurrentDivisions; i++)
+        {
+        m = &modelSettings[i];
+        if (m->mcModelId == YES)
+            {
+            /* get allocation vector */
+            allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
+
+            /* print the translate block information and the top of the file */
+            if (curGen == 0)
+                {
+                /* print header information */
+                SafeSprintf (&tempStr, &tempStrSize, "[ID: %s]\n", stamp);
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "[   Gen                --  Generation]\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "[   Alloc              --  Allocation vector]\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "Gen\tAlloc\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                }
+
+            /* Print generation number */
+            SafeSprintf (&tempStr, &tempStrSize, "%d\t", curGen);
+            if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+
+            /* Print allocation vector */
+            for (i=0; i<m->numChars; i++)
+                {
+                SafeSprintf (&tempStr, &tempStrSize, "%d ", allocationVector[i]);
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                }
+
+            SafeSprintf (&tempStr, &tempStrSize, "\t\n");
+            if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+
+            free (tempStr);
+            }
+        }
+    return (NO_ERROR);
+}
+
+
 /*----------------------------------------------------------------------
 |
 |   PrintAllocationVectorToFile: Print allocation vector to file.
@@ -11952,16 +12019,24 @@ errorExit:
 ------------------------------------------------------------------------*/
 int PrintAllocationVectorToFile (int curGen)
 {
-    int         i, d, chn, coldId, runId, *allocationVector;
+    int         chn, coldId, runId;
+#   if !defined (MPI_ENABLED)
+    int         i, *allocationVector;
     ModelInfo   *m;
+#   endif
+#   if defined (MPI_ENABLED)
+    int             id, x, doesThisProcHaveId, procWithChain, ierror, tag, nErrors, sumErrors;
+    MPI_Status      status;
+#   endif
 
-    for (d=0; d<numCurrentDivisions; d++)
+#   if !defined (MPI_ENABLED)
+
+    /* Print allocation vectors to file (single-processor version) */
+    for (i=0; i<numCurrentDivisions; i++)
         {
-        m = &modelSettings[d];
-
+        m = &modelSettings[i];
         if (m->mcModelId == YES)
             {
-            /* Print allocation vector (single-processor version) */
             for (chn=0; chn<numLocalChains; chn++)
                 {
                 if ((chainId[chn] % chainParams.numChains) == 0)
@@ -11993,6 +12068,158 @@ int PrintAllocationVectorToFile (int curGen)
                 }
             }
         }
+#   else
+    /* Print allocation vector to file (parallel version) */
+
+    /* Wait for all of the processors to get to this point before starting the printing. */
+    ierror = MPI_Barrier (MPI_COMM_WORLD);
+    if (ierror != MPI_SUCCESS)
+        {
+        MrBayesPrint ("%s   Problem at chain barrier.\n", spacer);
+        return ERROR;
+        }
+    tag = nErrors = 0;
+
+    /* Loop over runs. */
+    for (runId=0; runId<chainParams.numRuns; runId++)
+        {
+        /* Get the ID of the chain we want to print. Remember, the ID's should be numbered
+           0, 1, 2, ..., numChains X numRuns. Chains numbered 0, numChains, 2 X numChains, ...
+           are cold. */
+        id = runId * chainParams.numChains;
+
+        /* Does this processor have the chain? */
+        doesThisProcHaveId = NO;
+        coldId = 0;
+        for (chn=0; chn<numLocalChains; chn++)
+            {
+            if (chainId[chn] == id)
+                {
+                doesThisProcHaveId = YES;
+                coldId = chn;
+                break;
+                }
+            }
+
+        /* Tell all the processors which has the chain we want to print. We do this using the MPI_AllReduce
+           function. If the processor does not have the chain, then it initializes x = 0. If it does
+           have the chain, then x = proc_id. When the value of x is summed over all the processors, the sum
+           should be the proc_id of the processor with the chain. Possible values are 0, 1, 2, num_procs-1.
+           Note that every processor knows procWithChain because we are using MPI_Allreduce, instead of MPI_Reduce. */
+        x = 0;
+        if (doesThisProcHaveId == YES)
+            x = proc_id;
+        ierror = MPI_Allreduce (&x, &procWithChain, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (ierror != MPI_SUCCESS)
+            {
+            MrBayesPrint ("%s   Problem finding processor with chain to print.\n", spacer);
+            return (ERROR);
+            }
+
+        /* ****************************************************************************************************/
+        /* print allocation vector ****************************************************************************/
+
+        /* Fill printString with the contents to be printed on proc_id = 0. Note
+           that printString is allocated in the function. */
+        if (doesThisProcHaveId == YES)
+            if (PrintAllocationVector (curGen, coldId) == ERROR)
+                    nErrors++;
+        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (sumErrors > 0)
+            {
+            MrBayesPrint ("%s   Problem with printing allocation vector.\n", spacer);
+            return ERROR;
+            }
+
+        /* First communication: Send/receive the length of the printString. */
+        if (proc_id == 0 || proc_id == procWithChain)
+            {
+            if (procWithChain != 0)
+                {
+                if (proc_id == procWithChain)
+                    {
+                    /* Find out how large the string is, and send the information to proc_id = 0. */
+                    ierror = MPI_Send (&printStringSize, 1, MPI_LONG, 0, tag, MPI_COMM_WORLD);
+                    if (ierror != MPI_SUCCESS)
+                        nErrors++;
+                    }
+                else
+                    {
+                    /* Receive the length of the string from proc_id = procWithChain, and then allocate
+                       printString to be that length. */
+                    ierror = MPI_Recv (&printStringSize, 1, MPI_LONG, procWithChain, tag, MPI_COMM_WORLD, &status);
+                    if (ierror != MPI_SUCCESS)
+                        {
+                        MrBayesPrint ("%s   Problem receiving printStringSize from proc_id = %d\n", spacer, procWithChain);
+                        nErrors++;
+                        }
+                    printString = (char *)SafeMalloc((size_t)printStringSize * sizeof(char));
+                    if (!printString)
+                        {
+                        MrBayesPrint ("%s   Problem allocating printString (%d)\n", spacer, printStringSize * sizeof(char));
+                        nErrors++;
+                        }
+                    strcpy (printString, "");
+                    }
+                }
+            }
+        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (sumErrors > 0)
+            {
+            MrBayesPrint ("%s   Problem with first communication (states).\n", spacer);
+            return ERROR;
+            }
+
+        /* Second communication: Send/receive the printString. */
+        if (proc_id == 0 || proc_id == procWithChain)
+            {
+            if (procWithChain != 0)
+                {
+                if (proc_id == procWithChain)
+                    {
+                    /* Send the printString to proc_id = 0. After we send the string to proc_id = 0, we can
+                       free it. */
+                    ierror = MPI_Send (&printString[0], (int)printStringSize, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
+                    if (ierror != MPI_SUCCESS)
+                        nErrors++;
+                    free(printString);
+                    }
+                else
+                    {
+                    /* Receive the printString from proc_id = procWithChain. */
+                    ierror = MPI_Recv (&printString[0], (int)printStringSize, MPI_CHAR, procWithChain, tag, MPI_COMM_WORLD, &status);
+                    if (ierror != MPI_SUCCESS)
+                        {
+                        MrBayesPrint ("%s   Problem receiving printString from proc_id = %d\n", spacer, procWithChain);
+                        nErrors++;
+                        }
+                    }
+                }
+            }
+        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (sumErrors > 0)
+            {
+            MrBayesPrint ("%s   Problem with second communication (states).\n", spacer);
+            return ERROR;
+            }
+
+        /* Print the string with the parameter information if we are proc_id = 0. */
+        if (proc_id == 0)
+            {
+            fprintf (fpAlloc[runId], "%s", printString);
+            fflush (fpAlloc[runId]);
+            free(printString);
+            }
+
+        /* Have all of the chains wait here, until the string has been successfully printed on proc_id = 0. */
+        ierror = MPI_Barrier (MPI_COMM_WORLD);
+        if (ierror != MPI_SUCCESS)
+            {
+            MrBayesPrint ("%s   Problem at chain barrier.\n", spacer);
+            return ERROR;
+            }
+        }
+        #   endif
 
     return (NO_ERROR);
 }
@@ -13206,6 +13433,11 @@ int PrintStates (int curGen, int coldId)
                 SafeSprintf (&tempStr, &tempStrSize, "\t%d", (int)st[j]);
                 if (AddToPrintString (tempStr) == ERROR) goto errorExit;
                 }
+            }
+        else if (p->paramType == P_ALLOCATIONVECTOR || p->paramType == P_LATENTMATRIX)
+            {
+            /* We print the allocation vector separately, so ignore it here */
+            continue;
             }
         else
             {

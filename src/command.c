@@ -11331,7 +11331,7 @@ int GetUserHelp (char *helpTkn)
         MrBayesPrint ("   Generatepr    -- This parameter is similar to 'Ratepr' but applies to gene    \n");
         MrBayesPrint ("                    trees in the multispecies coalescent, whereas 'Ratepr' app-  \n");
         MrBayesPrint ("                    lies to partitions within genes.                             \n");
-        MrBayesPrint ("     Rhopr       -- This parameter is used to specify a prior on rho, which      \n");
+        MrBayesPrint ("   Rhocorrpr     -- This parameter is used to specify a prior on rho, which      \n");
         MrBayesPrint ("                    controls the strength of correlation between standard        \n");
         MrBayesPrint ("                    characters under the correlation model. Rho is equal to a    \n");
         MrBayesPrint ("                    \"slow\" rate (beta) over a \"fast\" rate (alpha); lower     \n");
@@ -11341,15 +11341,15 @@ int GetUserHelp (char *helpTkn)
         MrBayesPrint ("                    estimate it against an exponential prior distribution via the\n");
         MrBayesPrint ("                    following options:                                           \n");
         MrBayesPrint ("                                                                                 \n");
-        MrBayesPrint ("                       prset rhopr = fixed(<number>)                             \n");
-        MrBayesPrint ("                       prset rhopr = exponential(<number>)                       \n");
+        MrBayesPrint ("                       prset rhocorrpr = fixed(<number>)                         \n");
+        MrBayesPrint ("                       prset rhocorrpr = exponential(<number>)                   \n");
         MrBayesPrint ("                                                                                 \n");
         MrBayesPrint ("                    Under the correlation model, the rates are constrained such  \n");
         MrBayesPrint ("                    that (2 * alpha) + beta = 1. For example, if you fix rho to  \n");
         MrBayesPrint ("                    0.25, then beta = 0.(1) (= 1/9) and alpha = 0.(4) (= 4/9). If\n");
-        MrBayesPrint ("                    you set rhopr as exponential(5), then rho will be estimated  \n");
-        MrBayesPrint ("                    against a prior probability distribution where the expected  \n");
-        MrBayesPrint ("                    value of rho will be 0.20 (= 1/5).                           \n");
+        MrBayesPrint ("                    you set rhocorr pr as exponential(5), then rho will be       \n");
+        MrBayesPrint ("                    estimated against a prior probability distribution where the \n");
+        MrBayesPrint ("                    expected value of rho will be 0.20 (= 1/5).                  \n");
         MrBayesPrint ("   Alphadirpr    -- This parameter is used to set the prior on the concentration \n");
         MrBayesPrint ("                    parameter for the Dirichlet process mixture model used to    \n");
         MrBayesPrint ("                    cluster standard characters under the correlation model.     \n");
@@ -11720,9 +11720,9 @@ int GetUserHelp (char *helpTkn)
             else
                 MrBayesPrint ("\n");
 
-            MrBayesPrint ("   Rhopr            Fixed/Exponential            %s", mp->rhoPr);
-            if (!strcmp(mp->rhoPr, "Exponential"))
-                MrBayesPrint ("(%1.2lf)\n", mp->rhoExp);
+            MrBayesPrint ("   Rhocorrpr        Fixed/Exponential            %s", mp->rhoCorrPr);
+            if (!strcmp(mp->rhoCorrPr, "Exponential"))
+                MrBayesPrint ("(%1.2lf)\n", mp->rhoCorrExp);
             else
                 MrBayesPrint ("\n");
 
@@ -14705,7 +14705,7 @@ void SetUpParms (void)
     PARAM (276, "Nlnormcat",      DoLsetParm,        "\0");
     PARAM (277, "Nmixtcat",       DoLsetParm,        "\0");
     PARAM (278, "Mcmodel",        DoLsetParm,        "Yes|No|\0");
-    PARAM (279, "Rhopr",          DoPrsetParm,       "Exponential|Fixed|\0");
+    PARAM (279, "Rhocorrpr",      DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|\0");
     //PARAM (282, "Filename",       DoSumaParm,        "\0");

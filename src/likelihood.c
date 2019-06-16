@@ -2010,15 +2010,14 @@ int CondLikeDown_Std (TreeNode *p, int division, int chain)
 -----------------------------------------------------------------*/
 int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
 {
-    int             c, i, j, k, nStates=3, currEntry, idx, *allocationVector,
-                    *latentMatrix, tipIdx, numTipCLs, left=NO, right=NO;
+    int             c, i, j, k, nStates=3, currEntry, idx, *latentMatrix, tipIdx,
+                    numTipCLs, left=NO, right=NO;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR, *leftTipCLs, *rightTipCLs;
     ModelInfo       *m;
 
     m = &modelSettings[division];
 
-    /* Get allocationVector, latentMatrix, and number of latent matrix columns */
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    /* Get latentMatrix */
     latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
     /* Flip conditional likelihood space */
@@ -4782,16 +4781,14 @@ int CondLikeRoot_Std (TreeNode *p, int division, int chain)
 int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
 {
     int             a, c, h, i, j, k, nStates=3, tipIdx, currEntry, idx,
-                    *allocationVector, *latentMatrix, numTipCLs, left=NO, right=NO,
-                    anc=NO;
+                    *latentMatrix, numTipCLs, left=NO, right=NO, anc=NO;
     CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA,
                     likeL, likeR, likeA, *leftTipCLs, *rightTipCLs, *ancTipCLs;
     ModelInfo       *m;
 
     m = &modelSettings[division];
 
-    /* Get allocationVector, latentMatrix, and number of latent matrix columns */
-    allocationVector = GetParamIntVals(m->allocationVector, chain, state[chain]);
+    /* Get latentMatrix */
     latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
 
     /* flip state of node so that we are not overwriting old cond likes */
@@ -8065,7 +8062,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
     numClusters = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
     latentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain]);
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]); /* DPMM scaling factor */
-    rho = *GetParamVals(m->rho, chain, state[chain]); /* Inverse correlation factor */
+    rho = *GetParamVals(m->rhoCorr, chain, state[chain]); /* Inverse correlation factor */
 
     /* set number of reps */
     numReps = m->numChars * nStates;
@@ -10183,7 +10180,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
     tiP = m->tiProbs[m->tiProbsIndex[chain][p->index]];
 
     /* get inverse correlation factor */
-    rho = *GetParamVals(m->rho, chain, state[chain]);
+    rho = *GetParamVals(m->rhoCorr, chain, state[chain]);
 
     /* get base rate */
     baseRate = GetRate (division, chain);

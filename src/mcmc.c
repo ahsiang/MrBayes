@@ -6411,7 +6411,7 @@ int InitChainCondLikes (void)
                             {
                             if (charBits[c] == DIMORPH0)
                                 {
-                                for (s=0; s<m->nStates[c]; s++)
+                                for (s=0; s<nStates; s++)
                                     {
                                     if (s == 0 || s == 1)
                                         (*cL) = 1.0;
@@ -6422,7 +6422,7 @@ int InitChainCondLikes (void)
                                 }
                             else if (charBits[c] == DIMORPH1)
                                 {
-                                for (s=0; s<m->nStates[c]; s++)
+                                for (s=0; s<nStates; s++)
                                     {
                                     if (s == 1 || s == 2)
                                         (*cL) = 1.0;
@@ -6433,7 +6433,7 @@ int InitChainCondLikes (void)
                                 }
                             else
                                 {
-                                for (s=0; s<m->nStates[c]; s++)
+                                for (s=0; s<nStates; s++)
                                     {
                                     if (IsBitSet(s, charBits))
                                         (*cL) = 1.0;
@@ -6457,9 +6457,9 @@ int InitChainCondLikes (void)
                                     }
                                 }
                             }
-                        charBits += m->nParsIntsPerSite;
                         }
                     }
+                charBits += m->nParsIntsPerSite;
                 }
             }
         else if (useBeagle == NO)
@@ -7774,11 +7774,11 @@ MrBFlt LogPrior (int chain)
             if (p->paramId == ALPHADIR_EXP)
                 lnPrior += log(mp->alphaDirExp) - mp->alphaDirExp * st[0];
             }
-        else if (p->paramType == P_RHO)
+        else if (p->paramType == P_RHOCORR)
             {
             /* Correlation model rho parameter */
-            if (p->paramId == RHO_EXP)
-                lnPrior += log(mp->rhoExp) - mp->rhoExp * st[0];
+            if (p->paramId == RHOCORR_EXP)
+                lnPrior += log(mp->rhoCorrExp) - mp->rhoCorrExp * st[0];
             }
         else if (p->paramType == P_REVMAT)
             {
@@ -11764,11 +11764,6 @@ if (proc_id == 0)
                 value = GetParamSubVals (p, j, state[j]);
                 nValues = p->nSubValues;
                 }
-            else if ((p->paramType == P_ALLOCATIONVECTOR) || (p->paramType == P_LATENTMATRIX))
-                {
-                intValue = GetParamIntVals (p, j, state[j]);
-                nValues = p->nIntValues;
-                }
             else
                 {
                 value = GetParamVals (p, j, state[j]);
@@ -11777,6 +11772,9 @@ if (proc_id == 0)
 
             if (((p->paramType == P_ALLOCATIONVECTOR) || (p->paramType == P_LATENTMATRIX)))
                 {
+                intValue = GetParamIntVals (p, j, state[j]);
+                nValues = p->nIntValues;
+
                 if (nErrors == 0 && SafeSprintf (&tempString, &tempStrSize, "\t\t%s(%d,%d)=(%d", p->name, run, chn, intValue[0]) == ERROR)
                     nErrors++;
                 if (nErrors == 0 && AddToPrintString (tempString) == ERROR)

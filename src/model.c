@@ -625,7 +625,7 @@ int AllocateNormalParams (void)
 
     for (k=0; k<numParams; k++)
         {
-        MrBayesPrint ("%s\n",params[k]);
+        //MrBayesPrint ("%s\n",params[k]);
         nOfParams += params[k].nValues;
         nOfParams += params[k].nSubValues;
         nOfIntParams += params[k].nIntValues;
@@ -2403,7 +2403,7 @@ int CorrPreprocess ()
 int CompressData (void)
 {
     int             a, c, d, i, j, k, t, col[3], isSame, newRow, newColumn,
-                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter, sameIdx;
+                    *isTaken, *tempSitesOfPat, *tempChar, allocCounter=0, sameIdx=0;
     BitsLong        *tempMatrix;
     ModelInfo       *m;
     ModelParams     *mp;
@@ -6658,8 +6658,8 @@ int DoPrsetParm (char *parmName, char *tkn)
             else
                 return (ERROR);
             }
-        /* set Rhopr (rhoPr) **************************************************************/
-        else if (!strcmp(parmName, "Rhopr"))
+        /* set Rhocorrpr (rhoCorrPr) **************************************************************/
+        else if (!strcmp(parmName, "Rhocorrpr"))
             {
             if (expecting == Expecting(EQUALSIGN))
                 expecting = Expecting(ALPHA);
@@ -6673,7 +6673,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                         {
                         if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
                             {
-                            strcpy(modelParams[i].rhoPr, tempStr);
+                            strcpy(modelParams[i].rhoCorrPr, tempStr);
                             flag = 1;
                             }
                         }
@@ -6686,7 +6686,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                     }
                 else
                     {
-                    MrBayesPrint ("%s   Invalid Rhopr argument\n", spacer);
+                    MrBayesPrint ("%s   Invalid Rhocorrpr argument\n", spacer);
                     return (ERROR);
                     }
                 expecting  = Expecting(LEFTPAR);
@@ -6704,39 +6704,39 @@ int DoPrsetParm (char *parmName, char *tkn)
                     {
                     if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == STANDARD))
                         {
-                        if (!strcmp(modelParams[i].rhoPr,"Exponential"))
+                        if (!strcmp(modelParams[i].rhoCorrPr,"Exponential"))
                             {
                             sscanf (tkn, "%lf", &tempD);
-                            modelParams[i].rhoExp = tempD;
-                            if (modelParams[i].rhoExp < 0.0)
+                            modelParams[i].rhoCorrExp = tempD;
+                            if (modelParams[i].rhoCorrExp < 0.0)
                                 {
                                 MrBayesPrint ("%s   Exponential distribution rate parameter must be positive\n", spacer);
                                 return (ERROR);
                                 }
                             if (nApplied == 0 && numCurrentDivisions == 1)
-                                MrBayesPrint ("%s   Setting Rhopr to Exponential(%1.2lf)\n", spacer, modelParams[i].rhoExp);
+                                MrBayesPrint ("%s   Setting Rhocorrpr to Exponential(%1.2lf)\n", spacer, modelParams[i].rhoCorrExp);
                             else
-                                MrBayesPrint ("%s   Setting Rhopr to Exponential(%1.2lf) for partition %d\n", spacer, modelParams[i].rhoExp, i+1);
+                                MrBayesPrint ("%s   Setting Rhocorrpr to Exponential(%1.2lf) for partition %d\n", spacer, modelParams[i].rhoCorrExp, i+1);
                             expecting  = Expecting(RIGHTPAR);
                             }
-                        else if (!strcmp(modelParams[i].rhoPr,"Fixed"))
+                        else if (!strcmp(modelParams[i].rhoCorrPr,"Fixed"))
                             {
                             sscanf (tkn, "%lf", &tempD);
-                            modelParams[i].rhoFix = tempD;
-                            if (modelParams[i].rhoFix > MAX_RHO_PARAM)
+                            modelParams[i].rhoCorrFix = tempD;
+                            if (modelParams[i].rhoCorrFix > MAX_RHOCORR_PARAM)
                                 {
-                                MrBayesPrint ("%s   Rho parameter cannot be greater than %1.2lf\n", spacer, MAX_RHO_PARAM);
+                                MrBayesPrint ("%s   Rhocorr parameter cannot be greater than %1.2lf\n", spacer, MAX_RHOCORR_PARAM);
                                 return (ERROR);
                                 }
-                            if (modelParams[i].rhoFix < MIN_RHO_PARAM)
+                            if (modelParams[i].rhoCorrFix < MIN_RHOCORR_PARAM)
                                 {
-                                MrBayesPrint ("%s   Rho parameter cannot be less than %1.2lf\n", spacer, MIN_RHO_PARAM);
+                                MrBayesPrint ("%s   Rhocorr parameter cannot be less than %1.2lf\n", spacer, MIN_RHOCORR_PARAM);
                                 return (ERROR);
                                 }
                             if (nApplied == 0 && numCurrentDivisions == 1)
-                                MrBayesPrint ("%s   Setting Rhopr to Fixed(%1.2lf)\n", spacer, modelParams[i].rhoFix);
+                                MrBayesPrint ("%s   Setting Rhocorrpr to Fixed(%1.2lf)\n", spacer, modelParams[i].rhoCorrFix);
                             else
-                                MrBayesPrint ("%s   Setting Rhopr to Fixed(%1.2lf) for partition %d\n", spacer, modelParams[i].rhoFix, i+1);
+                                MrBayesPrint ("%s   Setting Rhocorrpr to Fixed(%1.2lf) for partition %d\n", spacer, modelParams[i].rhoCorrFix, i+1);
                             expecting  = Expecting(RIGHTPAR);
                             }
                         }
@@ -11271,13 +11271,13 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 else if (p->paramId == TRATIO_FIX)
                     value[0] = mp->tRatioFix;
                 }
-            else if (p->paramType == P_RHO)
+            else if (p->paramType == P_RHOCORR)
                 {
                 /* Fill in rho ******************************************************************************************/
-                if (p->paramId == RHO_EXP)
-                    value[0] = 1.0 / mp->rhoExp;
-                else if (p->paramId == RHO_FIX)
-                    value[0] = mp->rhoFix;
+                if (p->paramId == RHOCORR_EXP)
+                    value[0] = 1.0 / mp->rhoCorrExp;
+                else if (p->paramId == RHOCORR_FIX)
+                    value[0] = mp->rhoCorrFix;
                 }
             else if (p->paramType == P_ALPHADIR)
                 {
@@ -15523,7 +15523,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
         }
-    else if (whichParam == P_RHO)
+    else if (whichParam == P_RHOCORR)
         {
         /* Check the correlation model rho parameter for partitions 1 and 2. */
 
@@ -15546,14 +15546,14 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic2 = NO; /* part2 is not under the correlation model so rho does not apply */
 
         /* Check if the prior is the same for both. */
-        if (!strcmp(modelParams[part1].rhoPr,"Exponential") && !strcmp(modelParams[part2].rhoPr,"Exponential"))
+        if (!strcmp(modelParams[part1].rhoCorrPr,"Exponential") && !strcmp(modelParams[part2].rhoCorrPr,"Exponential"))
             {
-            if (AreDoublesEqual (modelParams[part1].rhoExp, modelParams[part2].rhoExp, (MrBFlt) 0.00001) == NO)
+            if (AreDoublesEqual (modelParams[part1].rhoCorrExp, modelParams[part2].rhoCorrExp, (MrBFlt) 0.00001) == NO)
                 isSame = NO;
             }
-        else if (!strcmp(modelParams[part1].rhoPr,"Fixed") && !strcmp(modelParams[part2].rhoPr,"Fixed"))
+        else if (!strcmp(modelParams[part1].rhoCorrPr,"Fixed") && !strcmp(modelParams[part2].rhoCorrPr,"Fixed"))
             {
-            if (AreDoublesEqual (modelParams[part1].rhoFix, modelParams[part2].rhoFix, (MrBFlt) 0.00001) == NO)
+            if (AreDoublesEqual (modelParams[part1].rhoCorrFix, modelParams[part2].rhoCorrFix, (MrBFlt) 0.00001) == NO)
                 isSame = NO;
             }
         else
@@ -18379,7 +18379,7 @@ int SetModelInfo (void)
         m->mixedvar = NULL;
         m->mixedBrchRates = NULL;
         m->clockRate = NULL;
-        m->rho = NULL;
+        m->rhoCorr = NULL;
         m->alphaDir = NULL;
         m->allocationVector = NULL;
         m->latentMatrix = NULL;
@@ -18982,33 +18982,33 @@ int SetModelParams (void)
                 SafeStrcat (&p->paramHeader, partString);
                 }
             }
-        else if (j == P_RHO)
+        else if (j == P_RHOCORR)
             {
             /* Set up rho for correlation model ***********************************************************************/
-            p->paramType = P_RHO;
+            p->paramType = P_RHOCORR;
             p->nValues = 1;
             p->nSubValues = 0;
-            p->min = MIN_RHO_PARAM;
-            p->max = MAX_RHO_PARAM;
+            p->min = MIN_RHOCORR_PARAM;
+            p->max = MAX_RHOCORR_PARAM;
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
-                    modelSettings[i].rho = p;
+                    modelSettings[i].rhoCorr = p;
 
             p->paramTypeName = "Inverse correlation factor";
-            SafeStrcat(&p->name, "rho");
+            SafeStrcat(&p->name, "rhoCorr");
             SafeStrcat(&p->name, partString);
 
             /* find the parameter x prior type */
-            if (!strcmp(mp->rhoPr,"Exponential"))
-                p->paramId = RHO_EXP;
+            if (!strcmp(mp->rhoCorrPr,"Exponential"))
+                p->paramId = RHOCORR_EXP;
             else
-                p->paramId = RHO_FIX;
+                p->paramId = RHOCORR_FIX;
 
-            if (p->paramId != RHO_FIX)
+            if (p->paramId != RHOCORR_FIX)
                 p->printParam = YES;
 
             /* report rho (inverse correlation factor) */
-            SafeStrcat (&p->paramHeader,"rho");
+            SafeStrcat (&p->paramHeader,"rhoCorr");
             SafeStrcat (&p->paramHeader, partString);
             }
         else if (j == P_ALPHADIR)
@@ -22612,15 +22612,15 @@ void SetUpMoveTypes (void)
     mt->Autotune = &AutotuneDirichlet;
     mt->targetRate = 0.25;
 
-    /* Move_Rho_M */
+    /* Move_Rhocorr_M */
     mt = &moveTypes[i++];
     mt->name = "Multiplier";
     mt->shortName = "Multiplier";
     mt->tuningName[0] = "Multiplier tuning parameter";
     mt->shortTuningName[0] = "lambda";
-    mt->applicableTo[0] = RHO_EXP;
+    mt->applicableTo[0] = RHOCORR_EXP;
     mt->nApplicable = 1;
-    mt->moveFxn = &Move_Rho_M;
+    mt->moveFxn = &Move_Rhocorr_M;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 1;
     mt->tuningParam[0] = 2.0 * log (1.5);  /* so-called lambda */
@@ -23410,13 +23410,13 @@ int ShowModel (void)
                     {
                     if (modelParams[i].dataType == STANDARD)
                         {
-                          if (!strcmp(modelParams[i].mcModel,"Yes"))
+                          if (modelSettings[i].mcModelId == YES)
                               {
-                              MrBayesPrint ("%s         # States  = Correlated binary characters\n", spacer);
-                              if (!strcmp(modelParams[i].rhoPr,"Fixed"))
-                                  MrBayesPrint ("%s                     Rho is fixed to %1.2lf\n", spacer, modelParams[i].rhoFix);
+                              MrBayesPrint ("%s         # States  = Correlated binary characters (3)\n", spacer);
+                              if (!strcmp(modelParams[i].rhoCorrPr,"Fixed"))
+                                  MrBayesPrint ("%s                     Rhocorr is fixed to %1.2lf\n", spacer, modelParams[i].rhoCorrFix);
                               else
-                                  MrBayesPrint ("%s                     Rho has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].rhoExp);
+                                  MrBayesPrint ("%s                     Rhocorr has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].rhoCorrExp);
                               if (!strcmp(modelParams[i].alphaDirPr,"Fixed"))
                                   MrBayesPrint ("%s                     Alphadir is fixed to %1.2lf\n", spacer, modelParams[i].alphaDirFix);
                               else
@@ -23433,7 +23433,7 @@ int ShowModel (void)
                         MrBayesPrint ("%s         # States  = %d (in the model)\n", spacer, modelSettings[i].numModelStates);
                     else
                         MrBayesPrint ("%s         # States  = %d\n", spacer, ns);
-                    if (modelSettings[i].dataType == STANDARD)
+                    if ((modelSettings[i].dataType == STANDARD) && (modelSettings[i].mcModelId == NO))
                         {
                         if (!strcmp(modelParams[i].symPiPr,"Fixed"))
                             {
@@ -23573,6 +23573,8 @@ int ShowModel (void)
                         {
                         if (!strcmp(modelParams[i].covarionModel, "No"))
                             MrBayesPrint ("%s         Rates     = %s\n", spacer, modelParams[i].ratesModel);
+                        // else if (modelSettings[i].mcModelId == YES)
+                        //     continue;
                         else
                             {
                             if (!strcmp(modelParams[i].ratesModel, "Propinv"))
@@ -23974,9 +23976,9 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             {
             MrBayesPrint ("%s      Revmat            ", spacer);
             }
-        else if (j == P_RHO)
+        else if (j == P_RHOCORR)
             {
-            MrBayesPrint ("%s      Rho               ", spacer);
+            MrBayesPrint ("%s      Rhocorr           ", spacer);
             }
         else if (j == P_ALPHADIR)
             {
@@ -24189,12 +24191,12 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
                     MrBayesPrint ("%s            Prior      = Fixed(user-specified)\n", spacer);
                 }
             }
-        else if (j == P_RHO)
+        else if (j == P_RHOCORR)
             {
-            if (!strcmp(mp->rhoPr,"Exponential"))
-                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->rhoExp, modelParams[i].rhoExp);
+            if (!strcmp(mp->rhoCorrPr,"Exponential"))
+                MrBayesPrint ("%s            Prior      = Exponential(%1.2lf)\n", spacer, mp->rhoCorrExp, modelParams[i].rhoCorrExp);
             else
-                MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->rhoFix);
+                MrBayesPrint ("%s            Prior      = Fixed(%1.2lf)\n", spacer, mp->rhoCorrFix);
             }
         else if (j == P_ALPHADIR)
             {

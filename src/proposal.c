@@ -439,9 +439,8 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
-                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix,
-                oldNumClusters;
-    MrBFlt      alphaDir=0.0, minA, probNewTable, randomNum;
+                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix;
+    MrBFlt      alphaDir=0.0, probNewTable, randomNum;
     ModelInfo   *m;
 
     /* Get model settings */
@@ -449,9 +448,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Get alphadir rate parameter */
     alphaDir = *GetParamVals(m->alphaDir, chain, state[chain]);
-
-    /* Get minimum value for alphadir */
-    minA = MIN_ALPHADIR_PARAM;
 
     /* Get new and old allocation vectors */
     oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
@@ -546,7 +542,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Change latent matrix to reflect change in allocation vector */
     oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
-    oldNumClusters = (int) *GetParamSubVals(m->allocationVector, chain, state[chain] ^ 1);
 
     updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, m->compMatrixStart, newTable, oldLatentMatrix, newTableIndex);
 
@@ -15422,7 +15417,7 @@ int Move_Revmat_SplitMerge2 (Param *param, int chain, RandLong *seed, MrBFlt *ln
 }
 
 
-int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
+int Move_Rhocorr_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* change rho using multiplier */
 
@@ -15437,10 +15432,10 @@ int Move_Rho_M (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, M
     tuning = mvp[0];
 
     /* get minimum value for rho */
-    minRho = MIN_RHO_PARAM;
+    minRho = MIN_RHOCORR_PARAM;
 
     /* get rate parameter of prior */
-    lambda = mp->rhoExp;
+    lambda = mp->rhoCorrExp;
 
     /* get old value of rho */
     oldRho = *GetParamVals(param, chain, state[chain]);

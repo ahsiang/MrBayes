@@ -326,8 +326,8 @@ typedef long double MrBLFlt;
 #define MAX_Q_RATE              100.0f
 #define MIN_SHAPE_PARAM         0.00001f
 #define MAX_SHAPE_PARAM         100.0f
-#define MIN_RHO_PARAM           0.00000001f  // 1E-8f
-#define MAX_RHO_PARAM           1.0f
+#define MIN_RHOCORR_PARAM       0.00000001f  // 1E-8f
+#define MAX_RHOCORR_PARAM       1.0f
 #define MIN_ALPHADIR_PARAM      0.00000001f  // 1E-8f
 #define MAX_SITE_RATE           10.0f
 #define MAX_RATE_CATS           20
@@ -478,7 +478,7 @@ typedef long double MrBLFlt;
 #define P_MIXEDVAR              29
 #define P_MIXEDBRCHRATES        30
 #define P_MIXTURE_RATES         31
-#define P_RHO                   32
+#define P_RHOCORR               32
 #define P_ALPHADIR              33
 #define P_LATENTMATRIX          34
 #define P_ALLOCATIONVECTOR      35
@@ -881,8 +881,8 @@ typedef struct param
 #define MIXEDVAR_UNI                    145
 #define MIXEDBRCHRATES                  146
 #define MIXTURE_RATES                   147
-#define RHO_EXP                         148
-#define RHO_FIX                         149
+#define RHOCORR_EXP                     148
+#define RHOCORR_FIX                     149
 #define ALPHADIR_EXP                    150
 #define ALPHADIR_FIX                    151
 #define LATENTMATRIX                    152
@@ -1024,9 +1024,9 @@ typedef struct model
     MrBFlt      tRatioDir[2];
 
     char        mcModel[100];      /* use correlation model? (yes/no)              */
-    char        rhoPr[100];        /* prior for inverse correlation factor         */
-    MrBFlt      rhoFix;
-    MrBFlt      rhoExp;
+    char        rhoCorrPr[100];    /* prior for inverse correlation factor         */
+    MrBFlt      rhoCorrFix;
+    MrBFlt      rhoCorrExp;
     char        alphaDirPr[100];   /* prior for DPMM concentration parameter       */
     MrBFlt      alphaDirFix;
     MrBFlt      alphaDirExp;
@@ -1265,7 +1265,7 @@ typedef struct modelinfo
 
     /* Model parameter pointers */
     Param       *tRatio;                    /* ptr to tRatio used in model              */
-    Param       *rho;                       /* ptr to rho used in model (inverse correlation factor) */
+    Param       *rhoCorr;                   /* ptr to rho used in model (inverse correlation factor) */
     Param       *alphaDir;                  /* ptr to alphaDir used in model (DPMM scaling parameter) */
     Param       *latentMatrix;              /* ptr to latentMatrix used in model (correlation process patterns) */
     Param       *allocationVector;          /* ptr to allocationVector used in model (DPMM table allocation) */

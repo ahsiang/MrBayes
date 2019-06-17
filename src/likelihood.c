@@ -8686,8 +8686,7 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
 {
     int             i, n, m, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
                     numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
-    BitsLong  factor, totalResolutions=0;
-    MrBLFlt     term, emissionProbability=0.0, finalLnProbability;
+    MrBLFlt         term, factor, emissionProbability=0.0, finalLnProbability, totalResolutions=0;
 
     /* Get number of polymorphic states, number of trimorphisms, number of (non-polymorphic)
     intermediate states, and maximum number of intermediate states (K) possible */
@@ -8714,7 +8713,7 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
     /* Determine number of possible resolutions for each number of intermediate states 0,1,...,E
     (i.e., index 0 = number of resolutions for resolutions with no intermediate states;
     index 1 = number of resolutions for resolutions with 1 intermediate state; etc.) */
-    BitsLong numPossibleResolutions[maxNumIntmedStates+1];
+    MrBLFlt numPossibleResolutions[maxNumIntmedStates+1];
     for (i=0; i<=maxNumIntmedStates; i++)
         {
         if (numPolymorphicStates == 0) // No polymorphisms

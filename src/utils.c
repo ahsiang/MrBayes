@@ -76,7 +76,7 @@ MrBFlt  BetaCf (MrBFlt a, MrBFlt b, MrBFlt x);
 MrBFlt  BetaQuantile (MrBFlt alpha, MrBFlt beta, MrBFlt x);
 MrBFlt  CdfBinormal (MrBFlt h1, MrBFlt h2, MrBFlt r);
 MrBFlt  CdfNormal (MrBFlt x);
-unsigned long Combination (int n, int k);
+MrBLFlt Combination (int n, int k);
 MrBComplex Complex (MrBFlt a, MrBFlt b);
 MrBFlt  ComplexAbsoluteValue (MrBComplex a);
 MrBComplex ComplexAddition (MrBComplex a, MrBComplex b);
@@ -101,7 +101,7 @@ void    ElmHes (int dim, int low, int high, MrBFlt **a, int *interchanged);
 void    ElTran (int dim, int low, int high, MrBFlt **a, int *interchanged, MrBFlt **z);
 void    Exchange (int j, int k, int l, int m, int n, MrBFlt **a, MrBFlt *scale);
 MrBFlt  Factorial (int x);
-unsigned long BigFactorial (int x);
+MrBLFlt BigFactorial (int x);
 void    ForwardSubstitutionRow (int dim, MrBFlt **L, MrBFlt *b);
 MrBFlt  GammaRandomVariable (MrBFlt a, MrBFlt b, RandLong *seed);
 void    GaussianElimination (int dim, MrBFlt **a, MrBFlt **bMat, MrBFlt **xMat);
@@ -9765,14 +9765,14 @@ MrBFlt CdfNormal (MrBFlt x)
 |   Returns n choose k
 |
 ---------------------------------------------------------------------------------*/
-BitsLong Combination (int n, int k)
+MrBLFlt Combination (int n, int k)
 {
-    BitsLong   comb;
+    MrBLFlt   comb;
 
     if (n < k)
-        comb = 0;
-    else if (n == k)
-        comb = 1;
+        comb = 0.0;
+    else if (n == k || k == 0)
+        comb = 1.0;
     else
         comb = BigFactorial(n) / (BigFactorial(k) * BigFactorial(n-k));
 
@@ -11033,16 +11033,14 @@ MrBFlt Factorial (int x)
 |   Returns x! as an unsigned long (for big numbers)
 |
 ---------------------------------------------------------------------------------*/
-unsigned long BigFactorial (int x)
+MrBLFlt BigFactorial (int x)
 {
-    int             i;
-    unsigned long   fac;
+    int         i;
+    MrBLFlt     fac;
 
     fac = 1.0;
     for (i=0; i<x; i++)
-        {
         fac *= (i+1);
-        }
 
     return (fac);
 }
@@ -14173,10 +14171,10 @@ MrBLFlt SmartExponentiation(MrBLFlt base, MrBLFlt exp)
 |   and a specified number of intermediate states (>= 1) required for those patterns.
 |
 ---------------------------------------------------------------------------------*/
-BitsLong GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired)
+MrBLFlt GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired)
 {
-    int        d, t, i, j, k;
-    BitsLong   term1, term2, term3, total;
+    int         d, t, i, j, k;
+    MrBLFlt     term1, term2, term3, total;
 
     d = numDimorphisms;
     t = numTrimorphisms;

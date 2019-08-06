@@ -3513,8 +3513,8 @@ fi
 
 if test -z "$HAVE_LATEX_TRUE"; then :
   else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: pdflatex or bibtex is missing, documentation will not be rebuilt" >&5
-$as_echo "$as_me: WARNING: pdflatex or bibtex is missing, documentation will not be rebuilt" >&2;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: pdflatex and/or bibtex is missing, documentation will not be rebuilt" >&5
+$as_echo "$as_me: WARNING: pdflatex and/or bibtex is missing, documentation will not be rebuilt" >&2;}
 fi
 
  if test -n "$LATEXMK"; then
@@ -7945,7 +7945,7 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile doc/Makefile doc/manual/Makefile doc/tutorial/Makefile examples/Makefile src/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile doc/manual/Makefile doc/tutorial/Makefile doc/SMME_paper/Makefile examples/Makefile src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -8690,6 +8690,7 @@ do
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "doc/manual/Makefile") CONFIG_FILES="$CONFIG_FILES doc/manual/Makefile" ;;
     "doc/tutorial/Makefile") CONFIG_FILES="$CONFIG_FILES doc/tutorial/Makefile" ;;
+    "doc/SMME_paper/Makefile") CONFIG_FILES="$CONFIG_FILES doc/SMME_paper/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
 

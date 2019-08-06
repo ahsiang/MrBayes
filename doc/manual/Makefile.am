@@ -23,7 +23,6 @@ deps=	\
 	$(srcdir)/src/Appendix_Fig2.pdf \
 	$(srcdir)/src/Appendix_Fig3.pdf \
 	$(srcdir)/src/Manual_MrBayes_v3.2.tex \
-	$(srcdir)/src/StatisticalMethods_Chapter.tex \
 	$(srcdir)/src/bayes.bib \
 	$(srcdir)/src/sysbio.bst
 
@@ -36,10 +35,15 @@ Manual_MrBayes_v3.2.pdf: $(deps)
 
 else # !HAVE_LATEXMK
 
+# The order of pdflatex and bibtex runs below (and the number of runs)
+# mirrors what laxexmf seems to want to do.
 Manual_MrBayes_v3.2.pdf: $(deps)
 	env $(envvars) $(PDFLATEX) --interaction=batchmode $(srcdir)/src/Manual_MrBayes_v3.2
 	env $(envvars) $(BIBTEX) -terse Manual_MrBayes_v3.2
 	env $(envvars) $(PDFLATEX) --interaction=batchmode $(srcdir)/src/Manual_MrBayes_v3.2
+	env $(envvars) $(BIBTEX) -terse Manual_MrBayes_v3.2
+	env $(envvars) $(PDFLATEX) --interaction=batchmode $(srcdir)/src/Manual_MrBayes_v3.2
+	env $(envvars) $(BIBTEX) -terse Manual_MrBayes_v3.2
 	env $(envvars) $(PDFLATEX) --interaction=batchmode $(srcdir)/src/Manual_MrBayes_v3.2
 
 endif

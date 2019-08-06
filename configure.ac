@@ -105,7 +105,7 @@ AC_PATH_PROG(LATEXMK, [latexmk])
 
 AM_CONDITIONAL([HAVE_LATEX], [test -n "$PDFLATEX" && test -n "$BIBTEX"])
 AM_COND_IF([HAVE_LATEX], [],
-           [AC_MSG_WARN([pdflatex or bibtex is missing, documentation will not be rebuilt])])
+           [AC_MSG_WARN([pdflatex and/or bibtex is missing, documentation will not be rebuilt])])
 
 AM_CONDITIONAL([HAVE_LATEXMK], [test -n "$LATEXMK"])
 
@@ -261,6 +261,7 @@ AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  doc/manual/Makefile
                  doc/tutorial/Makefile
+                 doc/SMME_paper/Makefile
                  examples/Makefile
                  src/Makefile
 ])

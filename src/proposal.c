@@ -559,9 +559,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* get proposal ratio */
     /* We don't need to get the prior ratio here because it's built into the likelihood calculation */
     if (numSeatedAtTablesWithoutSelected[randCharIndex] == 0) // Forward move
-        *lnProposalRatio += log(1.0 / numTables) + log(probNewTable);
+        *lnProposalRatio += log(1.0 / numTables) + log(probNewTable); // New table case
     else
-        *lnProposalRatio += log(1.0 / numTables) + log(tableProbs[newTable]);
+        *lnProposalRatio += log(1.0 / numTables) + log(tableProbs[newTable]); // Existing table case
 
     *lnProposalRatio -= log(1.0 / newNumTables) + log(tableProbs[oldTable]); // Backwards move
 

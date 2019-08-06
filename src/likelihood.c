@@ -2039,22 +2039,8 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (currEntry == 1 << j)
                     leftTipCLs[idx++] = 1.0;
-                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
+                else if (currEntry == MISSING || currEntry == GAP)
                     leftTipCLs[idx++] = 1.0;
-                else if (currEntry == DIMORPH0)
-                    {
-                    if ((j == 0) || (j == 1))
-                        leftTipCLs[idx++] = 1.0;
-                    else
-                        leftTipCLs[idx++] = 0.0;
-                    }
-                else if (currEntry == DIMORPH1)
-                    {
-                    if ((j == 1) || (j == 2))
-                        leftTipCLs[idx++] = 1.0;
-                    else
-                        leftTipCLs[idx++] = 0.0;
-                    }
                 else
                     leftTipCLs[idx++] = 0.0;
                 }
@@ -2078,22 +2064,8 @@ int CondLikeDown_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (currEntry == 1 << j)
                     rightTipCLs[idx++] = 1.0;
-                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
+                else if (currEntry == MISSING || currEntry == GAP)
                     rightTipCLs[idx++] = 1.0;
-                else if (currEntry == DIMORPH0)
-                    {
-                    if ((j == 0) || (j == 1))
-                        rightTipCLs[idx++] = 1.0;
-                    else
-                        rightTipCLs[idx++] = 0.0;
-                    }
-                else if (currEntry == DIMORPH1)
-                    {
-                    if ((j == 1) || (j == 2))
-                        rightTipCLs[idx++] = 1.0;
-                    else
-                        rightTipCLs[idx++] = 0.0;
-                    }
                 else
                     rightTipCLs[idx++] = 0.0;
                 }
@@ -8661,7 +8633,7 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
             }
         else // Seated at existing table case
             {
-            /* Calculate number currently seated at that existing table */
+            // Calculate number currently seated at that existing table
             numSeatedAtTable = 0;
             for (j=0; j<i; j++)
                 if (allocationVector[j] == allocationVector[i])
@@ -8682,75 +8654,31 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 |   Missing character compliant.
 |
 ---------------------------------------------------------------------------------*/
-MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
+MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
 {
-    int             i, n, m, numPolymorphicStates=0, maxNumIntmedStates=0, allEndStates=YES,
-                    numTrimorphisms=0, numDimorphisms, numIntmedStates=0;
-    MrBLFlt         term, factor, emissionProbability=0.0, finalLnProbability, totalResolutions=0;
-
-    /* Get number of polymorphic states, number of trimorphisms, number of (non-polymorphic)
-    intermediate states, and maximum number of intermediate states (K) possible */
-    for (i=0; i<numLocalTaxa; i++)
-        {
-        if (latentPattern[i] > OPPENDSTATE)
-            {
-            numPolymorphicStates++;
-            maxNumIntmedStates++;
-            if (latentPattern[i] == TRIMORPH)
-                numTrimorphisms++;
-            }
-        if (latentPattern[i] == INTSTATE) // Non-polymorphic i-states
-            {
-            maxNumIntmedStates++;
-            numIntmedStates++;
-            allEndStates = NO;
-            }
-        }
-
-    /* Get number of dimorphisms */
-    numDimorphisms = numPolymorphicStates - numTrimorphisms;
-
-    /* Determine number of possible resolutions for each number of intermediate states 0,1,...,E
-    (i.e., index 0 = number of resolutions for resolutions with no intermediate states;
-    index 1 = number of resolutions for resolutions with 1 intermediate state; etc.) */
-    MrBLFlt numPossibleResolutions[maxNumIntmedStates+1];
-    for (i=0; i<=maxNumIntmedStates; i++)
-        {
-        if (numPolymorphicStates == 0) // No polymorphisms
-            {
-            if (numIntmedStates == i)
-                numPossibleResolutions[i] = 1;
-            else
-                numPossibleResolutions[i] = 0;
-            }
-        else // Case with polymorphisms
-            {
-            // Resolutions requiring 1 or more intermediate states
-            if (allEndStates == YES)
-                numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i);
-            else
-                numPossibleResolutions[i] = GetNumPolymorphismPatterns(numDimorphisms, numTrimorphisms, i - numIntmedStates);
-            }
-        totalResolutions += numPossibleResolutions[i];
-        }
+    int             i, n, m, q, p;
+    MrBLFlt         term, emissionProbability=0.0, finalLnProbability;
 
     /* Calculate total emission probability */
     n = numCharsInCluster;
-    for (m=0; m<=maxNumIntmedStates; m++)
-        {
-        if (numPossibleResolutions[m] == 0)
-            continue;
-        else
-            {
-            factor = numPossibleResolutions[m] * n;
-            term = SmartExponentiation(2.0,factor);
-            emissionProbability += (1.0 / term); // i.e., (1/2)^mn
-            }
-        }
+    q = numMissing;
 
-    finalLnProbability = log (1.0 / totalResolutions) + log(emissionProbability);
+    /* Count number of i-states in latent pattern */
+    m = 0;
+    for (i=0; i<numLocalTaxa; i++)
+        if (latentPattern[i] == 1)
+            numIntStates++;
 
-    return ( finalLnProbability );
+    /* Get mn-q power term */
+    p = m * n - q;
+
+    /* Get emission probability */
+    term = SmartExponentiation(2.0, p);
+    emissionProbability = 1.0 / term; // i.e., (1/2)^(mn-q)
+
+    lnProbability = p * (log(1) - log(2));
+
+    return ( lnProbability );
 }
 
 
@@ -8761,10 +8689,10 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster)
 -----------------------------------------------------------------*/
 MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars)
 {
-    int         i, j, idx=0, highest=0, clusterCols[numClusters], currColumn[numLocalTaxa];
-    MrBFlt      lnCurrProb, lnTotalProb;
-
-    lnTotalProb = 0.0;
+    int         i, j, k, highest=0, clusterCols[numClusters], currColumn[numLocalTaxa],
+                numCharsPerCluster[numClusters], numMissingPerCluster[numClusters],
+                compMatrixIdx, entry;
+    MrBFlt      lnTotalProb=0.0;
 
     /* Determine which columns to calculate likelihood for */
     for (i=0; i<numChars; i++)
@@ -8775,7 +8703,6 @@ MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
             }
 
     /* Get number of characters per cluster */
-    int numCharsPerCluster[numClusters];
     for (i=0; i<numClusters; i++)
         numCharsPerCluster[i] = 0; // Initialize all entries to 0
     for (i=0; i<numClusters; i++)
@@ -8785,16 +8712,35 @@ MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
                 numCharsPerCluster[i]++;
         }
 
+    /* Get number of missing characters per cluster */
+    for (i=0; i<numClusters; i++)
+        numMissingPerCluster[i] = 0;
+    for (i=0; i<numClusters; i++)
+        {
+        for (j=0; j<numChars; j++)
+            {
+            if (allocationVector[j] == i)
+                {
+                for (k=0; k<numLocalTaxa; k++)
+                    {
+                    compMatrixIdx = j + compMatrixStart;
+                    entry = compMatrix[pos(k, compMatrixIdx, numCompressedChars)];
+                    if (entry == MISSING || entry == GAP)
+                        numMissingPerCluster[i]++;
+                    }
+                }
+            }
+        }
+
     /* Loop through processes and calculate probability */
     for (i=0; i<numClusters; i++)
         {
         // Grab current column/cluster/process
         for (j=0; j<numLocalTaxa; j++)
-            currColumn[j] = latentMatrix[pos(j,clusterCols[i],numChars)];
+            currColumn[j] = latentMatrix[pos(j, clusterCols[i], numChars)];
 
         // Calculate log likelihood of column and add to total
-        lnCurrProb = LnProbEmission(currColumn, numCharsPerCluster[i]);
-        lnTotalProb += lnCurrProb;
+        lnTotalProb += LnProbEmission(currColumn, numCharsPerCluster[i], numMissingPerCluster[i]);
         }
 
     return lnTotalProb;
@@ -10270,22 +10216,21 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
                     tiP[index++] = b + 2 * a * z;
                 }
 
-
-            int hasError = NO;
-            float epsilon = 0.0001;
-
-            for (i=0; i<6; i+=3)
-                {
-                if (1 - (tiP[i]+tiP[i+1]+tiP[i+2]) > epsilon)
-                    hasError = YES;
-                }
-            if (hasError)
-                {
-                for (i=0; i<9; i++)
-                    printf("tiP[%d] = %f\n",i,tiP[i]);
-                printf("a = %f\tb = %f\tu = %f\tu_inv = %f\tx = %f\ty = %f\t z = %f\n",a,b,u,u_inv,x,y,z);
-                printf("t = %f\n",t);
-                getchar();
+            // int hasError = NO;
+            // float epsilon = 0.0001;
+            //
+            // for (i=0; i<6; i+=3)
+            //     {
+            //     if (1 - (tiP[i]+tiP[i+1]+tiP[i+2]) > epsilon)
+            //         hasError = YES;
+            //     }
+            // if (hasError)
+            //     {
+            //     for (i=0; i<9; i++)
+            //         printf("tiP[%d] = %f\n",i,tiP[i]);
+            //     printf("a = %f\tb = %f\tu = %f\tu_inv = %f\tx = %f\ty = %f\t z = %f\n",a,b,u,u_inv,x,y,z);
+            //     printf("t = %f\n",t);
+            //     getchar();
                 }
             }
         }

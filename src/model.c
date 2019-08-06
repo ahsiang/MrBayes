@@ -19076,7 +19076,7 @@ int SetModelParams (void)
             p->nValues = 0;
             p->nIntValues = m->numChars * numLocalTaxa;
             p->nSubValues = 0;
-            p->min = TRIMORPH;
+            p->min = 0;
             p->max = 2;
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)

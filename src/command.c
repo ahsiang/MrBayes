@@ -15257,12 +15257,6 @@ char WhichStand (int x)
         return ('?');
     else if (x == GAP)
         return ('-');
-    else if (x == TRIMORPH)
-        return ('T');
-    else if (x == DIMORPH0)
-        return ('Z');
-    else if (x == DIMORPH1)
-        return ('O');
     else
         return (' ');
 }

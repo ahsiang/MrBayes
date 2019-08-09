@@ -6723,11 +6723,11 @@ int DoPrsetParm (char *parmName, char *tkn)
                             {
                             sscanf (tkn, "%lf", &tempD);
                             modelParams[i].rhoCorrFix = tempD;
-                            if (modelParams[i].rhoCorrFix > MAX_RHOCORR_PARAM)
-                                {
-                                MrBayesPrint ("%s   Rhocorr parameter cannot be greater than %1.2lf\n", spacer, MAX_RHOCORR_PARAM);
-                                return (ERROR);
-                                }
+                            // if (modelParams[i].rhoCorrFix > MAX_RHOCORR_PARAM)
+                            //     {
+                            //     MrBayesPrint ("%s   Rhocorr parameter cannot be greater than %1.2lf\n", spacer, MAX_RHOCORR_PARAM);
+                            //     return (ERROR);
+                            //     }
                             if (modelParams[i].rhoCorrFix < MIN_RHOCORR_PARAM)
                                 {
                                 MrBayesPrint ("%s   Rhocorr parameter cannot be less than %1.2lf\n", spacer, MIN_RHOCORR_PARAM);
@@ -11320,8 +11320,16 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             intValue[pos(i,c,m->numChars)] = ENDSTATE;
                         else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
                             intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
-                        else
-                            intValue[pos(i,c,m->numChars)] = TRIMORPH;
+                        else // If missing or gap, randomly select a latent state
+                            {
+                            MrBFlt rand = RandomNumber(seed);
+                            if (rand <= 1/3)
+                                intValue[pos(i,c,m->numChars)] = ENDSTATE;
+                            else if ((rand <= 2/3) && (rand > 1/3))
+                                intValue[pos(i,c,m->numChars)] = INTSTATE;
+                            else
+                                intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
+                            }
                         }
                     }
                 /* Copy over latent matrix to global initialLatentMatrix */
@@ -11329,7 +11337,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 initialLatentMatrix = (int *) SafeMalloc((size_t)numValues * sizeof(int));
                 for (i=0; i<numLocalTaxa; i++)
                     for (j=0; j<m->numChars; j++)
-                        initialLatentMatrix[pos(i,j,m->numChars)] = intValue[pos(i,j,m->numChars)];
+                        initialLatentMatrix[pos(i, j, m->numChars)] = intValue[pos(i, j, m->numChars)];
                 }
 
             else if (p->paramType == P_REVMAT)
@@ -18989,7 +18997,7 @@ int SetModelParams (void)
             p->nValues = 1;
             p->nSubValues = 0;
             p->min = MIN_RHOCORR_PARAM;
-            p->max = MAX_RHOCORR_PARAM;
+            p->max = POS_INFINITY;
             for (i=0; i<numCurrentDivisions; i++)
                 if (isPartTouched[i] == YES)
                     modelSettings[i].rhoCorr = p;

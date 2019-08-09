@@ -6409,36 +6409,11 @@ int InitChainCondLikes (void)
                         {
                         if (m->mcModelId == YES)
                             {
-                            if (charBits[c] == DIMORPH0)
+                            for (s=0; s<nStates; s++)
                                 {
-                                for (s=0; s<nStates; s++)
-                                    {
-                                    if (s == 0 || s == 1)
-                                        (*cL) = 1.0;
-                                    else
-                                        (*cL) = 0.0;
-                                    cL++;
-                                    }
-                                }
-                            else if (charBits[c] == DIMORPH1)
-                                {
-                                for (s=0; s<nStates; s++)
-                                    {
-                                    if (s == 1 || s == 2)
-                                        (*cL) = 1.0;
-                                    else
-                                        (*cL) = 0.0;
-                                    cL++;
-                                    }
-                                }
-                            else
-                                {
-                                for (s=0; s<nStates; s++)
-                                    {
-                                    if (IsBitSet(s, charBits))
-                                        (*cL) = 1.0;
-                                    cL++;
-                                    }
+                                if (IsBitSet(s, charBits))
+                                    (*cL) = 1.0;
+                                cL++;
                                 }
                             }
                         else
@@ -7071,7 +7046,7 @@ int InitParsSets (void)
                     else
                         x = compMatrix[pos(i,j,compMatrixRowSize)];
 
-                    if (x == MISSING || x == GAP || x == TRIMORPH)
+                    if (x == MISSING || x == GAP)
                         m->parsSets[i][c] = allAmbig;
                     else
                         m->parsSets[i][c] = x;

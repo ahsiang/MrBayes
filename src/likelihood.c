@@ -4781,22 +4781,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (currEntry == 1 << j)
                     leftTipCLs[idx++] = 1.0;
-                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
+                else if (currEntry == MISSING || currEntry == GAP)
                     leftTipCLs[idx++] = 1.0;
-                else if (currEntry == DIMORPH0)
-                    {
-                    if ((j == 0) || (j == 1))
-                        leftTipCLs[idx++] = 1.0;
-                    else
-                        leftTipCLs[idx++] = 0.0;
-                    }
-                else if (currEntry == DIMORPH1)
-                    {
-                    if ((j == 1) || (j == 2))
-                        leftTipCLs[idx++] = 1.0;
-                    else
-                        leftTipCLs[idx++] = 0.0;
-                    }
                 else
                     leftTipCLs[idx++] = 0.0;
                 }
@@ -4821,22 +4807,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (currEntry == 1 << j)
                     rightTipCLs[idx++] = 1.0;
-                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
+                else if (currEntry == MISSING || currEntry == GAP)
                     rightTipCLs[idx++] = 1.0;
-                else if (currEntry == DIMORPH0)
-                    {
-                    if ((j == 0) || (j == 1))
-                        rightTipCLs[idx++] = 1.0;
-                    else
-                        rightTipCLs[idx++] = 0.0;
-                    }
-                else if (currEntry == DIMORPH1)
-                    {
-                    if ((j == 1) || (j == 2))
-                        rightTipCLs[idx++] = 1.0;
-                    else
-                        rightTipCLs[idx++] = 0.0;
-                    }
                 else
                     rightTipCLs[idx++] = 0.0;
                 }
@@ -4861,22 +4833,8 @@ int CondLikeRoot_StdCorr (TreeNode *p, int division, int chain)
                 {
                 if (currEntry == 1 << j)
                     ancTipCLs[idx++] = 1.0;
-                else if (currEntry == MISSING || currEntry == GAP || currEntry == TRIMORPH)
+                else if (currEntry == MISSING || currEntry == GAP)
                     ancTipCLs[idx++] = 1.0;
-                else if (currEntry == DIMORPH0)
-                    {
-                    if ((j == 0) || (j == 1))
-                        ancTipCLs[idx++] = 1.0;
-                    else
-                        ancTipCLs[idx++] = 0.0;
-                    }
-                else if (currEntry == DIMORPH1)
-                    {
-                    if ((j == 1) || (j == 2))
-                        ancTipCLs[idx++] = 1.0;
-                    else
-                        ancTipCLs[idx++] = 0.0;
-                    }
                 else
                     ancTipCLs[idx++] = 0.0;
                 }
@@ -8117,24 +8075,11 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
             }
         }
 
-    // if ( ((*lnL) > 0) || !(isfinite((*lnL))) )
-    //     printf("lnL(1): %f\n",(*lnL));
-
     /* Account for likelihood of emitting observed states from current latent matrix */
-    (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, numClusters, m->numChars);
-    //
-    // if ( ((*lnL) > 0) || !(isfinite((*lnL))) )
-    //     printf("lnL(2): %f\n",(*lnL));
+    (*lnL) += LnProbLatentMatrix(allocationVector, latentMatrix, numClusters, m->numChars, m->compMatrixStart);
 
     /* Account for likelihood of current alphaDir value */
     (*lnL) += LnProbAllocation(allocationVector, m->numChars, alphaDir);
-    //
-    // if ( ((*lnL) > 0) || !(isfinite((*lnL))) )
-    //     {
-    //     printf("lnL(3): %f\n\n",(*lnL));
-    //     getchar();
-    //     }
-
 
     return NO_ERROR;
 }
@@ -8656,18 +8601,17 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 ---------------------------------------------------------------------------------*/
 MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
 {
-    int             i, n, m, q, p;
-    MrBLFlt         term, emissionProbability=0.0, finalLnProbability;
+    int             i, n, m=0, q, p;
+    MrBLFlt         term, emissionProbability=0.0, lnProbability;
 
     /* Calculate total emission probability */
     n = numCharsInCluster;
     q = numMissing;
 
     /* Count number of i-states in latent pattern */
-    m = 0;
     for (i=0; i<numLocalTaxa; i++)
-        if (latentPattern[i] == 1)
-            numIntStates++;
+        if (latentPattern[i] == INTSTATE)
+            m++;
 
     /* Get mn-q power term */
     p = m * n - q;
@@ -8687,11 +8631,11 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
 |   LnProbLatentMatrix: Calculate likelihood of latent matrix
 |
 -----------------------------------------------------------------*/
-MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars)
+MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars, int compMatrixStart)
 {
-    int         i, j, k, highest=0, clusterCols[numClusters], currColumn[numLocalTaxa],
-                numCharsPerCluster[numClusters], numMissingPerCluster[numClusters],
-                compMatrixIdx, entry;
+    int         i, j, idx=0, highest=0, clusterCols[numClusters], currColumn[numLocalTaxa],
+                numCharsPerCluster[numClusters], numMissingPerCluster[numClusters], numDataValues,
+                *data;
     MrBFlt      lnTotalProb=0.0;
 
     /* Determine which columns to calculate likelihood for */
@@ -8717,19 +8661,16 @@ MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
         numMissingPerCluster[i] = 0;
     for (i=0; i<numClusters; i++)
         {
-        for (j=0; j<numChars; j++)
-            {
-            if (allocationVector[j] == i)
-                {
-                for (k=0; k<numLocalTaxa; k++)
-                    {
-                    compMatrixIdx = j + compMatrixStart;
-                    entry = compMatrix[pos(k, compMatrixIdx, numCompressedChars)];
-                    if (entry == MISSING || entry == GAP)
-                        numMissingPerCluster[i]++;
-                    }
-                }
-            }
+        // Grab relevant data
+        numDataValues = numLocalTaxa * numCharsPerCluster[i];
+        data = (int *) SafeMalloc ((size_t)numDataValues * sizeof(int));
+        if (!data)
+            printf("ERROR: Problem with allocation in ConvertDataToLatentStates\n");
+        data = GetClusterData(allocationVector, i, numCharsPerCluster[i], numChars, compMatrixStart);
+        // Count number of missing characters
+        for (j=0; j<numDataValues; j++)
+            if (data[j] == MISSING || data[j] == GAP)
+                numMissingPerCluster[i]++;
         }
 
     /* Loop through processes and calculate probability */
@@ -8742,6 +8683,10 @@ MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
         // Calculate log likelihood of column and add to total
         lnTotalProb += LnProbEmission(currColumn, numCharsPerCluster[i], numMissingPerCluster[i]);
         }
+
+    /* Free allocation */
+    free (data);
+    data = NULL;
 
     return lnTotalProb;
 }
@@ -10140,7 +10085,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
         catRate = &theRate;
 
     /* compute pis */
-    pis[0] = pis[2] = 1.0 / (2.0 + rho);  /* alpha */
+    pis[0] = pis[2] = 1.0 / (2.0 + rho);   /* alpha */
     pis[1] = 1.0 - (2.0 * pis[0]);         /* beta */
 
     /* find length */
@@ -10231,7 +10176,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
             //     printf("a = %f\tb = %f\tu = %f\tu_inv = %f\tx = %f\ty = %f\t z = %f\n",a,b,u,u_inv,x,y,z);
             //     printf("t = %f\n",t);
             //     getchar();
-                }
+            //    }
             }
         }
 

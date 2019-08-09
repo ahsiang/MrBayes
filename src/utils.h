@@ -289,10 +289,10 @@ int       cmpMrBFlt(const void *a, const void *b);
 /* correlation model utility functions */
 MrBLFlt   ExponentBySquaring(MrBLFlt base, MrBLFlt exp);
 MrBLFlt   SmartExponentiation(MrBLFlt base, MrBLFlt exp);
-MrBLFlt   GetNumPolymorphismPatterns(int numDimorphisms, int numTrimorphisms, int numIntStatesRequired);
-int       *ConvertDataToLatentStates(int *dataSubset, int numCharsInCluster, int endStateIndex);
+int       *GetClusterData(int *allocationVector, int cluster, int numCharsInCluster, int numChars, int compMatrixStart);
+int       *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceEndState);
 int       *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);
-int       *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex);
+int       *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
 int       PrintLatentMatrix(int numChars, int *latentMatrix);
 
 #endif  /* __UTILS_H__ */

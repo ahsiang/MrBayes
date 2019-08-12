@@ -564,7 +564,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     // The probability of the forward move is equal to (the probability of selecting the random character) *
     // (the probability of selecting the new table) * (any probability associated with the i-state)
-    if ((numSeatedAtTablesWithoutSelected[randCharIndex] == 0) || (newTable == oldTable))
+    if ((numSeatedAtTablesWithoutSelected[randCharIndex] == 0) || (tableProbs[newTable] == 0.0))
         probForwardMove = log(1.0/numTables) + log(probNewTable) + log(moveProb); // New table case
     else
         probForwardMove = log(1.0/numTables) + log(tableProbs[newTable]) + log(moveProb); // Existing table case
@@ -584,8 +584,8 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     /* Free allocations */
     free (updatedLatentMatrix);
-    free (rescaledAllocationVector);
     updatedLatentMatrix = NULL;
+    free (rescaledAllocationVector);
     rescaledAllocationVector = NULL;
 
     return (NO_ERROR);
@@ -6044,6 +6044,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         lnEmissionProbabilities[i] = LnProbEmission(latentResolution, numCharsInCluster, numMissing);
         // Free allocation
         free (latentResolution);
+        latentResolution = NULL;
         }
 
     /* Normalize emission probabilities */
@@ -6131,6 +6132,10 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
+
+    /* Free allocations */
+    free (data);
+    data = NULL;
 
     return (NO_ERROR);
 }

@@ -14256,6 +14256,9 @@ int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCh
         // keep track of the number
         if (numIntStates < minNumIntStates)
             minNumIntStates = numIntStates;
+        // Free allocation
+        free (tempPattern);
+        tempPattern = NULL;
         }
 
     /* Now look at the pattern(s) that minimize the number of i-states; if there
@@ -14285,8 +14288,6 @@ int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCh
     /* Free allocations */
     free (compatibleStates);
     compatibleStates = NULL;
-    free (tempPattern);
-    tempPattern = NULL;
 
     return (latentResolution);
 }

@@ -8662,15 +8662,15 @@ MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
     for (i=0; i<numClusters; i++)
         {
         // Grab relevant data
-        numDataValues = numLocalTaxa * numCharsPerCluster[i];
-        data = (int *) SafeMalloc ((size_t)numDataValues * sizeof(int));
-        if (!data)
-            printf("ERROR: Problem with allocation in ConvertDataToLatentStates\n");
         data = GetClusterData(allocationVector, i, numCharsPerCluster[i], numChars, compMatrixStart);
         // Count number of missing characters
+        numDataValues = numLocalTaxa * numCharsPerCluster[i];
         for (j=0; j<numDataValues; j++)
             if (data[j] == MISSING || data[j] == GAP)
                 numMissingPerCluster[i]++;
+        // Free allocation
+        free (data);
+        data = NULL;
         }
 
     /* Loop through processes and calculate probability */
@@ -8683,10 +8683,6 @@ MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClus
         // Calculate log likelihood of column and add to total
         lnTotalProb += LnProbEmission(currColumn, numCharsPerCluster[i], numMissingPerCluster[i]);
         }
-
-    /* Free allocation */
-    free (data);
-    data = NULL;
 
     return lnTotalProb;
 }

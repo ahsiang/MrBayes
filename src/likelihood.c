@@ -8602,7 +8602,7 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
 {
     int             i, n, m=0, q, p;
-    MrBLFlt         term, emissionProbability=0.0, lnProbability;
+    MrBFlt         lnProbability;
 
     /* Calculate total emission probability */
     n = numCharsInCluster;
@@ -8617,10 +8617,7 @@ MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
     p = m * n - q;
 
     /* Get emission probability */
-    term = SmartExponentiation(2.0, p);
-    emissionProbability = 1.0 / term; // i.e., (1/2)^(mn-q)
-
-    lnProbability = p * (log(1) - log(2));
+    lnProbability = p * (log(1) - log(2)); // i.e., (1/2)^(mn-q)
 
     return ( lnProbability );
 }
@@ -10055,7 +10052,7 @@ int TiProbs_Fels (TreeNode *p, int division, int chain)
 int TiProbs_StdCorr (TreeNode *p, int division, int chain)
 {
     int         i, j, k, index;
-    MrBFlt      t, a, b, u, u_inv, x, y, z, rho, *catRate,
+    MrBFlt      t, a, b, u, z, rho, *catRate,
                 baseRate, theRate, pis[3], length;
     CLFlt       *tiP;
     ModelInfo   *m;
@@ -10140,9 +10137,6 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
                 a = pis[0];
                 b = pis[1];
                 u = exp(b * t);
-                u_inv = 1 / u;
-                x = exp(2 * a * t);
-                y = exp(-2 * a * t);
                 z = exp(-t);
 
                 if (i == 0 || i == 8)

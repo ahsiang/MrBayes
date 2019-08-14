@@ -5977,7 +5977,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     int         i, j, *allocationVector, numClusters, rho, *oldLatentMatrix,
                 *newLatentMatrix, randClustIndex, latentIdx=-1, *data,
-                numCharsInCluster=0, idx=0, origLatentStates[numLocalTaxa], numMissing=0,
+                numCharsInCluster=0, origLatentStates[numLocalTaxa], numMissing=0,
                 *latentResolution, newLatentPattern[numLocalTaxa], randEndIdx=0;
     MrBFlt      moveProb=1.0, maxLogProb, threshold, probSum=0.0, epsilon=1.0e-16, rand,
                 probForwardMove, probBackwardsMove, probEmOrigPat;
@@ -6004,16 +6004,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     for (i=0; i<m->numChars; i++)
         if (allocationVector[i] == randClustIndex)
             numCharsInCluster++;
-
-    /* Now get column indices corresponding to selected cluster */
-    int colIndices[numCharsInCluster];
-    for (i=0; i<m->numChars; i++)
-        if (allocationVector[i] == randClustIndex)
-            {
-            colIndices[idx++] = i;
-            if (latentIdx < 0)
-                latentIdx = i;
-            }
 
     /* Get latent pattern associated with this cluster */
     for (i=0; i<numLocalTaxa; i++)

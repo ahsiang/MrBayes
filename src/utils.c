@@ -14238,52 +14238,59 @@ int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCh
 
     /* If there are incompatibilities, we need to find the compatible latent pattern that
     minimizes the number of i-states */
-    minNumIntStates = numLocalTaxa;
-    for (i=0; i<numLocalTaxa; i++)
+    if (incompatible == YES)
         {
-        numIntStates = 0;
-        // Get latent resolution when current index is the end state
-        tempPattern = ConvertLatentStates(dataSubset, origLatentPattern, numCharsInCluster, i, rho, seed, moveProb, forceEndState);
-        for (j=0; j<numLocalTaxa; j++)
-            allPatterns[pos(j, i, numLocalTaxa)] = tempPattern[j];
-        // Count number of i-states in resolution
-        for (j=0; j<numLocalTaxa; j++)
-            if (tempPattern[j] == INTSTATE)
-                numIntStates++;
-        // Keep track of how many i-states there are per end state pattern
-        numIntStatesPerPattern[i] = numIntStates;
-        // If current pattern has fewer i-states than a previously seen pattern,
-        // keep track of the number
-        if (numIntStates < minNumIntStates)
-            minNumIntStates = numIntStates;
-        // Free allocation
-        free (tempPattern);
-        tempPattern = NULL;
-        }
-
-    /* Now look at the pattern(s) that minimize the number of i-states; if there
-    are multiple, randomly select between them */
-    for (i=0; i<numLocalTaxa; i++)
-        if (numIntStatesPerPattern[i] == minNumIntStates)
-            numPatternsWithMinIntStates++;
-
-    // Get the indices of the patterns with mininum number of i-states
-    int patternIndices[numPatternsWithMinIntStates];
-    for (i=0; i<numLocalTaxa; i++)
-        if (numIntStatesPerPattern[i] == minNumIntStates)
-            patternIndices[idx++] = i;
-
-    // Now pick the pattern
-    if (numPatternsWithMinIntStates == 1)
+        minNumIntStates = numLocalTaxa;
         for (i=0; i<numLocalTaxa; i++)
-            latentResolution[i] = allPatterns[pos(i, patternIndices[0], numLocalTaxa)];
+            {
+            numIntStates = 0;
+            // Get latent resolution when current index is the end state
+            tempPattern = ConvertLatentStates(dataSubset, origLatentPattern, numCharsInCluster, i, rho, seed, moveProb, forceEndState);
+            for (j=0; j<numLocalTaxa; j++)
+                allPatterns[pos(j, i, numLocalTaxa)] = tempPattern[j];
+            // Count number of i-states in resolution
+            for (j=0; j<numLocalTaxa; j++)
+                if (tempPattern[j] == INTSTATE)
+                    numIntStates++;
+            // Keep track of how many i-states there are per end state pattern
+            numIntStatesPerPattern[i] = numIntStates;
+            // If current pattern has fewer i-states than a previously seen pattern,
+            // keep track of the number
+            if (numIntStates < minNumIntStates)
+                minNumIntStates = numIntStates;
+            // Free allocation
+            free (tempPattern);
+            tempPattern = NULL;
+            }
+
+        /* Now look at the pattern(s) that minimize the number of i-states; if there
+        are multiple, randomly select between them */
+        for (i=0; i<numLocalTaxa; i++)
+            if (numIntStatesPerPattern[i] == minNumIntStates)
+                numPatternsWithMinIntStates++;
+
+        // Get the indices of the patterns with mininum number of i-states
+        int patternIndices[numPatternsWithMinIntStates];
+        for (i=0; i<numLocalTaxa; i++)
+            if (numIntStatesPerPattern[i] == minNumIntStates)
+                patternIndices[idx++] = i;
+
+        // Now pick the pattern
+        if (numPatternsWithMinIntStates == 1)
+            for (i=0; i<numLocalTaxa; i++)
+                latentResolution[i] = allPatterns[pos(i, patternIndices[0], numLocalTaxa)];
+        else
+            {
+            selected = rand() % numPatternsWithMinIntStates;
+            for (i=0; i<numLocalTaxa; i++)
+                latentResolution[i] = allPatterns[pos(i, patternIndices[selected], numLocalTaxa)];
+            *moveProb *= 1.0 / numPatternsWithMinIntStates;
+            }
+        }
+    /* If there are no incompatibilities, then we return the original latent pattern */
     else
-        {
-        selected = rand() % numPatternsWithMinIntStates;
         for (i=0; i<numLocalTaxa; i++)
-            latentResolution[i] = allPatterns[pos(i, patternIndices[selected], numLocalTaxa)];
-        *moveProb *= 1.0 / numPatternsWithMinIntStates;
-        }
+            latentResolution[i] = origLatentPattern[i];
 
     /* Free allocations */
     free (compatibleStates);

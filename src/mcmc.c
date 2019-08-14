@@ -12998,8 +12998,14 @@ int PrintStates (int curGen, int coldId)
         for (i=0; i<numPrintParams; i++)
             {
             p = printParam[i];
-            SafeSprintf (&tempStr, &tempStrSize, "\t%s", p->paramHeader);
-            if (AddToPrintString (tempStr) == ERROR) goto errorExit;
+            // Don't print allocation vector and latent matrix in header of .p files
+            if ((p->paramType == P_ALLOCATIONVECTOR) || (p->paramType == P_LATENTMATRIX))
+                continue;
+            else
+                {
+                SafeSprintf (&tempStr, &tempStrSize, "\t%s", p->paramHeader);
+                if (AddToPrintString (tempStr) == ERROR) goto errorExit;
+                }
             }
 
         /* print substitution model parameters header */

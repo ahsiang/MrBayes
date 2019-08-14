@@ -19071,7 +19071,7 @@ int SetModelParams (void)
             else
                 p->paramId = ALLOCATIONVECTOR_UNCORR;
 
-            p->printParam = NO;
+            p->printParam = YES;
 
             /* report alloctionVector */
             SafeStrcat (&p->paramHeader,"allocationVector");
@@ -19097,7 +19097,7 @@ int SetModelParams (void)
             /* find the parameter x prior type */
             p->paramId = LATENTMATRIX;
 
-            p->printParam = NO;
+            p->printParam = YES;
 
             /* report latentMatrix */
             SafeStrcat (&p->paramHeader,"latentMatrix");

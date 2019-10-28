@@ -10052,7 +10052,7 @@ int TiProbs_Fels (TreeNode *p, int division, int chain)
 int TiProbs_StdCorr (TreeNode *p, int division, int chain)
 {
     int         i, j, k, index;
-    MrBFlt      t, a, b, u, z, rho, *catRate,
+    MrBFlt      t, a, b, u, v, rho, *catRate,
                 baseRate, theRate, pis[3], length;
     CLFlt       *tiP;
     ModelInfo   *m;
@@ -10148,27 +10148,8 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
                 else if (i == 3 || i == 5)
                     tiP[index++] = (CLFlt) a - a * v;
                 else
-                    b + 2 * a * v;
+                    tiP[index++] = b + 2 * a * v;
                 }
-
-                // This is the unscaled rate matrix
-                // {
-                // a = pis[0];
-                // b = pis[1];
-                // u = exp(b * t);
-                // z = exp(-t);
-                //
-                // if (i == 0 || i == 8)
-                //     tiP[index++] = (CLFlt) (exp(-b * t) * (b * (1 + exp(-2*a*t)) + (2*a) * (1 + exp(b*t)))) / 2;
-                // else if (i == 1 || i == 7)
-                //     tiP[index++] = (CLFlt) (b - b * z);
-                // else if (i == 2 || i == 6)
-                //     tiP[index++] = (CLFlt) (exp(-b * t) * (b * (-1 + exp(-2*a*t)) + (2*a) * (-1 + exp(b*t)))) / 2;
-                // else if (i == 3 || i == 5)
-                //     tiP[index++] = (CLFlt) a - a * z;
-                // else
-                //     tiP[index++] = b + 2 * a * z;
-                // }
 
             // int hasError = NO;
             // float epsilon = 0.0001;

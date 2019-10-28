@@ -10137,7 +10137,7 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
                 a = pis[0];
                 b = pis[1];
                 u = exp(-t/(4*a));
-                v = exp(-t/(4a*b));
+                v = exp(-t/(4*a*b));
 
                 if (i == 0 || i == 8)
                     tiP[index++] = (CLFlt) (2*a + u + b*v) / 2;

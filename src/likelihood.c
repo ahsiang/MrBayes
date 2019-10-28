@@ -10136,20 +10136,39 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
                 {
                 a = pis[0];
                 b = pis[1];
-                u = exp(b * t);
-                z = exp(-t);
+                u = exp(-t/(4*a));
+                v = exp(-t/(4a*b));
 
                 if (i == 0 || i == 8)
-                    tiP[index++] = (CLFlt) (exp(-b * t) * (b * (1 + exp(-2*a*t)) + (2*a) * (1 + exp(b*t)))) / 2;
+                    tiP[index++] = (CLFlt) (2*a + u + b*v) / 2;
                 else if (i == 1 || i == 7)
-                    tiP[index++] = (CLFlt) (b - b * z);
+                    tiP[index++] = (CLFlt) b - b * v;
                 else if (i == 2 || i == 6)
-                    tiP[index++] = (CLFlt) (exp(-b * t) * (b * (-1 + exp(-2*a*t)) + (2*a) * (-1 + exp(b*t)))) / 2;
+                    tiP[index++] = (CLFlt) (2*a - u + b*v) / 2;
                 else if (i == 3 || i == 5)
-                    tiP[index++] = (CLFlt) a - a * z;
+                    tiP[index++] = (CLFlt) a - a * v;
                 else
-                    tiP[index++] = b + 2 * a * z;
+                    b + 2 * a * v;
                 }
+
+                // This is the unscaled rate matrix
+                // {
+                // a = pis[0];
+                // b = pis[1];
+                // u = exp(b * t);
+                // z = exp(-t);
+                //
+                // if (i == 0 || i == 8)
+                //     tiP[index++] = (CLFlt) (exp(-b * t) * (b * (1 + exp(-2*a*t)) + (2*a) * (1 + exp(b*t)))) / 2;
+                // else if (i == 1 || i == 7)
+                //     tiP[index++] = (CLFlt) (b - b * z);
+                // else if (i == 2 || i == 6)
+                //     tiP[index++] = (CLFlt) (exp(-b * t) * (b * (-1 + exp(-2*a*t)) + (2*a) * (-1 + exp(b*t)))) / 2;
+                // else if (i == 3 || i == 5)
+                //     tiP[index++] = (CLFlt) a - a * z;
+                // else
+                //     tiP[index++] = b + 2 * a * z;
+                // }
 
             // int hasError = NO;
             // float epsilon = 0.0001;

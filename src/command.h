@@ -29,5 +29,6 @@ char        WhichAA (int x);
 char        WhichNuc (int x);
 char        WhichRes (int x);
 char        WhichStand (int x);
+char        WhichLatent (int x);
 
 #endif  /* __COMMAND_H__ */

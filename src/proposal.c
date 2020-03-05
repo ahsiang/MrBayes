@@ -439,9 +439,12 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector, rho,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
-                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix;
+                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix,
+                *dataSrc, *dataDst, *dataSrcOrig, *dataDstOrig, srcLatentStates[numLocalTaxa],
+                dstLatentStates[numLocalTaxa], origSrcLatentStates[numLocalTaxa],
+                origDstLatentStates[numLocalTaxa], numMissing;
     MrBFlt      alphaDir=0.0, probNewTable, randomNum, moveProb=1.0, probForwardMove,
-                probBackwardsMove;
+                probBackwardsMove, emProbSrc, emProbDst, emProbSrcOrig, emProbDstOrig;
     ModelInfo   *m;
 
     /* Get model settings */
@@ -453,6 +456,11 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* Get new and old allocation vectors */
     oldAllocationVector = GetParamIntVals(param, chain, state[chain] ^ 1);
     newAllocationVector = GetParamIntVals(param, chain, state[chain]);
+    //
+    // printf("oldAllocationVector: ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",oldAllocationVector[i]);
+    // printf("\n\n");
 
     /* Get inverse correlation factor rho */
     rho = *GetParamVals(m->rhoCorr, chain, state[chain]);
@@ -460,12 +468,18 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* Get number of tables (i.e., number of latent columns) */
     numTables = (int) *GetParamSubVals(param, chain, state[chain] ^ 1);
 
+    // printf("numTables: %d\n",numTables);
+
     /* Propose new allocation vector */
     /* Pick random character from old allocation vector */
     randCharIndex = (int) (RandomNumber(seed) * m->numChars);
 
-    /* Get index of table that randomly selected character is seated at */
+    // printf("randCharIndex: %d\n",randCharIndex);
+
+    /* Get identity of table that randomly selected character is seated at */
     oldTable = oldAllocationVector[randCharIndex];
+
+    // printf("oldTable: %d\n",oldTable);
 
     /* Get number of characters seated at each table, excluding the selected character */
     int numSeatedAtTablesWithoutSelected[numTables];
@@ -475,12 +489,23 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         if (!(i == randCharIndex))
             numSeatedAtTablesWithoutSelected[oldAllocationVector[i]] += 1;
 
+    // printf("numSeatedWithoutSelected: ");
+    // for (i=0; i<numTables; i++)
+    //     printf("%d ",numSeatedAtTablesWithoutSelected[i]);
+    // printf("\n\n");
+
     /* Get probabilities of seating at new table and seating at all existing tables */
     MrBFlt tableProbs[numTables+1];
     probNewTable = alphaDir / (alphaDir + m->numChars - 1);
     for (i=0; i<numTables; i++)
         tableProbs[i] = numSeatedAtTablesWithoutSelected[i] / (alphaDir + m->numChars - 1);
     tableProbs[numTables] = probNewTable;
+
+    // printf("alphaDir: %f\n",alphaDir);
+    // printf("tableProbs: ");
+    // for (i=0; i<numTables+1; i++)
+    //     printf("%f ",tableProbs[i]);
+    // printf("\n\n");
 
     /* Get cumulative probabilities */
     MrBFlt cumulativeTableProbs[numTables + 1];
@@ -491,6 +516,11 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         else
             cumulativeTableProbs[i] = tableProbs[i] + cumulativeTableProbs[i-1];
         }
+
+    // printf("cumulativeTableProbs: ");
+    // for (i=0; i<numTables+1; i++)
+    //     printf("%f ",cumulativeTableProbs[i]);
+    // printf("\n\n");
 
     /* Randomly select a table using cumulativeTableProbs */
     randomNum = RandomNumber(seed);
@@ -504,6 +534,8 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         }
 
+    // printf("newTable: %d\n",newTable);
+
     /* Get index of first instance of newTable */
     int newTableIndex = -1;
     for (i=0; i<m->numChars; i++)
@@ -515,12 +547,19 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             }
         }
 
+    // printf("newTableIndex: %d\n",newTableIndex);
+
     /* Now get numSeatedAtTables proper */
     int numSeatedAtTables[numTables];
     for (i=0; i<numTables; i++)
         numSeatedAtTables[i] = 0;
     for (i=0; i<m->numChars; i++)
         numSeatedAtTables[oldAllocationVector[i]] += 1;
+
+    // printf("numSeatedAtTables: ");
+    // for (i=0; i<numTables; i++)
+    //     printf("%d ",numSeatedAtTables[i]);
+    // printf("\n\n");
 
     /* If character in a cluster of 1 is seated at a "new" table, don't change allocation */
     /* Otherwise, reseat character at newTable */
@@ -537,16 +576,195 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     else
         newAllocationVector[randCharIndex] = newTable;
 
-    /* Rescale allocation vector to fit growth function and get newNumTables */
+    // printf("newAllocationVector: ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",newAllocationVector[i]);
+    // printf("\n\n");
+
+    /* Change latent matrix to reflect change in allocation vector */
+    oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
+    updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, m->compMatrixStart, newTable, oldLatentMatrix, newTableIndex, rho, seed, &moveProb);
+
+    // printf("oldLatentMatrix: \n");
+    // PrintLatentMatrixToScreen(m->numChars, oldLatentMatrix);
+    // printf("updatedLatentMatrix: \n");
+    // PrintLatentMatrixToScreen(m->numChars, updatedLatentMatrix);
+
+
+    /* get proposal ratio */
+    /* We don't need to get the prior ratio here because it's built into the likelihood calculation */
+
+    // The probability of the forward move is equal to (the probability of selecting the random character) *
+    // (the probability of selecting the new table) * (emission probability of the source cluster latent pattern
+    // after the moved character has been removed) * (emission probability of the destination cluster latent patterns
+    // after the moved characters has been added)
+
+    // Get emission probability of source latent pattern after move
+    // First get the index of the first instance of oldTable after the move
+    int oldTableIndex = -1;
+    for (i=0; i<m->numChars; i++)
+        {
+        if (newAllocationVector[i] == oldTable)
+            {
+            oldTableIndex = i;
+            break;
+            }
+        }
+
+    // printf("oldTableIndex: %d\n",oldTableIndex);
+
+    // If the original cluster was a singleton, then that cluster has effectively
+    // 'disappeared' after the move and we ignore its emission prob
+    if (oldTableIndex == -1) {
+        emProbSrc = 0.0;
+    }
+    else {
+        // Get the source latent states after the move
+        for (i=0; i<numLocalTaxa; i++)
+            srcLatentStates[i] = updatedLatentMatrix[pos(i, oldTableIndex, m->numChars)];
+
+        // printf("srcLatentStates: ");
+        // for (i=0; i<numLocalTaxa; i++)
+        //     printf("%c ",WhichLatent(srcLatentStates[i]));
+        // printf("\n\n");
+
+        // Get the number of characters in the source cluster
+        int numSrcChars = 0;
+        for (i=0; i<m->numChars; i++)
+            if (oldAllocationVector[i] == oldTable)
+                numSrcChars++;
+
+        // printf("numSrcChars: %d\n",numSrcChars);
+
+        // Get data in source cluster
+        dataSrc = GetClusterData(newAllocationVector, oldTable, numSrcChars, m->numChars, m->compMatrixStart);
+
+        // Get number of missing characters in the relevant data
+        numMissing = 0;
+        for (i=0; i<numSrcChars * numLocalTaxa; i++)
+            if ((dataSrc[i] == MISSING) || (dataSrc[i] == GAP))
+                numMissing++;
+
+        // Finally calculate emission probability
+        emProbSrc = LnProbEmission(srcLatentStates, numSrcChars, numMissing);
+    }
+
+    // Get emission probability of destination latent pattern
+    // First get the destination latent states after the move
+    for (i=0; i<numLocalTaxa; i++)
+        dstLatentStates[i] = updatedLatentMatrix[pos(i, newTableIndex, m->numChars)];
+
+    // printf("dstLatentStates: ");
+    // for (i=0; i<numLocalTaxa; i++)
+    //     printf("%c ",WhichLatent(dstLatentStates[i]));
+    // printf("\n\n");
+
+
+    // Get the number of characters in the destination cluster
+    int numDstChars = 0;
+    for (i=0; i<m->numChars; i++)
+        if (newAllocationVector[i] == newTable)
+            numDstChars++;
+
+    // printf("numDstChars: %d\n",numDstChars);
+
+    // Get data in destination cluster
+    dataDst = GetClusterData(newAllocationVector, newTable, numDstChars, m->numChars, m->compMatrixStart);
+
+    // Get number of missing characters in the relevant data
+    numMissing = 0;
+    for (i=0; i<numDstChars * numLocalTaxa; i++)
+        if ((dataDst[i] == MISSING) || (dataDst[i] == GAP))
+            numMissing++;
+
+    // Finally calculate emission probability
+    emProbDst = LnProbEmission(dstLatentStates, numDstChars, numMissing);
+
+    // Now we can get the probability of the forward move
+    if ((numSeatedAtTablesWithoutSelected[randCharIndex] == 0) || (tableProbs[newTable] == 0.0))
+        probForwardMove = log(1.0/m->numChars) + log(probNewTable) + emProbSrc + emProbDst + log(moveProb); // New table case
+    else
+        probForwardMove = log(1.0/m->numChars) + log(tableProbs[newTable]) + emProbSrc + emProbDst + log(moveProb); // Existing table case
+
+    // printf("probForwardMove: %f\n",probForwardMove);
+
+    // The probability of the backwards move is equal to (the probability of selecting the random character) *
+    // (the probability of selecting the original table) * (the emission probabilities of the original latent patterns
+    // of the clusters involved in the move)
+
+    // Get emission probabilities of original latent patterns
+    // First get latent pattern for the source cluster before the random character was moved
+    for (i=0; i<numLocalTaxa; i++)
+        origSrcLatentStates[i] = oldLatentMatrix[pos(i, randCharIndex, m->numChars)];
+
+    // printf("origSrcLatentStates: ");
+    // for (i=0; i<numLocalTaxa; i++)
+    //     printf("%c ",WhichLatent(origSrcLatentStates[i]));
+    // printf("\n\n");
+
+    // Get data in original source cluster
+    dataSrcOrig = GetClusterData(oldAllocationVector, oldTable, numSeatedAtTables[oldTable], m->numChars, m->compMatrixStart);
+
+    // Get number of missing characters in the relevant data
+    numMissing = 0;
+    for (i=0; i<numSeatedAtTables[oldTable] * numLocalTaxa; i++)
+        if ((dataSrcOrig[i] == MISSING) || (dataSrcOrig[i] == GAP))
+            numMissing++;
+
+    // Calculate emission probability
+    emProbSrcOrig = LnProbEmission(origSrcLatentStates, numSeatedAtTables[oldTable], numMissing);
+
+    // Now for the destination cluster
+    // Get latent states in destination cluster before random character is moved
+    for (i=0; i<numLocalTaxa; i++)
+        origDstLatentStates[i] = oldLatentMatrix[pos(i, newTableIndex, m->numChars)];
+
+    // printf("origDstLatentStates: ");
+    // for (i=0; i<numLocalTaxa; i++)
+    //     printf("%c ",WhichLatent(origDstLatentStates[i]));
+    // printf("\n\n");
+
+    // Get data in original destination cluster
+    dataDstOrig = GetClusterData(oldAllocationVector, newTable, numSeatedAtTables[newTable], m->numChars, m->compMatrixStart);
+
+    // Get number of missing characters in the relevant data
+    numMissing = 0;
+    for (i=0; i<numSeatedAtTables[newTable] * numLocalTaxa; i++)
+        if ((dataDstOrig[i] == MISSING) || (dataDstOrig[i] == GAP))
+            numMissing++;
+
+    // Calculate emission probability
+    emProbDstOrig = LnProbEmission(origDstLatentStates, numSeatedAtTables[newTable], numMissing);
+
+    // Rescale allocation vector to fit growth function and get newNumTables
     rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
     newNumTables = 1;
     for (i=0; i<m->numChars; i++)
         if (rescaledAllocationVector[i] == newNumTables)
             newNumTables++;
 
-    /* Change latent matrix to reflect change in allocation vector */
-    oldLatentMatrix = GetParamIntVals(m->latentMatrix, chain, state[chain] ^ 1);
-    updatedLatentMatrix = UpdateLatentPatterns(newAllocationVector, m->numChars, m->compMatrixStart, newTable, oldLatentMatrix, newTableIndex, rho, seed, &moveProb);
+    // printf("rescaledAllocationVector: ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",rescaledAllocationVector[i]);
+    // printf("\n\n");
+    //
+    // printf("newNumTables: %d\n",newNumTables);
+
+    // Now get the probability of the backwards move
+    if (tableProbs[oldTable] == 0.0) // Old table was a singleton, so moving back to it is like moving to a new table
+        probBackwardsMove = log(1.0/m->numChars) + log(probNewTable) + emProbSrcOrig + emProbDstOrig;
+    else
+        probBackwardsMove = log(1.0/m->numChars) + log(tableProbs[oldTable]) + emProbSrcOrig + emProbDstOrig;
+
+    // printf("probBackwardsMove: %f\n",probBackwardsMove);
+    // printf("\n------------------------------\n\n");
+
+    //getchar();
+
+    // Now we can finally get the proposal ratio
+    *lnProposalRatio += probForwardMove;
+    *lnProposalRatio -= probBackwardsMove;
+
 
     /* Copy new allocation vector, latent matrix, and newNumTables back */
     for (i=0; i<m->numChars; i++)
@@ -558,25 +776,6 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             newLatentMatrix[pos(i, j, m->numChars)] = updatedLatentMatrix[pos(i, j, m->numChars)];
         }
     *GetParamSubVals(param, chain, state[chain]) = newNumTables;
-
-    /* get proposal ratio */
-    /* We don't need to get the prior ratio here because it's built into the likelihood calculation */
-
-    // The probability of the forward move is equal to (the probability of selecting the random character) *
-    // (the probability of selecting the new table) * (any probability associated with the i-state)
-    if ((numSeatedAtTablesWithoutSelected[randCharIndex] == 0) || (tableProbs[newTable] == 0.0))
-        probForwardMove = log(1.0/numTables) + log(probNewTable) + log(moveProb); // New table case
-    else
-        probForwardMove = log(1.0/numTables) + log(tableProbs[newTable]) + log(moveProb); // Existing table case
-    // The probability of the backwards move is equal to (the probability of selecting the random character) *
-    // (the probability of selecting the original table) * (the emission probability of )
-    if (tableProbs[oldTable] == 0.0) // Old table was a singleton, so moving back to it is like moving to a new table
-        probBackwardsMove = log(1.0/newNumTables) + log(probNewTable);
-    else
-        probBackwardsMove = log(1.0/newNumTables) + log(tableProbs[oldTable]);
-
-    *lnProposalRatio += probForwardMove;
-    *lnProposalRatio -= probBackwardsMove;
 
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
@@ -6107,7 +6306,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Get proposal ratio */
     // The probability of the forward move is equal to (the probability of selecting the random cluster)
     // * (the normalized emission probability of the latent pattern resulting from the randomly selected
-    // end state) * any additional probabilities related to i-state emission)
+    // end state) * (any additional probabilities related to i-state emission)
     probForwardMove = log(1.0/numClusters) + log(normProbs[randEndIdx]) + log(moveProb);
 
     // The probability of the backwards move is equal to (the probability of selecting the random cluster)

@@ -14365,7 +14365,7 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
                 pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
                 pis[1] = 1.0 - (2.0 * pis[0]);         // beta
                 // Finally get the overall probability
-                iProb = exp(emProb) * pis[1];
+                iProb = emProb * pis[1];
                 // Now determine if we pick the i-state
                 rand = RandomNumber(seed);
                 if ((forceEndState == YES) || (rand > iProb))
@@ -14497,12 +14497,12 @@ int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrix
 
 /*---------------------------------------------------------------------------------
 |
-|  PrintLatentMatrix
+|  PrintLatentMatrixToScreen
 |
 |  Prints latent matrix.
 |
 ---------------------------------------------------------------------------------*/
-int PrintLatentMatrix(int numChars, int *latentMatrix)
+int PrintLatentMatrixToScreen(int numChars, int *latentMatrix)
 {
     int         i, j;
 
@@ -14511,7 +14511,7 @@ int PrintLatentMatrix(int numChars, int *latentMatrix)
         {
         MrBayesPrint("\t");
         for (j=0; j<numChars; j++)
-            MrBayesPrint("%c ",WhichStand(latentMatrix[pos(i,j,numChars)]));
+            MrBayesPrint("%c ",WhichLatent(latentMatrix[pos(i,j,numChars)]));
         MrBayesPrint("\n");
         }
     MrBayesPrint("\n\n");

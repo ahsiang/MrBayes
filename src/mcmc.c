@@ -289,7 +289,7 @@ extern CLFlt    *preLikeA;                   /* precalculated cond likes for anc
 
 /* globals used here but declared elsewhere (in model.c) */
 extern int      *initialLatentMatrix;        /* initialized latent matrix at beginning       */
-extern int      writeAlloc;                  /* should .alloc file be written                */
+extern int      writeMcModelFiles;           /* set to YES to write .alloc/.latent files     */
 
 /* local (to this file) variables */
 int             numLocalChains;              /* number of Markov chains                      */
@@ -348,6 +348,7 @@ FILE            **fpParm = NULL;             /* pointer to .p file(s)           
 FILE            ***fpTree = NULL;            /* pointer to .t file(s)                        */
 FILE            *fpSS = NULL;                /* pointer to .ss file                          */
 FILE            **fpAlloc = NULL;            /* pointer to .alloc file                       */
+FILE            **fpLatent = NULL;           /* pointer to .latent file                      */
 static int      requestAbortRun;             /* flag for aborting mcmc analysis              */
 int             *topologyPrintIndex;         /* print file index of each topology            */
 int             *printTreeTopologyIndex;     /* topology index of each tree print file       */
@@ -1913,8 +1914,11 @@ void CloseMBPrintFiles (void)
 #if defined (PRINT_DUMP)
         SafeFclose (&fpDump[n]);
 #endif
-        if (writeAlloc == YES)
+        if (writeMcModelFiles == YES)
+            {
             SafeFclose (&fpAlloc[n]);
+            SafeFclose (&fpLatent[n]);
+            }
 
         for (i=0; i<numTrees; i++)
             {
@@ -4817,7 +4821,10 @@ void FreeChainMemory (void)
         if (fpParm != NULL)
             free (fpParm);
         if (fpAlloc != NULL)
+            {
             free (fpAlloc);
+            free (fpLatent);
+            }
         fpParm = NULL;
         fpTree = NULL;
         fpMcmc = NULL;
@@ -10531,12 +10538,21 @@ int PreparePrintFiles (void)
         m = &modelSettings[d];
         if (m->mcModelId == YES)
             {
+            writeMcModelFiles = YES;
+
             fpAlloc = NULL;
-            writeAlloc = YES;
+            fpLatent = NULL;
+
             fpAlloc = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
             if (fpAlloc == NULL)
                 {
                 MrBayesPrint ("%s   Could not allocate fpAlloc in PreparePrintFiles\n", spacer);
+                return ERROR;
+                }
+            fpLatent = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
+            if (fpLatent == NULL)
+                {
+                MrBayesPrint ("%s   Could not allocate fpLatent in PreparePrintFiles\n", spacer);
                 return ERROR;
                 }
             }
@@ -10592,12 +10608,24 @@ int PreparePrintFiles (void)
                 previousResults = YES;
                 }
 
-            if (writeAlloc == YES)
+            if (writeMcModelFiles == YES)
                 {
+                // allocation vector
                 if (chainParams.numRuns == 1)
                     sprintf (fileName, "%s.alloc", localFileName);
                 else
                     sprintf (fileName, "%s.run%d.alloc", localFileName, n+1);
+                if ((tempFile = TestOpenTextFileR(fileName)) != NULL)
+                    {
+                    fclose(tempFile);
+                    previousResults = YES;
+                    }
+
+                // latent matrix
+                if (chainParams.numRuns == 1)
+                    sprintf (fileName, "%s.latent", localFileName);
+                else
+                    sprintf (fileName, "%s.run%d.latent", localFileName, n+1);
                 if ((tempFile = TestOpenTextFileR(fileName)) != NULL)
                     {
                     fclose(tempFile);
@@ -10655,16 +10683,29 @@ int PreparePrintFiles (void)
             }
         }
 
-    /* Prepare the .p, .t, and .alloc (if Mc model set) files */
+    /* Prepare the .p, .t, and .alloc/.latent (if Mc model set) files */
     for (n=0; n<chainParams.numRuns; n++)
         {
-        if (writeAlloc == YES)
+        if (writeMcModelFiles == YES)
             {
+            // allocation vector
             if (chainParams.numRuns == 1)
                 sprintf (fileName, "%s.alloc", localFileName);
             else
                 sprintf (fileName, "%s.run%d.alloc", localFileName, n+1);
             if ((fpAlloc[n] = OpenNewMBPrintFile (fileName)) == NULL)
+                {
+                noWarn = oldNoWarn;
+                autoOverwrite = oldAutoOverwrite;
+                return (ERROR);
+                }
+
+            // latent matrix
+            if (chainParams.numRuns == 1)
+                sprintf (fileName, "%s.latent", localFileName);
+            else
+                sprintf (fileName, "%s.run%d.latent", localFileName, n+1);
+            if ((fpLatent[n] = OpenNewMBPrintFile (fileName)) == NULL)
                 {
                 noWarn = oldNoWarn;
                 autoOverwrite = oldAutoOverwrite;
@@ -12181,6 +12222,320 @@ int PrintAllocationVectorToFile (int curGen)
             {
             fprintf (fpAlloc[runId], "%s", printString);
             fflush (fpAlloc[runId]);
+            free(printString);
+            }
+
+        /* Have all of the chains wait here, until the string has been successfully printed on proc_id = 0. */
+        ierror = MPI_Barrier (MPI_COMM_WORLD);
+        if (ierror != MPI_SUCCESS)
+            {
+            MrBayesPrint ("%s   Problem at chain barrier.\n", spacer);
+            return ERROR;
+            }
+        }
+        #   endif
+
+    return (NO_ERROR);
+}
+
+
+int PrintLatentMatrix (int curGen, int coldId)
+{
+    int             i, j, tempStrSize, currCluster, numClusters, *allocationVector, *latentMatrix;
+    ModelInfo       *m;
+    char            *tempStr;
+
+    /* allocate the print string */
+    printStringSize = tempStrSize = TEMPSTRSIZE;
+    printString = (char *)SafeMalloc((size_t)printStringSize * sizeof(char));
+    if (!printString)
+        {
+        MrBayesPrint ("%s   Problem allocating printString (%d)\n", spacer, printStringSize * sizeof(char));
+        return (ERROR);
+        }
+    *printString = '\0';
+
+    tempStr = (char *) SafeMalloc((size_t)tempStrSize * sizeof(char));
+    if (!tempStr)
+        {
+        MrBayesPrint ("%s   Problem allocating tempString (%d)\n", spacer, tempStrSize * sizeof(char));
+        return (ERROR);
+        }
+    *tempStr = '\0';
+
+    for (i=0; i<numCurrentDivisions; i++)
+        {
+        m = &modelSettings[i];
+        if (m->mcModelId == YES)
+            {
+            /* get allocation vector, latent matrix, and number of clusters */
+            allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
+            numClusters = (int) *GetParamSubVals(m->allocationVector, coldId, state[coldId]);
+            latentMatrix = GetParamIntVals(m->latentMatrix, coldId, state[coldId]);
+
+            /* print the translate block information and the top of the file */
+            if (curGen == 0)
+                {
+                /* print header information */
+                SafeSprintf (&tempStr, &tempStrSize, "[ID: %s]\n", stamp);
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "[   Gen                --  Generation]\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "[   NClust             --  Number of Clusters]\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "[   Latent             --  Latent Matrix]\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                SafeSprintf (&tempStr, &tempStrSize, "Gen\tNClust\tLatent\n");
+                if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                }
+
+            /* Print generation number */
+            SafeSprintf (&tempStr, &tempStrSize, "%d\t", curGen);
+            if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+
+            /* Print number of clusters */
+            SafeSprintf (&tempStr, &tempStrSize, "%d\t", numClusters);
+            if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+
+            /* Print latent matrix */
+            currCluster = 0;
+            for (i=0; i<m->numChars; i++)
+                {
+                if (allocationVector[i] == currCluster)
+                    {
+                    for (j=0; j<numLocalTaxa; j++)
+                        {
+                        SafeSprintf (&tempStr, &tempStrSize, "%c ", WhichLatent(latentMatrix[pos(j, i, m->numChars)]));
+                        if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+                        }
+                    SafeSprintf (&tempStr, &tempStrSize, "; ");
+                    if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+
+                    currCluster++;
+                    }
+                }
+
+            SafeSprintf (&tempStr, &tempStrSize, "\t\n");
+            if (AddToPrintString (tempStr) == ERROR) return(ERROR);
+
+            free (tempStr);
+            }
+        }
+    return (NO_ERROR);
+}
+
+
+/*----------------------------------------------------------------------
+|
+|   PrintLatentMatrixToFile: Print latent matrix to file.
+|
+------------------------------------------------------------------------*/
+int PrintLatentMatrixToFile (int curGen)
+{
+    int         chn, coldId, runId;
+#   if !defined (MPI_ENABLED)
+    int         i, j, currCluster, numClusters, *allocationVector, *latentMatrix;
+    ModelInfo   *m;
+#   endif
+#   if defined (MPI_ENABLED)
+    int             id, x, doesThisProcHaveId, procWithChain, ierror, tag, nErrors, sumErrors;
+    MPI_Status      status;
+#   endif
+
+#   if !defined (MPI_ENABLED)
+
+    /* Print allocation vectors to file (single-processor version) */
+    for (i=0; i<numCurrentDivisions; i++)
+        {
+        m = &modelSettings[i];
+        if (m->mcModelId == YES)
+            {
+            for (chn=0; chn<numLocalChains; chn++)
+                {
+                if ((chainId[chn] % chainParams.numChains) == 0)
+                    {
+                    coldId = chn;
+                    runId = chainId[chn] / chainParams.numChains;
+
+                    /* Print header if curGen == 0 */
+                    if (curGen == 0)
+                        {
+                        MrBayesPrintf (fpLatent[runId], "[ID: %s]\n", stamp);
+                        MrBayesPrintf (fpLatent[runId], "[   Gen                --  Generation]\n");
+                        MrBayesPrintf (fpLatent[runId], "[   NClust             --  Number of Clusters]\n");
+                        MrBayesPrintf (fpLatent[runId], "[   Latent             --  Latent Matrix]\n");
+                        MrBayesPrintf (fpLatent[runId], "Gen\tNClust\tLatent\n");
+                        fflush (fpLatent[runId]);
+                        }
+
+                    allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
+                    numClusters = (int) *GetParamSubVals(m->allocationVector, coldId, state[coldId]);
+                    latentMatrix = GetParamIntVals(m->latentMatrix, coldId, state[coldId]);
+
+                    MrBayesPrintf (fpLatent[runId], "%d\t", curGen);
+                    MrBayesPrintf (fpLatent[runId], "%d\t", numClusters);
+
+                    currCluster = 0;
+                    for (i=0; i<m->numChars; i++)
+                        {
+                        if (allocationVector[i] == currCluster)
+                            {
+                            for (j=0; j<numLocalTaxa; j++)
+                                {
+                                MrBayesPrintf(fpLatent[runId], "%c ", WhichLatent(latentMatrix[pos(j, i, m->numChars)]));
+                                }
+                            MrBayesPrintf(fpLatent[runId], "; ");
+                            currCluster++;
+                            }
+                        }
+
+                    MrBayesPrintf (fpLatent[runId], "\t\n");
+
+                    fflush (fpLatent[runId]);
+                    }
+                }
+            }
+        }
+#   else
+    /* Print latent matrix to file (parallel version) */
+
+    /* Wait for all of the processors to get to this point before starting the printing. */
+    ierror = MPI_Barrier (MPI_COMM_WORLD);
+    if (ierror != MPI_SUCCESS)
+        {
+        MrBayesPrint ("%s   Problem at chain barrier.\n", spacer);
+        return ERROR;
+        }
+    tag = nErrors = 0;
+
+    /* Loop over runs. */
+    for (runId=0; runId<chainParams.numRuns; runId++)
+        {
+        /* Get the ID of the chain we want to print. Remember, the ID's should be numbered
+           0, 1, 2, ..., numChains X numRuns. Chains numbered 0, numChains, 2 X numChains, ...
+           are cold. */
+        id = runId * chainParams.numChains;
+
+        /* Does this processor have the chain? */
+        doesThisProcHaveId = NO;
+        coldId = 0;
+        for (chn=0; chn<numLocalChains; chn++)
+            {
+            if (chainId[chn] == id)
+                {
+                doesThisProcHaveId = YES;
+                coldId = chn;
+                break;
+                }
+            }
+
+        /* Tell all the processors which has the chain we want to print. We do this using the MPI_AllReduce
+           function. If the processor does not have the chain, then it initializes x = 0. If it does
+           have the chain, then x = proc_id. When the value of x is summed over all the processors, the sum
+           should be the proc_id of the processor with the chain. Possible values are 0, 1, 2, num_procs-1.
+           Note that every processor knows procWithChain because we are using MPI_Allreduce, instead of MPI_Reduce. */
+        x = 0;
+        if (doesThisProcHaveId == YES)
+            x = proc_id;
+        ierror = MPI_Allreduce (&x, &procWithChain, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (ierror != MPI_SUCCESS)
+            {
+            MrBayesPrint ("%s   Problem finding processor with chain to print.\n", spacer);
+            return (ERROR);
+            }
+
+        /* ****************************************************************************************************/
+        /* print latent matrix ********************************************************************************/
+
+        /* Fill printString with the contents to be printed on proc_id = 0. Note
+           that printString is allocated in the function. */
+        if (doesThisProcHaveId == YES)
+            if (PrintLatentMatrix (curGen, coldId) == ERROR)
+                    nErrors++;
+        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (sumErrors > 0)
+            {
+            MrBayesPrint ("%s   Problem with printing allocation vector.\n", spacer);
+            return ERROR;
+            }
+
+        /* First communication: Send/receive the length of the printString. */
+        if (proc_id == 0 || proc_id == procWithChain)
+            {
+            if (procWithChain != 0)
+                {
+                if (proc_id == procWithChain)
+                    {
+                    /* Find out how large the string is, and send the information to proc_id = 0. */
+                    ierror = MPI_Send (&printStringSize, 1, MPI_LONG, 0, tag, MPI_COMM_WORLD);
+                    if (ierror != MPI_SUCCESS)
+                        nErrors++;
+                    }
+                else
+                    {
+                    /* Receive the length of the string from proc_id = procWithChain, and then allocate
+                       printString to be that length. */
+                    ierror = MPI_Recv (&printStringSize, 1, MPI_LONG, procWithChain, tag, MPI_COMM_WORLD, &status);
+                    if (ierror != MPI_SUCCESS)
+                        {
+                        MrBayesPrint ("%s   Problem receiving printStringSize from proc_id = %d\n", spacer, procWithChain);
+                        nErrors++;
+                        }
+                    printString = (char *)SafeMalloc((size_t)printStringSize * sizeof(char));
+                    if (!printString)
+                        {
+                        MrBayesPrint ("%s   Problem allocating printString (%d)\n", spacer, printStringSize * sizeof(char));
+                        nErrors++;
+                        }
+                    strcpy (printString, "");
+                    }
+                }
+            }
+        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (sumErrors > 0)
+            {
+            MrBayesPrint ("%s   Problem with first communication (states).\n", spacer);
+            return ERROR;
+            }
+
+        /* Second communication: Send/receive the printString. */
+        if (proc_id == 0 || proc_id == procWithChain)
+            {
+            if (procWithChain != 0)
+                {
+                if (proc_id == procWithChain)
+                    {
+                    /* Send the printString to proc_id = 0. After we send the string to proc_id = 0, we can
+                       free it. */
+                    ierror = MPI_Send (&printString[0], (int)printStringSize, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
+                    if (ierror != MPI_SUCCESS)
+                        nErrors++;
+                    free(printString);
+                    }
+                else
+                    {
+                    /* Receive the printString from proc_id = procWithChain. */
+                    ierror = MPI_Recv (&printString[0], (int)printStringSize, MPI_CHAR, procWithChain, tag, MPI_COMM_WORLD, &status);
+                    if (ierror != MPI_SUCCESS)
+                        {
+                        MrBayesPrint ("%s   Problem receiving printString from proc_id = %d\n", spacer, procWithChain);
+                        nErrors++;
+                        }
+                    }
+                }
+            }
+        MPI_Allreduce (&nErrors, &sumErrors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        if (sumErrors > 0)
+            {
+            MrBayesPrint ("%s   Problem with second communication (states).\n", spacer);
+            return ERROR;
+            }
+
+        /* Print the string with the parameter information if we are proc_id = 0. */
+        if (proc_id == 0)
+            {
+            fprintf (fpLatent[runId], "%s", printString);
+            fflush (fpLatent[runId]);
             free(printString);
             }
 
@@ -16336,14 +16691,24 @@ int ReusePreviousResults (int *numSamples, int steps)
     fpParm = NULL;
     fpTree = NULL;
 
-    /* Deal with alloc file(s) for Mc model */
-    if (writeAlloc == YES)
+    /* Deal with allocation vector and latent matrix file(s) for Mc model */
+    if (writeMcModelFiles == YES)
         {
+        // allocation vector
         fpAlloc = NULL;
         fpAlloc = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
         if (fpAlloc == NULL)
             {
             MrBayesPrint ("%s   Could not allocate fpAlloc in ReusePreviousResults\n", spacer);
+            return ERROR;
+            }
+
+        // latent matrix
+        fpLatent = NULL;
+        fpLatent = (FILE **) SafeCalloc (chainParams.numRuns, sizeof (FILE *));
+        if (fpLatent == NULL)
+            {
+            MrBayesPrint ("%s   Could not allocate fpLatent in ReusePreviousResults\n", spacer);
             return ERROR;
             }
         }
@@ -16394,8 +16759,9 @@ int ReusePreviousResults (int *numSamples, int steps)
         else if (CopyResults(fpParm[n],bkupName+strlen(workingDir),numPreviousGen) == ERROR)
             return (ERROR);
 
-        if (writeAlloc == YES)
+        if (writeMcModelFiles == YES)
             {
+            // Allocation vector
             if (chainParams.numRuns == 1)
                 sprintf (fileName, "%s%s.alloc", workingDir, localFileName);
             else
@@ -16412,6 +16778,25 @@ int ReusePreviousResults (int *numSamples, int steps)
             if ((fpAlloc[n] = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
                 return (ERROR);
             else if (CopyResults(fpAlloc[n],bkupName+strlen(workingDir),numPreviousGen) == ERROR)
+                return (ERROR);
+
+            // Latent matrix
+            if (chainParams.numRuns == 1)
+                sprintf (fileName, "%s%s.latent", workingDir, localFileName);
+            else
+                sprintf (fileName, "%s%s.run%d.latent", workingDir, localFileName, n+1);
+            strcpy(bkupName,fileName);
+            strcat(bkupName,"~");
+            remove(bkupName);
+            if (rename(fileName,bkupName) != 0)
+                {
+                MrBayesPrint ("%s   Could not rename file %s\n", spacer, fileName);
+                return ERROR;
+                }
+
+            if ((fpLatent[n] = OpenNewMBPrintFile (fileName+strlen(workingDir))) == NULL)
+                return (ERROR);
+            else if (CopyResults(fpLatent[n],bkupName+strlen(workingDir),numPreviousGen) == ERROR)
                 return (ERROR);
             }
 
@@ -17126,11 +17511,21 @@ int RunChain (RandLong *seed)
             return ERROR;
 #   endif
             }
-        if (writeAlloc == YES)
+        if (writeMcModelFiles == YES)
             {
             if (PrintAllocationVectorToFile (0) == ERROR)
                 {
                 MrBayesPrint("%s   Error in printing allocation vector header to files\n");
+#   if defined (MPI_ENABLED)
+                nErrors++;
+#   else
+                return ERROR;
+#   endif
+                }
+
+            if (PrintLatentMatrixToFile (0) == ERROR)
+                {
+                MrBayesPrint("%s   Error in printing latent matrix header to files\n");
 #   if defined (MPI_ENABLED)
                 nErrors++;
 #   else
@@ -17512,11 +17907,21 @@ int RunChain (RandLong *seed)
                 return ERROR;
 #   endif
                 }
-            if (writeAlloc == YES)
+            if (writeMcModelFiles == YES)
                 {
                 if (PrintAllocationVectorToFile (n) == ERROR)
                     {
                     MrBayesPrint("%s   Error in printing allocation vector to files\n");
+#   if defined (MPI_ENABLED)
+                    nErrors++;
+#   else
+                    return ERROR;
+#   endif
+                    }
+
+                if (PrintLatentMatrixToFile (n) == ERROR)
+                    {
+                    MrBayesPrint("%s   Error in printing latent matrix to files\n");
 #   if defined (MPI_ENABLED)
                     nErrors++;
 #   else

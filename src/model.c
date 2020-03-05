@@ -117,7 +117,7 @@ Param           *treePrintparams;                       /* vector of tree parame
 int             setUpAnalysisSuccess;                   /* Set to YES if analysis is set without error      */
 int             *numSitesAlloc;                         /* pattern allocation by site                       */
 int             *initialLatentMatrix;                   /* initialized latent matrix at beginning of run    */
-int             writeAlloc;                             /* should .alloc file be written                    */
+int             writeMcModelFiles;                      /* Set to YES to write .alloc/.latent               */
 
 /* globals used to describe and change the current model; allocated in AllocCharacters and SetPartition  */
 int         *numVars;                                   /* number of variables in setting arrays         */
@@ -18573,12 +18573,12 @@ int SetModelInfo (void)
         if (!strcmp(mp->mcModel, "Yes"))
             {
             m->mcModelId = YES;
-            writeAlloc = YES;
+            writeMcModelFiles = YES;
             }
         else
             {
             m->mcModelId = NO;
-            writeAlloc = NO;
+            writeMcModelFiles = NO;
             }
 
         /* number of rate categories */

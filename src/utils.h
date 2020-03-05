@@ -293,6 +293,6 @@ int       *GetClusterData(int *allocationVector, int cluster, int numCharsInClus
 int       *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceEndState);
 int       *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);
 int       *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
-int       PrintLatentMatrix(int numChars, int *latentMatrix);
+int       PrintLatentMatrixToScreen(int numChars, int *latentMatrix);
 
 #endif  /* __UTILS_H__ */

@@ -7980,8 +7980,7 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
 {
     int             c, j, k, nRateCats, nStates=3, numReps, *allocationVector,
                     *latentMatrix, numClusters, trackCluster;
-    MrBFlt          catLike, catFreq, rateFreq, like, bs[3], alphaDir, rho;
-                    //pUnobserved, pObserved;
+    MrBFlt          a, b, catLike, catFreq, rateFreq, like, bs[3], alphaDir, rho;
     CLFlt           *clPtr, **clP, *lnScaler;
     ModelInfo       *m;
 
@@ -8007,8 +8006,10 @@ int Likelihood_StdCorr (TreeNode *p, int division, int chain, MrBFlt *lnL, int w
         }
 
     /* find base frequencies */
-    bs[0] = bs[2] = 1.0 / (2 + rho);
-    bs[1] = 1.0 - 2 * bs[0];
+    a = 1.0 / (2 + rho); // alpha
+    b = 1.0 - 2 * a; // beta
+    bs[0] = bs[2] = a;
+    bs[1] = b;
 
     /* find rate category number and frequencies */
     nRateCats = m->numRateCats;
@@ -8700,9 +8701,9 @@ int RemoveNodeScalers (TreeNode *p, int division, int chain)
     assert (m->unscaledNodes[chain][p->index] == 0);
 
     /* Set nChar depending on if mcModel is set */
-    if (m->mcModelId == YES)
-        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
-    else
+//    if (m->mcModelId == YES)
+//        nChar = (int) *GetParamSubVals(m->allocationVector, chain, state[chain]);
+//    else
         nChar = m->numChars;
 
     /* find scalers */
@@ -10078,8 +10079,10 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
         catRate = &theRate;
 
     /* compute pis */
-    pis[0] = pis[2] = 1.0 / (2.0 + rho);   /* alpha */
-    pis[1] = 1.0 - (2.0 * pis[0]);         /* beta */
+    a = 1.0 / (2.0 + rho); // alpha
+    b = 1.0 - (2.0 * a); // beta
+    pis[0] = pis[2] = a / (4*b);
+    pis[1] = b / (4*a);
 
     /* find length */
     if (m->cppEvents != NULL)
@@ -10101,8 +10104,13 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
     else
         length = p->length;
 
-    /* numerical errors will ensue if we allow very large or very small branch lengths,
-       which might occur in relaxed clock models */
+    /* numerical errors will ensue if we allow very large or very small branch lengths, which might
+       occur in relaxed clock models; an elegant solution would be to substitute the stationary
+       probs and initial probs but for now we truncate lengths at small or large values TODO */
+    if (length > BRLENS_MAX)
+        length = BRLENS_MAX;
+    else if (length < BRLENS_MIN)
+        length = BRLENS_MIN;
 
     /* fill in values */
     for (k=index=0; k<m->numRateCats; k++)
@@ -10134,8 +10142,6 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
             /* calculate probabilities */
             for (i=0; i<9; i++)
                 {
-                a = pis[0];
-                b = pis[1];
                 u = exp(-t/(4*a));
                 v = exp(-t/(4*a*b));
 
@@ -10163,18 +10169,11 @@ int TiProbs_StdCorr (TreeNode *p, int division, int chain)
             //     {
             //     for (i=0; i<9; i++)
             //         printf("tiP[%d] = %f\n",i,tiP[i]);
-            //     printf("a = %f\tb = %f\tu = %f\tu_inv = %f\tx = %f\ty = %f\t z = %f\n",a,b,u,u_inv,x,y,z);
             //     printf("t = %f\n",t);
             //     getchar();
-            //    }
+            // }
             }
         }
-
-    // for (i=0; i<9; i++)
-    //     printf("tiP[%d] = %f\n",i,tiP[i]);
-    // printf("a = %f\tb = %f\tu = %f\tu_inv = %f\tx = %f\ty = %f\t z = %f\n",a,b,u,u_inv,x,y,z);
-    // printf("t = %f\n",t);
-    // getchar();
 
     return NO_ERROR;
 }

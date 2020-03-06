@@ -631,7 +631,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         // Get the number of characters in the source cluster
         int numSrcChars = 0;
         for (i=0; i<m->numChars; i++)
-            if (oldAllocationVector[i] == oldTable)
+            if (newAllocationVector[i] == oldTable)
                 numSrcChars++;
 
         // printf("numSrcChars: %d\n",numSrcChars);

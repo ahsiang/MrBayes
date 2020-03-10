@@ -647,6 +647,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
         // Finally calculate emission probability
         emProbSrc = LnProbEmission(srcLatentStates, numSrcChars, numMissing);
+
+        // Cleanup
+        free(dataSrc);
+        dataSrc = NULL;
     }
 
     // Get emission probability of destination latent pattern
@@ -679,6 +683,10 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     // Finally calculate emission probability
     emProbDst = LnProbEmission(dstLatentStates, numDstChars, numMissing);
+
+    // Cleanup
+    free(dataDst);
+    dataDst = NULL;
 
     // Now we can get the probability of the forward move
     if ((numSeatedAtTablesWithoutSelected[randCharIndex] == 0) || (tableProbs[newTable] == 0.0))
@@ -714,41 +722,51 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     // Calculate emission probability
     emProbSrcOrig = LnProbEmission(origSrcLatentStates, numSeatedAtTables[oldTable], numMissing);
 
+    // Cleanup
+    free(dataSrcOrig);
+    dataSrcOrig = NULL;
+
     // Now for the destination cluster
-    // Get latent states in destination cluster before random character is moved
-    for (i=0; i<numLocalTaxa; i++)
-        origDstLatentStates[i] = oldLatentMatrix[pos(i, newTableIndex, m->numChars)];
+    // If destination cluster was a new cluster then we only need to deal
+    // with the emission prob of the source cluster in the backwards move.
+    if (newTable == numTables)
+        {
+        emProbDstOrig = 0.0;
+        }
+    else
+        {
+        // Get latent states in destination cluster before random character is moved
+        for (i=0; i<numLocalTaxa; i++)
+            origDstLatentStates[i] = oldLatentMatrix[pos(i, newTableIndex, m->numChars)];
 
-    // printf("origDstLatentStates: ");
-    // for (i=0; i<numLocalTaxa; i++)
-    //     printf("%c ",WhichLatent(origDstLatentStates[i]));
-    // printf("\n\n");
+        // printf("origDstLatentStates: ");
+        // for (i=0; i<numLocalTaxa; i++)
+        //     printf("%c ",WhichLatent(origDstLatentStates[i]));
+        // printf("\n\n");
 
-    // Get data in original destination cluster
-    dataDstOrig = GetClusterData(oldAllocationVector, newTable, numSeatedAtTables[newTable], m->numChars, m->compMatrixStart);
+        // Get data in original destination cluster
+        dataDstOrig = GetClusterData(oldAllocationVector, newTable, numSeatedAtTables[newTable], m->numChars, m->compMatrixStart);
 
-    // Get number of missing characters in the relevant data
-    numMissing = 0;
-    for (i=0; i<numSeatedAtTables[newTable] * numLocalTaxa; i++)
-        if ((dataDstOrig[i] == MISSING) || (dataDstOrig[i] == GAP))
-            numMissing++;
+        // Get number of missing characters in the relevant data
+        numMissing = 0;
+        for (i=0; i<numSeatedAtTables[newTable] * numLocalTaxa; i++)
+            if ((dataDstOrig[i] == MISSING) || (dataDstOrig[i] == GAP))
+                numMissing++;
 
-    // Calculate emission probability
-    emProbDstOrig = LnProbEmission(origDstLatentStates, numSeatedAtTables[newTable], numMissing);
+        // Calculate emission probability
+        emProbDstOrig = LnProbEmission(origDstLatentStates, numSeatedAtTables[newTable], numMissing);
 
-    // Rescale allocation vector to fit growth function and get newNumTables
-    rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
-    newNumTables = 1;
-    for (i=0; i<m->numChars; i++)
-        if (rescaledAllocationVector[i] == newNumTables)
-            newNumTables++;
+        // Cleanup
+        free(dataDstOrig);
+        dataDstOrig = NULL;
 
-    // printf("rescaledAllocationVector: ");
-    // for (i=0; i<m->numChars; i++)
-    //     printf("%d ",rescaledAllocationVector[i]);
-    // printf("\n\n");
-    //
-    // printf("newNumTables: %d\n",newNumTables);
+        // printf("rescaledAllocationVector: ");
+        // for (i=0; i<m->numChars; i++)
+        //     printf("%d ",rescaledAllocationVector[i]);
+        // printf("\n\n");
+        //
+        // printf("newNumTables: %d\n",newNumTables);
+        }
 
     // Now get the probability of the backwards move
     if (tableProbs[oldTable] == 0.0) // Old table was a singleton, so moving back to it is like moving to a new table
@@ -757,6 +775,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
         probBackwardsMove = log(1.0/m->numChars) + log(tableProbs[oldTable]) + emProbSrcOrig + emProbDstOrig;
 
     // printf("probBackwardsMove: %f\n",probBackwardsMove);
+
     // printf("\n------------------------------\n\n");
 
     //getchar();
@@ -765,6 +784,12 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     *lnProposalRatio += probForwardMove;
     *lnProposalRatio -= probBackwardsMove;
 
+    // Rescale allocation vector to fit growth function and get newNumTables
+    rescaledAllocationVector = RescaleAllocationVector(newAllocationVector, m->numChars, newTable, oldTable);
+    newNumTables = 1;
+    for (i=0; i<m->numChars; i++)
+        if (rescaledAllocationVector[i] == newNumTables)
+            newNumTables++;
 
     /* Copy new allocation vector, latent matrix, and newNumTables back */
     for (i=0; i<m->numChars; i++)

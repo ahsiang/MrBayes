@@ -14302,6 +14302,224 @@ int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCh
 
 /*---------------------------------------------------------------------------------
 |
+|   FlipCharacterPattern
+|
+|   Takes a character pattern and finds its opposite, e.g., 000 -> 111.
+|
+---------------------------------------------------------------------------------*/
+int *FlipCharacterPattern(int *pattern, int numCharsInCluster)
+{
+    int         i, *flippedPattern;
+
+    /* Allocate space for flipped pattern */
+    flippedPattern = (int *) SafeMalloc ((size_t)(numCharsInCluster) * sizeof(int));
+    if (!flippedPattern)
+        printf("ERROR: Problem with allocation in FlipCharacterPattern\n");
+
+    for (i=0; i<numCharsInCluster; i++)
+        {
+        if ((pattern[i] == MISSING) || (pattern[i] == GAP))
+            flippedPattern[i] = pattern[i];
+        else
+            {
+            if (pattern[i] == 1)
+                flippedPattern[i] = 2;
+            else
+                flippedPattern[i] = 1;
+            }
+        }
+
+    return (flippedPattern);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   GetNumLatentPatterns
+|
+|   Calculates the number of latent patterns possible for a given number of
+|   i-states (n) given the number of dimorphic (d; i.e., 0/i or i/1) and trimorphic
+|   (t; i.e., 0/i/1) states.
+|
+---------------------------------------------------------------------------------*/
+int GetNumLatentPatterns(int n, int d, int t)
+{
+    int         sum=0, term, i;
+
+
+    for (i=0; i<n+1; i++)
+        {
+        term = MAX(1, 2*(t-(n-i)));
+        sum += Combination(d,i) * Combination(t,n-i) * term;
+        }
+
+    return (sum);
+
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   CheckCharacterPatternCompatibility
+|
+|   Determines if a character pattern is 0- or 1-compatible with another specified
+|   character pattern.
+|
+|   Returns ENDSTATE if 0-compatible, OPPENDSTATE if 1-compatible, INTSTATE
+|   if neither, and TRIPOLY if completely ambiguous.
+|
+---------------------------------------------------------------------------------*/
+int CheckCharacterPatternCompatibility(int *pattern, int *patternToCheck, int numCharsInCluster)
+{
+    int         i, *oppositePattern, numAmbiguous=0, equal=TRUE, opposite=TRUE, result;
+
+
+    /* Get opposite pattern of specified character pattern */
+    oppositePattern = FlipCharacterPattern(pattern, numCharsInCluster);
+
+    /* Loop through characters to check compatibility */
+    for (i=0; i<numCharsInCluster; i++)
+        {
+        if ((pattern[i] == MISSING) || (pattern[i] == GAP) || (patternToCheck[i] == MISSING) || (patternToCheck[i] == GAP))
+            {
+            numAmbiguous++;
+            continue;
+            }
+        else
+            {
+            if (patternToCheck[i] != pattern[i])
+                equal = FALSE;
+            if (patternToCheck[i] != oppositePattern[i])
+                opposite = FALSE;
+            }
+        if ((equal == FALSE) && (opposite == FALSE))
+            break;
+        }
+
+    /* Determine compatibility */
+    if (numAmbiguous == numCharsInCluster)
+        result = TRIPOLY;
+    else
+        {
+        if (equal == TRUE)
+            result = ENDSTATE;
+        else
+            {
+            if (opposite == TRUE)
+                result = OPPENDSTATE;
+            else
+                result = INTSTATE;
+            }
+        }
+
+    // Free allocations
+    free (oppositePattern);
+    oppositePattern = NULL;
+
+    return (result);
+
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   CountLatentResolutions
+|
+|   Takes a subset of data that comprises a single cluster and determines
+|   the number of latent resolutions for each possible number of i-states,
+|   given an end state index. Returns a vector [r_0,r_1,...,r_k], where k
+|   is the maximum number of i-states possible (= number of taxa), and r_k
+|   is the number of possible latent resolutions that contain k i-states.
+|
+|   Uses the following codes for the possible latent states:
+|       0       ENDSTATE
+|       1       OPPENDSTATE
+|       i       INTSTATE
+|       0/i/1   TRIPOLY
+|       0/i     ZEROPOLY
+|       i/1     ONEPOLY
+|
+---------------------------------------------------------------------------------*/
+int *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, RandLong *seed)
+{
+    int         i, j, *latentResolutionCounts, endStatePattern[numCharsInCluster], possibleLatentStates[numLocalTaxa], currentCharacterPattern[numLocalTaxa],
+                charCompat, numStaticIntStates=0, numDiPolys=0, numTriPolys=0;
+
+
+    /* Allocate space for vector of latent resolution counts */
+    latentResolutionCounts = (int *) SafeMalloc ((size_t)(numLocalTaxa+1) * sizeof(int));
+    if (!latentResolutionCounts)
+        printf("ERROR: Problem with allocation in CountLatentResolutions\n");
+
+    /* Get end state pattern */
+    for (i=0; i<numCharsInCluster; i++)
+        endStatePattern[i] = dataSubset[pos(endStateIndex, i, numCharsInCluster)];
+
+    /* Loop through character patterns to determine possible latent states */
+    for (i=0; i<numLocalTaxa; i++)
+        {
+        // Specified end state is trivial
+        if (i == endStateIndex)
+            possibleLatentStates[i] = ENDSTATE;
+        else
+            {
+            // First get the current character pattern
+            for (j=0; j<numCharsInCluster; j++)
+                currentCharacterPattern[i] = dataSubset[pos(i, j, numCharsInCluster)];
+
+            // Determine if this character pattern is equal to the end state or the opposite end state
+            charCompat = CheckCharacterPatternCompatibility(endStatePattern, currentCharacterPattern, numCharsInCluster);
+
+            // Set code for possible latent states based on pattern compatibility
+            // Also count how many of each type of state there is
+            switch(charCompat)
+                {
+                case ENDSTATE:
+                    possibleLatentStates[i] = ZEROPOLY;
+                    numDiPolys++;
+                case OPPENDSTATE:
+                    possibleLatentStates[i] = ONEPOLY;
+                    numDiPolys++;
+                case INTSTATE:
+                    possibleLatentStates[i] = INTSTATE;
+                    numStaticIntStates++;
+                case TRIPOLY:
+                    possibleLatentStates[i] = TRIPOLY;
+                    numTriPolys++;
+                }
+            }
+        }
+
+    /* Loop through possible latent states to determine number of latent patterns per i-state */
+    for (i=0; i<numLocalTaxa+1; i++)
+        {
+        // The last entry is for the single all-i-state
+        if (i == numLocalTaxa)
+            latentResolutionCounts[i] = 1;
+        else
+            {
+            // The number of resolutions with n i-states is 0 for all n < numStaticIntStates
+            if (i < numStaticIntStates)
+                latentResolutionCounts[i] = 0;
+            // In all other cases, we need to count how many resolutions there are
+            else
+                {
+                if (i == numStaticIntStates)
+                    latentResolutionCounts[i] = 1;
+                // Remaining cases are when num i-states > numStaticIntStates
+                else
+                    latentResolutionCounts[i] = GetNumLatentPatterns(i-numStaticIntStates, numDiPolys, numTriPolys);
+                }
+            }
+        }
+
+    return (latentResolutionCounts);
+
+}
+
+
+/*---------------------------------------------------------------------------------
+|
 |   ConvertLatentStates
 |
 |   Takes a subset of data that comprises a single cluster and determines
@@ -14313,7 +14531,8 @@ int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCh
 int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceEndState)
 {
     int         i, j, *latentResolution, endStatePattern[numCharsInCluster], currEntry,
-                xorTotal, xorSum, currXOR, numMissing;
+                xorTotal, xorSum, currXOR, numMissing, currentCharacterPattern[numCharsInCluster],
+                compatibleLatentState, selectedLatentState;
     MrBFlt      emProb, iProb, pis[3], rand;
 
     /* Allocate space for final latent resolution */
@@ -14323,9 +14542,10 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
 
     /* All intermediate case */
     if (endStateIndex < 0)
+        {
         for (i=0; i<numLocalTaxa; i++)
             latentResolution[i] = INTSTATE;
-
+        }
     /* All other cases */
     else
         {
@@ -14336,58 +14556,147 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
         for (i=0; i<numCharsInCluster; i++)
             endStatePattern[i] = dataSubset[pos(endStateIndex, i, numCharsInCluster)];
 
+        /* We need to determine the probability of end state/opposite end state patterns being emitted by an i-state. */
+        // First get the number of missing states in the end state pattern.
+        numMissing = 0;
+        for (j=0; j<numCharsInCluster; j++)
+            {
+            if ((endStatePattern[j] == MISSING) || (endStatePattern[j] == GAP))
+                numMissing++;
+            }
+
+        // Now get the emission probability of an i-state emitting this new end state pattern
+        emProb = SmartExponentiation(0.5, numCharsInCluster - numMissing);
+
+        // Now get the overall probability of an i-state emitting the end or opposite end state
+        // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
+        pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
+        pis[1] = 1.0 - (2.0 * pis[0]);         // beta
+        // Finally get the overall probability
+        iProb = emProb * pis[1];
+        //iProb = emProb;
+
         /* Loop through original latent states to determine new latent states */
         for (i=0; i<numLocalTaxa; i++)
             {
-            xorTotal = numCharsInCluster; // Keep track of non-missing pairs
-            xorSum = 0;
-            for (j=0; j<numCharsInCluster; j++)
+            if (i == endStateIndex)
+                latentResolution[endStateIndex] = ENDSTATE;
+            else
                 {
-                currEntry = dataSubset[pos(i, j, numCharsInCluster)];
-                currXOR = currEntry ^ endStatePattern[j];
-                if ((currEntry >= MISSING) || (endStatePattern[j] >= MISSING))
-                    xorTotal--;
-                else
-                    xorSum += currXOR;
-                }
-            if ((xorSum == xorTotal) || (xorSum == 0)) // All-opposite or all-equal case
-                {
-                // Need to determine if the end state or opposite end state is emitted by an i-state.
-                // First get the number of missing states in the new end state pattern.
-                numMissing = 0;
+                // Get current character pattern
                 for (j=0; j<numCharsInCluster; j++)
-                    if ((endStatePattern[j] == MISSING) || (endStatePattern[j] == GAP))
-                        numMissing++;
-                // Now get the emission probability of an i-state emitting this new end state pattern
-                emProb = SmartExponentiation(0.5, numCharsInCluster - numMissing);
-                // Now get the overall probability of an i-state emitting the end or opposite end state
-                // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
-                pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
-                pis[1] = 1.0 - (2.0 * pis[0]);         // beta
-                // Finally get the overall probability
-                iProb = emProb * pis[1];
-                // Now determine if we pick the i-state
-                rand = RandomNumber(seed);
-                if ((forceEndState == YES) || (rand > iProb))
+                    currentCharacterPattern[i] = dataSubset[pos(i, j, numCharsInCluster)];
+
+                // Get possible latent state(s)
+                compatibleLatentState = CheckCharacterPatternCompatibility(endStatePattern, currentCharacterPattern, numCharsInCluster);
+
+                // Select latent states as appropriate
+                switch(compatibleLatentState)
                     {
-                    if (xorSum == xorTotal) // All-opposite case
-                        latentResolution[i] = OPPENDSTATE;
-                    else
-                        latentResolution[i] = ENDSTATE;
-                    *moveProb *= 1.0 - iProb;
+                    case ENDSTATE:
+                        // The underlying latent state could be 0 or i
+                        // Determine if we pick the i-state
+                        rand = RandomNumber(seed);
+                        if (rand <= iProb)
+                            {
+                            selectedLatentState = INTSTATE;
+                            *moveProb *= iProb;
+                            }
+                        else
+                            {
+                            selectedLatentState = ENDSTATE;
+                            *moveProb *= 1.0 - iProb;
+                            }
+
+                    case OPPENDSTATE:
+                        // The underlying latent state could be 1 or i
+                        // Determine if we pick the i-state
+                        rand = RandomNumber(seed);
+                        if (rand <= iProb)
+                            {
+                            selectedLatentState = INTSTATE;
+                            *moveProb *= iProb;
+                            }
+                        else
+                            {
+                            selectedLatentState = OPPENDSTATE;
+                            *moveProb *= 1.0 - iProb;
+                            }
+
+                    case INTSTATE:
+                        // The underlying latent state can only be i
+                        selectedLatentState = INTSTATE;
+
+                    case TRIPOLY:
+                        // The underlying state can be 0, i, or 1
+                        rand = RandomNumber(seed);
+                        if (rand <= 1.0/3.0)
+                            selectedLatentState = ENDSTATE;
+                        else if ((1.0/3.0 < rand) && (rand <= 2.0/3.0))
+                            selectedLatentState = INTSTATE;
+                        else
+                            selectedLatentState = OPPENDSTATE;
+                        *moveProb *= 1.0/3.0;
                     }
-                else
-                    {
-                    latentResolution[i] = INTSTATE;
-                    *moveProb *= iProb;
-                    }
+                // Set latent state
+                latentResolution[i] = selectedLatentState;
                 }
-            else // i-state case
-                latentResolution[i] = INTSTATE;
+                // removed code goes here
+
             }
         }
 
     return (latentResolution);
+
+
+                // xorTotal = numCharsInCluster; // Keep track of non-missing pairs
+                // xorSum = 0;
+                // for (j=0; j<numCharsInCluster; j++)
+                //     {
+                //     currEntry = dataSubset[pos(i, j, numCharsInCluster)];
+                //     currXOR = currEntry ^ endStatePattern[j];
+                //     if ((currEntry >= MISSING) || (endStatePattern[j] >= MISSING))
+                //         xorTotal--;
+                //     else
+                //         xorSum += currXOR;
+                //     }
+                // if ((xorSum == xorTotal) || (xorSum == 0)) // All-opposite or all-equal case
+                //     {
+                //     // Need to determine if the end state or opposite end state is emitted by an i-state.
+                //     // First get the number of missing states in the new end state pattern.
+                //     numMissing = 0;
+                //     for (j=0; j<numCharsInCluster; j++)
+                //         if ((endStatePattern[j] == MISSING) || (endStatePattern[j] == GAP))
+                //             numMissing++;
+                //     // Now get the emission probability of an i-state emitting this new end state pattern
+                //     emProb = SmartExponentiation(0.5, numCharsInCluster - numMissing);
+                //     // Now get the overall probability of an i-state emitting the end or opposite end state
+                //     // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
+                //     pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
+                //     pis[1] = 1.0 - (2.0 * pis[0]);         // beta
+                //     // Finally get the overall probability
+                //     iProb = emProb * pis[1];
+                //     // Now determine if we pick the i-state
+                //     rand = RandomNumber(seed);
+                //     if ((forceEndState == YES) || (rand > iProb))
+                //         {
+                //         if (xorSum == xorTotal) // All-opposite case
+                //             latentResolution[i] = OPPENDSTATE;
+                //         else
+                //             latentResolution[i] = ENDSTATE;
+                //         *moveProb *= 1.0 - iProb;
+                //         }
+                //     else
+                //         {
+                //         latentResolution[i] = INTSTATE;
+                //         *moveProb *= iProb;
+                //         }
+                //     }
+                // else // i-state case
+                //     {
+                //     if ()
+                //     }
+                //     latentResolution[i] = INTSTATE;
 }
 
 
@@ -14433,6 +14742,63 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
             }
         }
     return (rescaled);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
+|   DrawNewLatentPatterns
+|
+|   Draws new latent patterns that match data pattern for new clusters.
+|
+---------------------------------------------------------------------------------*/
+int *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix)
+{
+    int         i, j, numCharsInCluster=0, *data, *finalLatentMatrix, numValues;
+
+    /* Get number of characters in newTable cluster*/
+    for (i=0; i<numChars; i++)
+        if (newAllocationVector[i] == newTable)
+            numCharsInCluster++;
+
+    /* Get data from characters that belong to the newTable cluster */
+    data = GetClusterData(newAllocationVector, newTable, numCharsInCluster, numChars, compMatrixStart);
+
+    /* Set new latent states */
+    int newLatentStates[numChars];
+    for (i=0; i<numChars; i++)
+        {
+            if (data[i] == 1)
+                newLatentStates[i] = ENDSTATE;
+            else if (data[i] == 2)
+                newLatentStates[i] = OPPENDSTATE;
+            else
+                newLatentStates[i] = INTSTATE;
+        }
+
+    /* Initialize data structure to hold new latent matrix */
+    numValues = numChars * numLocalTaxa;
+    finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
+    if (!finalLatentMatrix)
+        printf("ERROR: Problem with allocation in UpdateLatentPatterns\n");
+
+    /* Replace appropriate columns with new latent state resolution */
+    for (i=0; i<numLocalTaxa; i++)
+        {
+        for (j=0; j<numChars; j++)
+            {
+            if (newAllocationVector[j] == newTable)
+                finalLatentMatrix[pos(i, j, numChars)] = newLatentStates[i];
+            else
+                finalLatentMatrix[pos(i, j, numChars)] = oldLatentMatrix[pos(i, j, numChars)];
+            }
+        }
+
+    /* Free allocations */
+    free (data);
+    data = NULL;
+
+    return (finalLatentMatrix);
 }
 
 

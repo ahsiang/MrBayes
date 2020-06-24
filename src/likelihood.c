@@ -8602,7 +8602,7 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 ---------------------------------------------------------------------------------*/
 MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
 {
-    int             i, n, m=0, q, p;
+    int            i, n, m=0, q, p;
     MrBFlt         lnProbability;
 
     /* Calculate total emission probability */

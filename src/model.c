@@ -11322,13 +11322,15 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                             intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
                         else // If missing or gap, randomly select a latent state
                             {
-                            MrBFlt rand = RandomNumber(seed);
-                            if (rand <= 1/3)
-                                intValue[pos(i,c,m->numChars)] = ENDSTATE;
-                            else if ((rand <= 2/3) && (rand > 1/3))
-                                intValue[pos(i,c,m->numChars)] = INTSTATE;
-                            else
-                                intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
+                            intValue[pos(i,c,m->numChars)] = INTSTATE;
+
+                            // MrBFlt rand = RandomNumber(seed);
+                            // if (rand <= 1.0/3.0)
+                            //     intValue[pos(i,c,m->numChars)] = ENDSTATE;
+                            // else if ((rand <= 2.0/3.0) && (rand > 1.0/3.0))
+                            //     intValue[pos(i,c,m->numChars)] = INTSTATE;
+                            // else
+                            //     intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
                             }
                         }
                     }

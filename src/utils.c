@@ -14196,108 +14196,108 @@ int *GetClusterData(int *allocationVector, int cluster, int numCharsInCluster, i
 }
 
 
-/*---------------------------------------------------------------------------------
-|
-|   CheckLatentCompatibility
-|
-|   Determines whether a given subset of data is compatible for a given latent
-|   pattern. Returns original latent pattern if compatible; returns a compatible
-|   pattern that minimizes the number of i-states if original latent pattern is
-|   not compatible. Missing character compliant. Used for allocation vector move.
-|
----------------------------------------------------------------------------------*/
-int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCharsInCluster, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
-{
-    int         i, j, *latentResolution, *compatibleStates, *tempPattern, endStateIdx=-1,
-                incompatible=NO, forceEndState=YES, minNumIntStates, numIntStates,
-                allPatterns[numLocalTaxa * numLocalTaxa], numIntStatesPerPattern[numLocalTaxa],
-                numPatternsWithMinIntStates=0, idx=0, selected;
-
-    /* Allocate space for final latent resolution */
-    latentResolution = (int *) SafeMalloc ((size_t)numLocalTaxa * sizeof(int));
-    if (!latentResolution)
-        printf("ERROR: Problem with allocation in CheckLatentCompatibility\n");
-
-    /* Find end state in latent pattern */
-    for (i=0; i<numLocalTaxa; i++)
-        if ((origLatentPattern[i] == ENDSTATE) && (endStateIdx < 0))
-            endStateIdx = i;
-
-    /* Get compatible latent states, forcing end states when necessary */
-    compatibleStates = ConvertLatentStates(dataSubset, origLatentPattern, numCharsInCluster, endStateIdx, rho, seed, moveProb, forceEndState);
-
-    /* Check if compatible states are equal to original latent pattern */
-    for (i=0; i<numLocalTaxa; i++)
-        {
-        if (compatibleStates[i] != origLatentPattern[i])
-            {
-            incompatible = YES;
-            break;
-            }
-        }
-
-    /* If there are incompatibilities, we need to find the compatible latent pattern that
-    minimizes the number of i-states */
-    if (incompatible == YES)
-        {
-        minNumIntStates = numLocalTaxa;
-        for (i=0; i<numLocalTaxa; i++)
-            {
-            numIntStates = 0;
-            // Get latent resolution when current index is the end state
-            tempPattern = ConvertLatentStates(dataSubset, origLatentPattern, numCharsInCluster, i, rho, seed, moveProb, forceEndState);
-            for (j=0; j<numLocalTaxa; j++)
-                allPatterns[pos(j, i, numLocalTaxa)] = tempPattern[j];
-            // Count number of i-states in resolution
-            for (j=0; j<numLocalTaxa; j++)
-                if (tempPattern[j] == INTSTATE)
-                    numIntStates++;
-            // Keep track of how many i-states there are per end state pattern
-            numIntStatesPerPattern[i] = numIntStates;
-            // If current pattern has fewer i-states than a previously seen pattern,
-            // keep track of the number
-            if (numIntStates < minNumIntStates)
-                minNumIntStates = numIntStates;
-            // Free allocation
-            free (tempPattern);
-            tempPattern = NULL;
-            }
-
-        /* Now look at the pattern(s) that minimize the number of i-states; if there
-        are multiple, randomly select between them */
-        for (i=0; i<numLocalTaxa; i++)
-            if (numIntStatesPerPattern[i] == minNumIntStates)
-                numPatternsWithMinIntStates++;
-
-        // Get the indices of the patterns with mininum number of i-states
-        int patternIndices[numPatternsWithMinIntStates];
-        for (i=0; i<numLocalTaxa; i++)
-            if (numIntStatesPerPattern[i] == minNumIntStates)
-                patternIndices[idx++] = i;
-
-        // Now pick the pattern
-        if (numPatternsWithMinIntStates == 1)
-            for (i=0; i<numLocalTaxa; i++)
-                latentResolution[i] = allPatterns[pos(i, patternIndices[0], numLocalTaxa)];
-        else
-            {
-            selected = rand() % numPatternsWithMinIntStates;
-            for (i=0; i<numLocalTaxa; i++)
-                latentResolution[i] = allPatterns[pos(i, patternIndices[selected], numLocalTaxa)];
-            *moveProb *= 1.0 / numPatternsWithMinIntStates;
-            }
-        }
-    /* If there are no incompatibilities, then we return the original latent pattern */
-    else
-        for (i=0; i<numLocalTaxa; i++)
-            latentResolution[i] = origLatentPattern[i];
-
-    /* Free allocations */
-    free (compatibleStates);
-    compatibleStates = NULL;
-
-    return (latentResolution);
-}
+// /*---------------------------------------------------------------------------------
+// |
+// |   CheckLatentCompatibility
+// |
+// |   Determines whether a given subset of data is compatible for a given latent
+// |   pattern. Returns original latent pattern if compatible; returns a compatible
+// |   pattern that minimizes the number of i-states if original latent pattern is
+// |   not compatible. Missing character compliant. Used for allocation vector move.
+// |
+// ---------------------------------------------------------------------------------*/
+// int *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCharsInCluster, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
+// {
+//     int         i, j, *latentResolution, *compatibleStates, *tempPattern, endStateIdx=-1,
+//                 incompatible=NO, forceEndState=YES, minNumIntStates, numIntStates,
+//                 allPatterns[numLocalTaxa * numLocalTaxa], numIntStatesPerPattern[numLocalTaxa],
+//                 numPatternsWithMinIntStates=0, idx=0, selected;
+//
+//     /* Allocate space for final latent resolution */
+//     latentResolution = (int *) SafeMalloc ((size_t)numLocalTaxa * sizeof(int));
+//     if (!latentResolution)
+//         printf("ERROR: Problem with allocation in CheckLatentCompatibility\n");
+//
+//     /* Find end state in latent pattern */
+//     for (i=0; i<numLocalTaxa; i++)
+//         if ((origLatentPattern[i] == ENDSTATE) && (endStateIdx < 0))
+//             endStateIdx = i;
+//
+//     /* Get compatible latent states, forcing end states when necessary */
+//     compatibleStates = ConvertLatentStates(dataSubset, origLatentPattern, numCharsInCluster, endStateIdx, rho, seed, moveProb, forceEndState);
+//
+//     /* Check if compatible states are equal to original latent pattern */
+//     for (i=0; i<numLocalTaxa; i++)
+//         {
+//         if (compatibleStates[i] != origLatentPattern[i])
+//             {
+//             incompatible = YES;
+//             break;
+//             }
+//         }
+//
+//     /* If there are incompatibilities, we need to find the compatible latent pattern that
+//     minimizes the number of i-states */
+//     if (incompatible == YES)
+//         {
+//         minNumIntStates = numLocalTaxa;
+//         for (i=0; i<numLocalTaxa; i++)
+//             {
+//             numIntStates = 0;
+//             // Get latent resolution when current index is the end state
+//             tempPattern = ConvertLatentStates(dataSubset, origLatentPattern, numCharsInCluster, i, rho, seed, moveProb, forceEndState);
+//             for (j=0; j<numLocalTaxa; j++)
+//                 allPatterns[pos(j, i, numLocalTaxa)] = tempPattern[j];
+//             // Count number of i-states in resolution
+//             for (j=0; j<numLocalTaxa; j++)
+//                 if (tempPattern[j] == INTSTATE)
+//                     numIntStates++;
+//             // Keep track of how many i-states there are per end state pattern
+//             numIntStatesPerPattern[i] = numIntStates;
+//             // If current pattern has fewer i-states than a previously seen pattern,
+//             // keep track of the number
+//             if (numIntStates < minNumIntStates)
+//                 minNumIntStates = numIntStates;
+//             // Free allocation
+//             free (tempPattern);
+//             tempPattern = NULL;
+//             }
+//
+//         /* Now look at the pattern(s) that minimize the number of i-states; if there
+//         are multiple, randomly select between them */
+//         for (i=0; i<numLocalTaxa; i++)
+//             if (numIntStatesPerPattern[i] == minNumIntStates)
+//                 numPatternsWithMinIntStates++;
+//
+//         // Get the indices of the patterns with mininum number of i-states
+//         int patternIndices[numPatternsWithMinIntStates];
+//         for (i=0; i<numLocalTaxa; i++)
+//             if (numIntStatesPerPattern[i] == minNumIntStates)
+//                 patternIndices[idx++] = i;
+//
+//         // Now pick the pattern
+//         if (numPatternsWithMinIntStates == 1)
+//             for (i=0; i<numLocalTaxa; i++)
+//                 latentResolution[i] = allPatterns[pos(i, patternIndices[0], numLocalTaxa)];
+//         else
+//             {
+//             selected = rand() % numPatternsWithMinIntStates;
+//             for (i=0; i<numLocalTaxa; i++)
+//                 latentResolution[i] = allPatterns[pos(i, patternIndices[selected], numLocalTaxa)];
+//             *moveProb *= 1.0 / numPatternsWithMinIntStates;
+//             }
+//         }
+//     /* If there are no incompatibilities, then we return the original latent pattern */
+//     else
+//         for (i=0; i<numLocalTaxa; i++)
+//             latentResolution[i] = origLatentPattern[i];
+//
+//     /* Free allocations */
+//     free (compatibleStates);
+//     compatibleStates = NULL;
+//
+//     return (latentResolution);
+// }
 
 
 /*---------------------------------------------------------------------------------
@@ -14520,6 +14520,85 @@ int *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numChar
 
 /*---------------------------------------------------------------------------------
 |
+|   GetMoveProbability
+|
+|   For a given latent vector and set of characters, calculates the move probability
+|   (i.e., the probabilty of moving to that latent vector given the data)
+|
+---------------------------------------------------------------------------------*/
+MrBFlt GetMoveProbability(int *dataSubset, int *latentPattern, int numCharsInCluster, int numMissing, MrBFlt rho)
+{
+    int         i, j, endStateIdx=-1, endStatePattern[numCharsInCluster],
+                currPattern[numCharsInCluster], currLatentState, charCompat;
+    MrBFlt      moveProb=1.0, emProb, iProb, pis[3];
+
+    // Get end state index
+    for (i=0; i<numLocalTaxa; i++)
+        {
+        if (latentPattern[i] == ENDSTATE)
+            {
+            endStateIdx = i;
+            break;
+            }
+        }
+
+    // Get end state pattern
+    if (endStateIdx == -1)
+        {
+        for (i=0; i<numCharsInCluster; i++)
+            endStatePattern[i] = MISSING;
+        }
+    else
+        {
+        for (i=0; i<numCharsInCluster; i++)
+            endStatePattern[i] = dataSubset[pos(endStateIdx, i, numCharsInCluster)];
+        }
+
+    // Get probability of i-state emitting the end state or opposite end state
+    emProb = SmartExponentiation(0.5, numCharsInCluster - numMissing);
+
+    // Compute pis:
+    pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
+    pis[1] = 1.0 - (2.0 * pis[0]);         // beta
+    // Finally get the overall probability
+    iProb = emProb * pis[1];
+
+    // Loop through latent states and associated character patterns
+    for (i=0; i<numLocalTaxa; i++)
+        {
+        currLatentState = latentPattern[i];
+        for (j=0; j<numCharsInCluster; j++)
+            currPattern[j] = dataSubset[pos(i,j,numCharsInCluster)];
+
+        // Determine if current pattern could be an end state or an opposite end state
+        charCompat = CheckCharacterPatternCompatibility(endStatePattern, currPattern, numCharsInCluster);
+
+        // Determine probability of current latent state given current data pattern
+        switch(charCompat)
+            {
+            case ENDSTATE:
+                if (currLatentState == ENDSTATE)
+                    moveProb *= 1.0 - iProb;
+                else
+                    moveProb *= iProb;
+            case OPPENDSTATE:
+                if (currLatentState == OPPENDSTATE)
+                    moveProb *= 1.0 - iProb;
+                else
+                    moveProb *= iProb;
+            case INTSTATE:
+                moveProb *= 1.0;
+            case TRIPOLY:
+                moveProb *= 1.0/3.0;
+            }
+        }
+
+    return moveProb;
+}
+
+
+/*---------------------------------------------------------------------------------
+|
 |   ConvertLatentStates
 |
 |   Takes a subset of data that comprises a single cluster and determines
@@ -14528,10 +14607,10 @@ int *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numChar
 |   returned. Missing character compliant. Used for latent move.
 |
 ---------------------------------------------------------------------------------*/
-int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceEndState)
+int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
 {
-    int         i, j, *latentResolution, endStatePattern[numCharsInCluster], currEntry,
-                xorTotal, xorSum, currXOR, numMissing, currentCharacterPattern[numCharsInCluster],
+    int         i, j, *latentResolution, endStatePattern[numCharsInCluster],
+                numMissing, currentCharacterPattern[numCharsInCluster],
                 compatibleLatentState, selectedLatentState;
     MrBFlt      emProb, iProb, pis[3], rand;
 
@@ -14574,7 +14653,6 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
         pis[1] = 1.0 - (2.0 * pis[0]);         // beta
         // Finally get the overall probability
         iProb = emProb * pis[1];
-        //iProb = emProb;
 
         /* Loop through original latent states to determine new latent states */
         for (i=0; i<numLocalTaxa; i++)
@@ -14756,7 +14834,7 @@ int *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatri
 {
     int         i, j, numCharsInCluster=0, *data, *finalLatentMatrix, numValues;
 
-    /* Get number of characters in newTable cluster*/
+    /* Get number of characters in newTable cluster */
     for (i=0; i<numChars; i++)
         if (newAllocationVector[i] == newTable)
             numCharsInCluster++;
@@ -14768,12 +14846,12 @@ int *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatri
     int newLatentStates[numChars];
     for (i=0; i<numChars; i++)
         {
-            if (data[i] == 1)
-                newLatentStates[i] = ENDSTATE;
-            else if (data[i] == 2)
-                newLatentStates[i] = OPPENDSTATE;
-            else
-                newLatentStates[i] = INTSTATE;
+        if (data[i] == 1)
+            newLatentStates[i] = ENDSTATE;
+        else if (data[i] == 2)
+            newLatentStates[i] = OPPENDSTATE;
+        else
+            newLatentStates[i] = INTSTATE;
         }
 
     /* Initialize data structure to hold new latent matrix */
@@ -14802,63 +14880,63 @@ int *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatri
 }
 
 
-/*---------------------------------------------------------------------------------
-|
-|   UpdateLatentPatterns
-|
-|   Ensures that latent patterns in latent matrix match allocation vector.
-|
----------------------------------------------------------------------------------*/
-int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
-{
-    int         i, j, numCharsInCluster=0, *data, origLatentPattern[numLocalTaxa],
-                endStateIndex=-1, *newLatentStates, numValues, *finalLatentMatrix;
-
-    /* Get number of characters in newTable cluster*/
-    for (i=0; i<numChars; i++)
-        if (newAllocationVector[i] == newTable)
-            numCharsInCluster++;
-
-    /* Get data from characters that belong to the newTable cluster */
-    data = GetClusterData(newAllocationVector, newTable, numCharsInCluster, numChars, compMatrixStart);
-
-    /* Get original latent pattern of the newTable cluster and also find the end state index */
-    for (i=0; i<numLocalTaxa; i++)
-        {
-        origLatentPattern[i] = oldLatentMatrix[pos(i, newTableIndex, numChars)];
-        if ((oldLatentMatrix[pos(i, newTableIndex, numChars)] == ENDSTATE) && (endStateIndex < 0))
-            endStateIndex = i;
-        }
-
-    /* Get new latent state resolution */
-    newLatentStates = CheckLatentCompatibility(data, origLatentPattern, numCharsInCluster, rho, seed, moveProb);
-
-    /* Initialize data structure to hold new latent matrix */
-    numValues = numChars * numLocalTaxa;
-    finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
-    if (!finalLatentMatrix)
-        printf("ERROR: Problem with allocation in UpdateLatentPatterns\n");
-
-    /* Replace appropriate columns with new latent state resolution */
-    for (i=0; i<numLocalTaxa; i++)
-        {
-        for (j=0; j<numChars; j++)
-            {
-            if (newAllocationVector[j] == newTable)
-                finalLatentMatrix[pos(i, j, numChars)] = newLatentStates[i];
-            else
-                finalLatentMatrix[pos(i, j, numChars)] = oldLatentMatrix[pos(i, j, numChars)];
-            }
-        }
-
-    /* Free allocations */
-    free (data);
-    data = NULL;
-    free (newLatentStates);
-    newLatentStates = NULL;
-
-    return (finalLatentMatrix);
-}
+// /*---------------------------------------------------------------------------------
+// |
+// |   UpdateLatentPatterns
+// |
+// |   Ensures that latent patterns in latent matrix match allocation vector.
+// |
+// ---------------------------------------------------------------------------------*/
+// int *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
+// {
+//     int         i, j, numCharsInCluster=0, *data, origLatentPattern[numLocalTaxa],
+//                 endStateIndex=-1, *newLatentStates, numValues, *finalLatentMatrix;
+//
+//     /* Get number of characters in newTable cluster*/
+//     for (i=0; i<numChars; i++)
+//         if (newAllocationVector[i] == newTable)
+//             numCharsInCluster++;
+//
+//     /* Get data from characters that belong to the newTable cluster */
+//     data = GetClusterData(newAllocationVector, newTable, numCharsInCluster, numChars, compMatrixStart);
+//
+//     /* Get original latent pattern of the newTable cluster and also find the end state index */
+//     for (i=0; i<numLocalTaxa; i++)
+//         {
+//         origLatentPattern[i] = oldLatentMatrix[pos(i, newTableIndex, numChars)];
+//         if ((oldLatentMatrix[pos(i, newTableIndex, numChars)] == ENDSTATE) && (endStateIndex < 0))
+//             endStateIndex = i;
+//         }
+//
+//     /* Get new latent state resolution */
+//     newLatentStates = CheckLatentCompatibility(data, origLatentPattern, numCharsInCluster, rho, seed, moveProb);
+//
+//     /* Initialize data structure to hold new latent matrix */
+//     numValues = numChars * numLocalTaxa;
+//     finalLatentMatrix = (int *) SafeMalloc ((size_t)numValues * sizeof(MrBFlt));
+//     if (!finalLatentMatrix)
+//         printf("ERROR: Problem with allocation in UpdateLatentPatterns\n");
+//
+//     /* Replace appropriate columns with new latent state resolution */
+//     for (i=0; i<numLocalTaxa; i++)
+//         {
+//         for (j=0; j<numChars; j++)
+//             {
+//             if (newAllocationVector[j] == newTable)
+//                 finalLatentMatrix[pos(i, j, numChars)] = newLatentStates[i];
+//             else
+//                 finalLatentMatrix[pos(i, j, numChars)] = oldLatentMatrix[pos(i, j, numChars)];
+//             }
+//         }
+//
+//     /* Free allocations */
+//     free (data);
+//     data = NULL;
+//     free (newLatentStates);
+//     newLatentStates = NULL;
+//
+//     return (finalLatentMatrix);
+// }
 
 
 /*---------------------------------------------------------------------------------

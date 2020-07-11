@@ -5934,13 +5934,13 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     the end state for that cluster, and then selecting a new end state and latent resolution based
     on these normalized probabilties */
 
-    int         i, j, idx, *allocationVector, numClusters, rho, *oldLatentMatrix,
-                *newLatentMatrix, randClustIndex, latentIdx=-1, *data,
+    int         i, j, idx, *allocationVector, numClusters, *oldLatentMatrix,
+                *newLatentMatrix, randClustIndex, *data,
                 numCharsInCluster=0, origLatentStates[numLocalTaxa], numMissing=0,
-                *latentResolution, newLatentPattern[numLocalTaxa], randEndIdx=0;
-    MrBFlt      moveProbForwards=1.0, moveProbBackwards, maxLogProb, threshold,
-                probSum=0.0, epsilon=1.0e-16, rand, probForwardMove, probBackwardsMove,
-                probEmOrigPat;
+                *latentResolution, newLatentPattern[numLocalTaxa], newLatentVectorIdx=0,
+                origEndStateIdx=-1;
+    MrBFlt      rho, moveProbForwards, moveProbBackwards, rand, cProbsForwards[numLocalTaxa+1],
+                *forwardNormProbs, *backwardsNormProbs, *forwardMoveProbs, *backwardsMoveProbs;
     ModelInfo   *m;
 
     /* Get model settings */
@@ -5967,7 +5967,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     /* Get latent pattern associated with this cluster */
     for (i=0; i<numLocalTaxa; i++)
-        origLatentStates[i] = oldLatentMatrix[pos(i, latentIdx, m->numChars)];
+        origLatentStates[i] = oldLatentMatrix[pos(i, randClustIndex, m->numChars)];
 
     /* Get relevant data with structure: [C1a C1b C1c ... C2a C2b C2c ...]
     where a, b, c... corresponds to taxa */
@@ -5979,24 +5979,32 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
             numMissing++;
 
     /* Get emission probabilities for every end state possibility */
-    MrBFlt lnEmissionProbabilities[numLocalTaxa+1]; // This holds the emission probabilities when pattern i %in% numLocalTaxa = end state
     int latentResolutions[(numLocalTaxa+1) * numLocalTaxa]; // This holds all the sampled latent resolutions
-    for (i=0; i<numLocalTaxa+1; i++) // Last entry is the all-i-state case
+
+    /* Allocate space for forward move probabilities for each latent resolution */
+    forwardMoveProbs = (MrBFlt *) SafeMalloc ((size_t)(numLocalTaxa+1) * sizeof(MrBFlt));
+    if (!forwardMoveProbs)
+        printf("ERROR: Problem with allocation in Move_Latent\n");
+
+    for (i=0; i<numLocalTaxa+1; i++)
         {
-        if (i == numLocalTaxa) // All-i-state latent resolution
+        if (i == numLocalTaxa) // Last entry is the all-i-state case
             idx = -1;
         else // Current data pattern is the end state
             idx = i;
 
+        // Reset move prob for current latent resolution
+        moveProbForwards = 0.0;
+
         // Get latent resolution
-        latentResolution = ConvertLatentStates(data, origLatentStates, numCharsInCluster, idx, rho, seed, &moveProbForwards);
+        latentResolution = ConvertLatentStates(data, origLatentStates, numCharsInCluster, idx, rho, seed, &moveProbForwards, NO);
 
         // Copy latent resolution to data structure
         for (j=0; j<numLocalTaxa; j++)
             latentResolutions[pos(j, i, numLocalTaxa+1)] = latentResolution[j];
 
-        // Get emission probability for the latent resolution
-        lnEmissionProbabilities[i] = LnProbEmission(latentResolution, numCharsInCluster, numMissing);
+        // Copy move prob to data structure
+        forwardMoveProbs[i] = moveProbForwards;
 
         // Free allocation
         free (latentResolution);
@@ -6004,56 +6012,87 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         }
 
     /* Normalize emission probabilities */
-    // Get maximum log probability
-    maxLogProb = lnEmissionProbabilities[0];
-    for (i=1; i<numLocalTaxa+1; i++)
-        if (lnEmissionProbabilities[i] > maxLogProb)
-            maxLogProb = lnEmissionProbabilities[i];
-    // Subtract maximum from all log probs
-    MrBFlt differences[numLocalTaxa+1];
-    for (i=0; i<numLocalTaxa+1; i++)
-        differences[i] = lnEmissionProbabilities[i] - maxLogProb;
-    // Compare differences to a threshold and only keep those that exceed it
-    MrBFlt threshProbs[numLocalTaxa+1];
-    threshold = log(epsilon) - log(numLocalTaxa+1);
-    for (i=0; i<numLocalTaxa+1; i++)
-        {
-        if (differences[i] < threshold)
-            threshProbs[i] = 0;
-        else
-            threshProbs[i] = exp(differences[i]);
-        }
-    // Normalize remaining probabilities
-    MrBFlt normProbs[numLocalTaxa+1];
-    for (i=0; i<numLocalTaxa+1; i++)
-        probSum += threshProbs[i];
-    for (i=0; i<numLocalTaxa+1; i++)
-        normProbs[i] = threshProbs[i] / probSum;
+    forwardNormProbs = NormalizeEmissionProbabilities(forwardMoveProbs);
 
     /* Convert to cumulative probabilities */
-    MrBFlt cProbs[numLocalTaxa+1];
     for (i=0; i<numLocalTaxa+1; i++)
         {
         if (i == 0)
-            cProbs[i] = normProbs[i];
+            cProbsForwards[i] = forwardMoveProbs[i];
         else
-            cProbs[i] = normProbs[i] + cProbs[i-1];
+            cProbsForwards[i] = forwardMoveProbs[i] + cProbsForwards[i-1];
         }
 
-    /* Randomly select new end state pattern */
+    /* Randomly select new latent resolution */
     rand = RandomNumber(seed);
     for (i=0; i<numLocalTaxa+1; i++)
         {
-        if (rand <= cProbs[i])
+        if (rand <= cProbsForwards[i])
             {
-            randEndIdx = i;
+            newLatentVectorIdx = i;
             break;
             }
         }
 
-    /* Get new latent pattern resulting from the newly selected end state */
+    /* Get new latent resolution pattern */
     for (i=0; i<numLocalTaxa; i++)
-        newLatentPattern[i] = latentResolutions[pos(i, randEndIdx, numLocalTaxa+1)];
+        newLatentPattern[i] = latentResolutions[pos(i, newLatentVectorIdx, numLocalTaxa+1)];
+
+    /* Get proposal ratio */
+    // The probability of the forward move is equal to (the probability of selecting the random cluster)
+    // * (the normalized emission probability of the latent pattern resulting from the randomly selected
+    // end state) * (any additional probabilities related to i-state emission)
+    /* We don't need to get the prior ratio here because it's built into the likelihood ratio */
+
+    /* Get the backwards move probability */
+    // Allocate space for forward move probabilities for each latent resolution */
+    backwardsMoveProbs = (MrBFlt *) SafeMalloc ((size_t)(numLocalTaxa+1) * sizeof(MrBFlt));
+    if (!backwardsMoveProbs)
+        printf("ERROR: Problem with allocation in Move_Latent\n");
+
+    // Get end state index in original latent pattern
+    for (i=0; i<numLocalTaxa; i++)
+        {
+        if (origLatentStates[i] == ENDSTATE)
+            origEndStateIdx = i;
+            break;
+        }
+    if (origEndStateIdx == -1)
+        origEndStateIdx = numLocalTaxa;
+
+    // Get emission probabilities for every end state possibility
+    for (i=0; i<numLocalTaxa+1; i++)
+        {
+        if (i == numLocalTaxa) // Last entry is the all-i-state case
+            idx = -1;
+        else // Current data pattern is the end state
+            idx = i;
+
+        // Reset move prob for current latent resolution
+        moveProbBackwards = 0.0;
+
+        // Get latent resolution
+        if (i == origEndStateIdx)
+            latentResolution = ConvertLatentStates(data, origLatentStates, numCharsInCluster, idx, rho, seed, &moveProbBackwards, YES);
+        else
+            latentResolution = ConvertLatentStates(data, origLatentStates, numCharsInCluster, idx, rho, seed, &moveProbBackwards, NO);
+
+        // Copy move prob to data structure
+        backwardsMoveProbs[i] = moveProbBackwards;
+
+        // Free allocation
+        free (latentResolution);
+        latentResolution = NULL;
+        }
+
+    /* Normalize emission probabilities */
+    backwardsNormProbs = NormalizeEmissionProbabilities(backwardsMoveProbs);
+
+    // Now we can calculate proposal ratio
+    // Forward move
+    *lnProposalRatio += log(1.0/numClusters) + log(forwardNormProbs[newLatentVectorIdx]);
+    // Backwards move
+    *lnProposalRatio -= log(1.0/numClusters) + log(backwardsNormProbs[origEndStateIdx]);
 
     /* Copy over states from oldLatentMatrix to newLatentMatrix, replacing columns corresponding to selected cluster */
     for (i=0; i<numLocalTaxa; i++)
@@ -6070,30 +6109,6 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Copy back newLatentMatrix */
     *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;
 
-    /* Get proposal ratio */
-    // The probability of the forward move is equal to (the probability of selecting the random cluster)
-    // * (the normalized emission probability of the latent pattern resulting from the randomly selected
-    // end state) * (any additional probabilities related to i-state emission)
-    probForwardMove = log(1.0/numClusters) + log(normProbs[randEndIdx]) + log(moveProbForwards);
-
-    // The probability of the backwards move is equal to (the probability of selecting the random cluster)
-    // * (the normalized emission probability of the original latent pattern)
-    probEmOrigPat = LnProbEmission(origLatentStates, numCharsInCluster, numMissing);
-
-    // Get move probability associated with original latent states
-    moveProbBackwards = GetMoveProbability(data, origLatentStates, numCharsInCluster, numMissing, rho);
-
-    probBackwardsMove = log(1.0/numClusters) + probEmOrigPat + log(moveProbBackwards);
-
-    /* We don't need to get the prior ratio here because it's built into the likelihood ratio */
-    *lnProposalRatio += probForwardMove;
-    *lnProposalRatio -= probBackwardsMove;
-
-    // If we're running with no data then the move is always accepted because
-    // the likelihood of the old state and the new state are equal
-    if (chainParams.runWithData == NO)
-        *lnProposalRatio = 1.0;
-
     /* Update flags */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
@@ -6101,6 +6116,18 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     /* Free allocations */
     free (data);
     data = NULL;
+
+    free (forwardMoveProbs);
+    forwardMoveProbs = NULL;
+
+    free (backwardsMoveProbs);
+    backwardsMoveProbs = NULL;
+
+    free (forwardNormProbs);
+    forwardNormProbs = NULL;
+
+    free (backwardsNormProbs);
+    backwardsNormProbs = NULL;
 
 
     return (NO_ERROR);

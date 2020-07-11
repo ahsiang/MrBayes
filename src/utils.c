@@ -14599,6 +14599,55 @@ MrBFlt GetMoveProbability(int *dataSubset, int *latentPattern, int numCharsInClu
 
 /*---------------------------------------------------------------------------------
 |
+|   NormalizeEmissionProbabilities
+|
+|   Takes a set of log emission probabilities and returns normalized probabilities.
+|
+---------------------------------------------------------------------------------*/
+MrBFlt *NormalizeEmissionProbabilities(MrBFlt *emissionProbabilities)
+{
+
+    int         i;
+    MrBFlt     *normProbs, maxLogProb, differences[numLocalTaxa+1], threshProbs[numLocalTaxa+1],
+                threshold, epsilon=1.0e-16, probSum=0.0;
+
+    /* Allocate space for normalized probabilities */
+    normProbs = (MrBFlt *) SafeMalloc ((size_t)(numLocalTaxa+1) * sizeof(MrBFlt));
+    if (!normProbs)
+        printf("ERROR: Problem with allocation in NormalizeEmissionProbabilities\n");
+
+    // Get maximum log probability
+    maxLogProb = emissionProbabilities[0];
+    for (i=1; i<numLocalTaxa+1; i++)
+        if (emissionProbabilities[i] > maxLogProb)
+            maxLogProb = emissionProbabilities[i];
+
+    // Subtract maximum from all log probs
+    for (i=0; i<numLocalTaxa+1; i++)
+        differences[i] = emissionProbabilities[i] - maxLogProb;
+
+    // Compare differences to a threshold and only keep those that exceed it
+    threshold = log(epsilon) - log(numLocalTaxa+1);
+    for (i=0; i<numLocalTaxa+1; i++)
+        {
+        if (differences[i] < threshold)
+            threshProbs[i] = 0;
+        else
+            threshProbs[i] = exp(differences[i]);
+        }
+
+    // Normalize remaining probabilities
+    for (i=0; i<numLocalTaxa+1; i++)
+        probSum += threshProbs[i];
+    for (i=0; i<numLocalTaxa+1; i++)
+        normProbs[i] = threshProbs[i] / probSum;
+
+    return (normProbs);
+}
+
+
+/*---------------------------------------------------------------------------------
+|
 |   ConvertLatentStates
 |
 |   Takes a subset of data that comprises a single cluster and determines
@@ -14606,54 +14655,76 @@ MrBFlt GetMoveProbability(int *dataSubset, int *latentPattern, int numCharsInClu
 |   If end state index is negative, then the all-intermediate-state case is
 |   returned. Missing character compliant. Used for latent move.
 |
+|   If forceOriginal == YES, then this function will return the original latent
+|   pattern and the corresponding move probability for that pattern.
+|
 ---------------------------------------------------------------------------------*/
-int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
+int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceOriginal)
 {
     int         i, j, *latentResolution, endStatePattern[numCharsInCluster],
                 numMissing, currentCharacterPattern[numCharsInCluster],
                 compatibleLatentState, selectedLatentState;
     MrBFlt      emProb, iProb, pis[3], rand;
 
+
     /* Allocate space for final latent resolution */
     latentResolution = (int *) SafeMalloc ((size_t)numLocalTaxa * sizeof(int));
     if (!latentResolution)
         printf("ERROR: Problem with allocation in ConvertLatentStates\n");
 
+    /* Set end state (or all i-state pattern) */
+    if (endStateIndex == -1)
+        {
+        // End state pattern is unknown
+        for (i=0; i<numCharsInCluster; i++)
+            endStatePattern[i] = MISSING;
+        }
+    else
+        {
+        latentResolution[endStateIndex] = ENDSTATE;
+        /* Get new end state pattern */
+        for (i=0; i<numCharsInCluster; i++)
+            endStatePattern[i] = dataSubset[pos(endStateIndex, i, numCharsInCluster)];
+        }
+
+    /* We need to determine the probability of end state/opposite end state patterns being emitted by an i-state. */
+    // First get the number of missing states in the end state pattern.
+    numMissing = 0;
+    for (j=0; j<numCharsInCluster; j++)
+        {
+        if ((endStatePattern[j] == MISSING) || (endStatePattern[j] == GAP))
+            numMissing++;
+        }
+
+    // Now get the emission probability of an i-state emitting this new end state pattern
+    emProb = log(SmartExponentiation(0.5, numCharsInCluster - numMissing));
+
+    // Now get the overall probability of an i-state emitting the end or opposite end state
+    // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
+    pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
+    pis[1] = 1.0 - (2.0 * pis[0]);         // beta
+    // Finally get the overall probability
+    iProb = emProb + log(pis[1]);
+
     /* All intermediate case */
     if (endStateIndex < 0)
         {
         for (i=0; i<numLocalTaxa; i++)
+            {
+            // Set all states to i-state
             latentResolution[i] = INTSTATE;
+
+            // If we have no data, then probabilities of each state are equal
+            if (numMissing == numCharsInCluster)
+                *moveProb += log(1.0/3.0);
+            // Otherwise the probability of the i-state is the iProb
+            else
+                *moveProb += log(iProb);
+            }
         }
     /* All other cases */
     else
         {
-        /* Set end state to 0 */
-        latentResolution[endStateIndex] = ENDSTATE;
-
-        /* Get new end state pattern */
-        for (i=0; i<numCharsInCluster; i++)
-            endStatePattern[i] = dataSubset[pos(endStateIndex, i, numCharsInCluster)];
-
-        /* We need to determine the probability of end state/opposite end state patterns being emitted by an i-state. */
-        // First get the number of missing states in the end state pattern.
-        numMissing = 0;
-        for (j=0; j<numCharsInCluster; j++)
-            {
-            if ((endStatePattern[j] == MISSING) || (endStatePattern[j] == GAP))
-                numMissing++;
-            }
-
-        // Now get the emission probability of an i-state emitting this new end state pattern
-        emProb = SmartExponentiation(0.5, numCharsInCluster - numMissing);
-
-        // Now get the overall probability of an i-state emitting the end or opposite end state
-        // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
-        pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
-        pis[1] = 1.0 - (2.0 * pis[0]);         // beta
-        // Finally get the overall probability
-        iProb = emProb * pis[1];
-
         /* Loop through original latent states to determine new latent states */
         for (i=0; i<numLocalTaxa; i++)
             {
@@ -14661,6 +14732,8 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
                 latentResolution[endStateIndex] = ENDSTATE;
             else
                 {
+                // If we don't force the original latent states, then we draw new ones probabilistically
+
                 // Get current character pattern
                 for (j=0; j<numCharsInCluster; j++)
                     currentCharacterPattern[i] = dataSubset[pos(i, j, numCharsInCluster)];
@@ -14668,38 +14741,47 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
                 // Get possible latent state(s)
                 compatibleLatentState = CheckCharacterPatternCompatibility(endStatePattern, currentCharacterPattern, numCharsInCluster);
 
+                if (forceOriginal == YES)
+                    selectedLatentState = origLatentPattern[i];
+
                 // Select latent states as appropriate
                 switch(compatibleLatentState)
                     {
                     case ENDSTATE:
                         // The underlying latent state could be 0 or i
                         // Determine if we pick the i-state
-                        rand = RandomNumber(seed);
-                        if (rand <= iProb)
+                        if (forceOriginal == NO)
                             {
-                            selectedLatentState = INTSTATE;
-                            *moveProb *= iProb;
+                            rand = log(RandomNumber(seed));
+                            if (rand <= iProb)
+                                selectedLatentState = INTSTATE;
+                            else
+                                selectedLatentState = ENDSTATE;
                             }
+
+                        // Now deal with the moveprob
+                        if (selectedLatentState == INTSTATE)
+                            *moveProb += iProb;
                         else
-                            {
-                            selectedLatentState = ENDSTATE;
-                            *moveProb *= 1.0 - iProb;
-                            }
+                            *moveProb += log(1.0 - emProb * pis[1]);
 
                     case OPPENDSTATE:
                         // The underlying latent state could be 1 or i
                         // Determine if we pick the i-state
-                        rand = RandomNumber(seed);
-                        if (rand <= iProb)
+                        if (forceOriginal == NO)
                             {
-                            selectedLatentState = INTSTATE;
-                            *moveProb *= iProb;
+                            rand = log(RandomNumber(seed));
+                            if (rand <= iProb)
+                                selectedLatentState = INTSTATE;
+                            else
+                                selectedLatentState = OPPENDSTATE;
                             }
+
+                        // Now deal with the moveprob
+                        if (selectedLatentState == INTSTATE)
+                            *moveProb += iProb;
                         else
-                            {
-                            selectedLatentState = OPPENDSTATE;
-                            *moveProb *= 1.0 - iProb;
-                            }
+                            *moveProb += log(1.0 - emProb * pis[1]);
 
                     case INTSTATE:
                         // The underlying latent state can only be i
@@ -14707,74 +14789,36 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
 
                     case TRIPOLY:
                         // The underlying state can be 0, i, or 1
-                        rand = RandomNumber(seed);
-                        if (rand <= 1.0/3.0)
-                            selectedLatentState = ENDSTATE;
-                        else if ((1.0/3.0 < rand) && (rand <= 2.0/3.0))
-                            selectedLatentState = INTSTATE;
-                        else
-                            selectedLatentState = OPPENDSTATE;
-                        *moveProb *= 1.0/3.0;
+                        // Should this be equal probabilities or equal to stationary state frequencies?
+                        if (forceOriginal == NO)
+                            {
+                            rand = RandomNumber(seed);
+                            if (rand <= 1.0/3.0)
+                                selectedLatentState = ENDSTATE;
+                            else if ((1.0/3.0 < rand) && (rand <= 2.0/3.0))
+                                selectedLatentState = INTSTATE;
+                            else
+                                selectedLatentState = OPPENDSTATE;
+                            }
+
+                        *moveProb += log(1.0/3.0);
                     }
+
+                // else // We force the original latent states
+                //     {
+                //     latentResolution[i] = origLatentPattern[i];
+                //     if ((origLatentPattern[i] == ENDSTATE) || (origLatentPattern[i] == OPPENDSTATE))
+                //         *moveProb *= 1.0 - iProb;
+                //     else
+                //         *moveProb *= iProb;
+                //     }
                 // Set latent state
                 latentResolution[i] = selectedLatentState;
                 }
-                // removed code goes here
-
             }
         }
 
     return (latentResolution);
-
-
-                // xorTotal = numCharsInCluster; // Keep track of non-missing pairs
-                // xorSum = 0;
-                // for (j=0; j<numCharsInCluster; j++)
-                //     {
-                //     currEntry = dataSubset[pos(i, j, numCharsInCluster)];
-                //     currXOR = currEntry ^ endStatePattern[j];
-                //     if ((currEntry >= MISSING) || (endStatePattern[j] >= MISSING))
-                //         xorTotal--;
-                //     else
-                //         xorSum += currXOR;
-                //     }
-                // if ((xorSum == xorTotal) || (xorSum == 0)) // All-opposite or all-equal case
-                //     {
-                //     // Need to determine if the end state or opposite end state is emitted by an i-state.
-                //     // First get the number of missing states in the new end state pattern.
-                //     numMissing = 0;
-                //     for (j=0; j<numCharsInCluster; j++)
-                //         if ((endStatePattern[j] == MISSING) || (endStatePattern[j] == GAP))
-                //             numMissing++;
-                //     // Now get the emission probability of an i-state emitting this new end state pattern
-                //     emProb = SmartExponentiation(0.5, numCharsInCluster - numMissing);
-                //     // Now get the overall probability of an i-state emitting the end or opposite end state
-                //     // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
-                //     pis[0] = pis[2] = 1.0 / (2.0 + rho);   // alpha
-                //     pis[1] = 1.0 - (2.0 * pis[0]);         // beta
-                //     // Finally get the overall probability
-                //     iProb = emProb * pis[1];
-                //     // Now determine if we pick the i-state
-                //     rand = RandomNumber(seed);
-                //     if ((forceEndState == YES) || (rand > iProb))
-                //         {
-                //         if (xorSum == xorTotal) // All-opposite case
-                //             latentResolution[i] = OPPENDSTATE;
-                //         else
-                //             latentResolution[i] = ENDSTATE;
-                //         *moveProb *= 1.0 - iProb;
-                //         }
-                //     else
-                //         {
-                //         latentResolution[i] = INTSTATE;
-                //         *moveProb *= iProb;
-                //         }
-                //     }
-                // else // i-state case
-                //     {
-                //     if ()
-                //     }
-                //     latentResolution[i] = INTSTATE;
 }
 
 

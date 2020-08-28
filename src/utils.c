@@ -14339,8 +14339,8 @@ int CheckCharacterPatternCompatibility(int *pattern, int *patternToCheck, int nu
 int *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, RandLong *seed)
 {
     int         i, j, *latentResolutionCounts, endStatePattern[numCharsInCluster],
-                currentCharacterPattern[numLocalTaxa], charCompat, numStaticIntStates=0,
-                numDiPolys=0, numTriPolys=0;
+                possibleLatentStates[numLocalTaxa], currentCharacterPattern[numLocalTaxa],
+                charCompat, numStaticIntStates=0, numDiPolys=0, numTriPolys=0;
 
 
     /* Allocate space for vector of latent resolution counts */
@@ -14481,7 +14481,7 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
 {
     int         i, j, *latentResolution, endStatePattern[numCharsInCluster],
                 numMissingEndState, currentCharacterPattern[numCharsInCluster],
-                compatibleLatentState, selectedLatentState=0;
+                compatibleLatentState, selectedLatentState;
     MrBFlt      emProb, iProb, jProb, pis[3], rand;
 
 

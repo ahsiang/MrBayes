@@ -16,7 +16,7 @@
  *  fredrik.ronquist@nrm.se
  *
  *  With important contributions by
- *
+ *©
  *  Paul van der Mark (paulvdm@sc.fsu.edu)
  *  Maxim Teslenko (maxkth@gmail.com)
  *  Chi Zhang (zhangchicool@gmail.com)
@@ -437,7 +437,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* Change allocation vector by picking random character and re-seating it */
 
-    int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector, rho,
+    int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
                 *rescaledAllocationVector, newNumTables, *updatedLatentMatrix;
     MrBFlt      alphaDir=0.0, probNewTable, randomNum;
@@ -6063,8 +6063,10 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     for (i=0; i<numLocalTaxa; i++)
         {
         if (origLatentStates[i] == ENDSTATE)
+            {
             origEndStateIdx = i;
             break;
+            }
         }
     if (origEndStateIdx == -1)
         origEndStateIdx = numLocalTaxa;

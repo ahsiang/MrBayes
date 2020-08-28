@@ -437,7 +437,7 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 {
     /* Change allocation vector by picking random character and re-seating it */
 
-    int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
+    int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector, rho,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
                 *rescaledAllocationVector, newNumTables, *updatedLatentMatrix;
     MrBFlt      alphaDir=0.0, probNewTable, randomNum;

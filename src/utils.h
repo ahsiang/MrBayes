@@ -292,15 +292,13 @@ MrBLFlt   SmartExponentiation(MrBLFlt base, MrBLFlt exp);
 int       GetNumLatentPatterns(int n, int d, int t);
 int       *FlipCharacterPattern(int *pattern, int numCharsInCluster);
 int       CheckCharacterPatternCompatibility(int *pattern, int *patternToCheck, int numCharsInCluster);
-// int       *CheckLatentCompatibility(int *dataSubset, int *origLatentPattern, int numCharsInCluster, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
 int       *GetClusterData(int *allocationVector, int cluster, int numCharsInCluster, int numChars, int compMatrixStart);
-MrBFlt    GetMoveProbability(int *dataSubset, int *latentPattern, int numCharsInCluster, int numMissing, MrBFlt rho);
+int       GetNumMissingChars(int numChars, int *pattern);
 MrBFlt    *NormalizeEmissionProbabilities(MrBFlt *emissionProbabilities);
 int       *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceOriginal);
 int       *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, RandLong *seed);
 int       *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);
 int       *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix);
-// int       *UpdateLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix, int newTableIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
 int       PrintLatentMatrixToScreen(int numChars, int *latentMatrix);
 
 #endif  /* __UTILS_H__ */

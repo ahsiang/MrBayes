@@ -689,7 +689,7 @@ int InitializeMrBayes (void)
 
     strcpy(defaultModel.mcModel, "No");                 /* use correlation model? (yes/no)              */
     strcpy(defaultModel.corrPr, "Uncorrelated");        /* prior for allocation vector and latent matrix initialization state */
-    strcpy(defaultModel.rhoCorrPr, "Exponential");          /* prior for inverse correlation factor         */
+    strcpy(defaultModel.rhoCorrPr, "Exponential");      /* prior for inverse correlation factor         */
     defaultModel.rhoCorrFix = 0.05;
     defaultModel.rhoCorrExp = 20.0;
     strcpy(defaultModel.alphaDirPr, "Exponential");     /* prior for DPMM scaling factor                */

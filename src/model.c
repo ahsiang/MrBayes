@@ -11307,33 +11307,51 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                         }
                     subValue[0] = maxTable; // This is numClusters
                     }
+                else if (p->paramId == ALLOCATIONVECTOR_ALLCORR)
+                    {
+                    for (j=0; j<m->numChars; j++)
+                        intValue[j] = 0;
+                    subValue[0] = 1;
+                    }
                 }
             else if (p->paramType == P_LATENTMATRIX)
             /* TODO: Multi-state support missing, currently binary only */
                 {
                 /* Fill in latentmatrix *************************************************************************************/
-                for (i=0; i<numLocalTaxa; i++)
+                if (p->paramId == LATENTMATRIX_ALLCORR)
                     {
-                    for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
+                    for (i=0; i<numLocalTaxa; i++)
                         {
-                        if (compMatrix[pos(i,j,numCompressedChars)] == 1)
-                            intValue[pos(i,c,m->numChars)] = ENDSTATE;
-                        else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
-                            intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
-                        else // If missing or gap, randomly select a latent state
+                        for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
+                                intValue[pos(i,c,m->numChars)] = INTSTATE;
+                        }
+                    }
+                else
+                    {
+                    for (i=0; i<numLocalTaxa; i++)
+                        {
+                        for (int c=0, j=m->compMatrixStart; j<m->compMatrixStop; c++, j++)
                             {
-                            intValue[pos(i,c,m->numChars)] = INTSTATE;
+                            if (compMatrix[pos(i,j,numCompressedChars)] == 1)
+                                intValue[pos(i,c,m->numChars)] = ENDSTATE;
+                            else if (compMatrix[pos(i,j,numCompressedChars)] == 2)
+                                intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
+                            else // If missing or gap, randomly select a latent state
+                                {
+                                intValue[pos(i,c,m->numChars)] = INTSTATE;
 
-                            // MrBFlt rand = RandomNumber(seed);
-                            // if (rand <= 1.0/3.0)
-                            //     intValue[pos(i,c,m->numChars)] = ENDSTATE;
-                            // else if ((rand <= 2.0/3.0) && (rand > 1.0/3.0))
-                            //     intValue[pos(i,c,m->numChars)] = INTSTATE;
-                            // else
-                            //     intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
+                                // MrBFlt rand = RandomNumber(seed);
+                                // if (rand <= 1.0/3.0)
+                                //     intValue[pos(i,c,m->numChars)] = ENDSTATE;
+                                // else if ((rand <= 2.0/3.0) && (rand > 1.0/3.0))
+                                //     intValue[pos(i,c,m->numChars)] = INTSTATE;
+                                // else
+                                //     intValue[pos(i,c,m->numChars)] = OPPENDSTATE;
+                                }
                             }
                         }
                     }
+
                 /* Copy over latent matrix to global initialLatentMatrix */
                 int numValues = m->numChars * numLocalTaxa;
                 initialLatentMatrix = (int *) SafeMalloc((size_t)numValues * sizeof(int));
@@ -15640,6 +15658,8 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             isSame = NO;
         else if (!strcmp(modelParams[part1].corrPr,"Correlated") && !strcmp(modelParams[part2].corrPr,"Correlated"))
             isSame = NO;
+        else if (!strcmp(modelParams[part1].corrPr,"All") && !strcmp(modelParams[part2].corrPr,"All"))
+            isSame = NO;
         else
             isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
 
@@ -15673,6 +15693,8 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         if (!strcmp(modelParams[part1].corrPr,"Uncorrelated") && !strcmp(modelParams[part2].corrPr,"Uncorrelated"))
             isSame = NO;
         else if (!strcmp(modelParams[part1].corrPr,"Correlated") && !strcmp(modelParams[part2].corrPr,"Correlated"))
+            isSame = NO;
+        else if (!strcmp(modelParams[part1].corrPr,"All") && !strcmp(modelParams[part2].corrPr,"All"))
             isSame = NO;
         else
             isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
@@ -19070,8 +19092,10 @@ int SetModelParams (void)
             /* find the parameter x prior type */
             if (!strcmp(mp->corrPr,"Correlated"))
                 p->paramId = ALLOCATIONVECTOR_CORR;
-            else
+            else if (!strcmp(mp->corrPr,"Uncorrelated"))
                 p->paramId = ALLOCATIONVECTOR_UNCORR;
+            else if (!strcmp(mp->corrPr,"All"))
+                p->paramId = ALLOCATIONVECTOR_ALLCORR;
 
             p->printParam = YES;
 
@@ -19097,7 +19121,10 @@ int SetModelParams (void)
             SafeStrcat(&p->name, partString);
 
             /* find the parameter x prior type */
-            p->paramId = LATENTMATRIX;
+            if (!strcmp(mp->corrPr,"All"))
+                p->paramId = LATENTMATRIX_ALLCORR;
+            else
+                p->paramId = LATENTMATRIX;
 
             p->printParam = YES;
 
@@ -21292,7 +21319,8 @@ void SetUpMoveTypes (void)
     mt->shortName = "SwitchTable";
     mt->applicableTo[0] = ALLOCATIONVECTOR_UNCORR;
     mt->applicableTo[1] = ALLOCATIONVECTOR_CORR;
-    mt->nApplicable = 2;
+    mt->applicableTo[2] = ALLOCATIONVECTOR_ALLCORR;
+    mt->nApplicable = 3;
     mt->moveFxn = &Move_Allocation;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 0;
@@ -21731,7 +21759,8 @@ void SetUpMoveTypes (void)
     mt->name = "Switch intemediate latent state to end state";
     mt->shortName = "SwitchLatent";
     mt->applicableTo[0] = LATENTMATRIX;
-    mt->nApplicable = 1;
+    mt->applicableTo[1] = LATENTMATRIX_ALLCORR;
+    mt->nApplicable = 2;
     mt->moveFxn = &Move_Latent;
     mt->relProposalProb = 1.0;
     mt->numTuningParams = 0;
@@ -23433,8 +23462,10 @@ int ShowModel (void)
                                   MrBayesPrint ("%s                     Alphadir has an Exponential(%1.2lf) prior\n", spacer, modelParams[i].alphaDirExp);
                               if (!strcmp(modelParams[i].corrPr,"Uncorrelated"))
                                   MrBayesPrint ("%s                     Correlation model is initialized with all characters uncorrelated\n", spacer);
-                              else
+                              else if (!strcmp(modelParams[i].corrPr,"Correlated"))
                                   MrBayesPrint ("%s                     Correlation model is initialized with maximum correlation\n", spacer);
+                              else if (!strcmp(modelParams[i].corrPr,"All"))
+                                  MrBayesPrint ("%s                     Correlation model is initialized with all characters in one cluster\n", spacer);
                               }
                           else
                               MrBayesPrint ("%s         # States  = Variable, up to 10\n", spacer);
@@ -24219,15 +24250,19 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             {
             if (!strcmp(mp->corrPr,"Uncorrelated"))
                 MrBayesPrint ("%s            Prior      = Uncorrelated\n", spacer);
-            else
+            else if (!strcmp(mp->corrPr,"Correlated"))
                 MrBayesPrint ("%s            Prior      = Correlated\n", spacer);
+            else if (!strcmp(mp->corrPr,"All"))
+                MrBayesPrint ("%s            Prior      = All\n", spacer);
             }
         else if (j == P_LATENTMATRIX)
             {
             if (!strcmp(mp->corrPr,"Uncorrelated"))
                 MrBayesPrint ("%s            Prior      = Uncorrelated\n", spacer);
-            else
+            else if (!strcmp(mp->corrPr,"Correlated"))
                 MrBayesPrint ("%s            Prior      = Correlated\n", spacer);
+            else if (!strcmp(mp->corrPr,"All"))
+                MrBayesPrint ("%s            Prior      = All\n", spacer);
             }
         else if (j == P_OMEGA)
             {

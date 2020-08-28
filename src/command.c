@@ -11733,11 +11733,13 @@ int GetUserHelp (char *helpTkn)
                 MrBayesPrint ("\n");
 
             /* TODO: What should be printed? */
-            MrBayesPrint ("   Corrpr           Uncorrelated/Correlated      %s", mp->corrPr);
+            MrBayesPrint ("   Corrpr           Uncorrelated/Correlated/All  %s", mp->corrPr);
             if (!strcmp(mp->corrPr, "Uncorrelated"))
-                MrBayesPrint ("");
+                MrBayesPrint ("Uncorrelated\n");
             else if (!strcmp(mp->corrPr,"Correlated"))
-                MrBayesPrint ("");
+                MrBayesPrint ("Correlated\n");
+            else if (!strcmp(mp->corrPr,"All"))
+                MrBayesPrint ("All\n");
             else
                 MrBayesPrint ("\n");
 
@@ -14707,7 +14709,7 @@ void SetUpParms (void)
     PARAM (278, "Mcmodel",        DoLsetParm,        "Yes|No|\0");
     PARAM (279, "Rhocorrpr",      DoPrsetParm,       "Exponential|Fixed|\0");
     PARAM (280, "Alphadirpr",     DoPrsetParm,       "Exponential|Fixed|\0");
-    PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|\0");
+    PARAM (281, "Corrpr",         DoPrsetParm,       "Correlated|Uncorrelated|All|\0");
     //PARAM (282, "Filename",       DoSumaParm,        "\0");
     //PARAM (283, "Burnin",         DoSumaParm,        "\0");
     //PARAM (284, "Relburnin",      DoSumaParm,        "Yes|No|\0");

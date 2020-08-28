@@ -5940,7 +5940,8 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
                 *latentResolution, newLatentPattern[numLocalTaxa], newLatentVectorIdx=0,
                 origEndStateIdx=-1;
     MrBFlt      rho, moveProbForwards, moveProbBackwards, rand, cProbsForwards[numLocalTaxa+1],
-                *forwardNormProbs, *backwardsNormProbs, *forwardMoveProbs, *backwardsMoveProbs;
+                *forwardNormProbs, *backwardsNormProbs, *forwardMoveProbs, *backwardsMoveProbs,
+                emissionProb;
     ModelInfo   *m;
 
     /* Get model settings */
@@ -5974,9 +5975,7 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     data = GetClusterData(allocationVector, randClustIndex, numCharsInCluster, m->numChars, m->compMatrixStart);
 
     /* Get number of missing characters in the relevant data */
-    for (i=0; i<numCharsInCluster * numLocalTaxa; i++)
-        if ((data[i] == MISSING) || (data[i] == GAP))
-            numMissing++;
+    numMissing = GetNumMissingChars(numCharsInCluster * numLocalTaxa, data);
 
     /* Get emission probabilities for every end state possibility */
     int latentResolutions[(numLocalTaxa+1) * numLocalTaxa]; // This holds all the sampled latent resolutions
@@ -6003,8 +6002,18 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
         for (j=0; j<numLocalTaxa; j++)
             latentResolutions[pos(j, i, numLocalTaxa+1)] = latentResolution[j];
 
-        // Copy move prob to data structure
-        forwardMoveProbs[i] = moveProbForwards;
+        // Get emission probability of latent resolution
+        emissionProb = LnProbEmission(latentResolution, numCharsInCluster, numMissing);
+
+        // Add move prob to emission probability and then save to data structure
+        forwardMoveProbs[i] = moveProbForwards + emissionProb;
+
+        // printf("latent[%d]: ",i);
+        // for (j=0; j<numLocalTaxa; j++)
+        //     printf("%c ",WhichLatent(latentResolution[j]));
+        // printf("\n");
+        //
+        // printf("moveProb: %f\n",exp(forwardMoveProbs[i]));
 
         // Free allocation
         free (latentResolution);
@@ -6018,9 +6027,9 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     for (i=0; i<numLocalTaxa+1; i++)
         {
         if (i == 0)
-            cProbsForwards[i] = forwardMoveProbs[i];
+            cProbsForwards[i] = forwardNormProbs[i];
         else
-            cProbsForwards[i] = forwardMoveProbs[i] + cProbsForwards[i-1];
+            cProbsForwards[i] = forwardNormProbs[i] + cProbsForwards[i-1];
         }
 
     /* Randomly select new latent resolution */
@@ -6090,9 +6099,11 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
 
     // Now we can calculate proposal ratio
     // Forward move
-    *lnProposalRatio += log(1.0/numClusters) + log(forwardNormProbs[newLatentVectorIdx]);
+    //*lnProposalRatio += log(1.0/numClusters) + log(forwardNormProbs[newLatentVectorIdx]);
     // Backwards move
-    *lnProposalRatio -= log(1.0/numClusters) + log(backwardsNormProbs[origEndStateIdx]);
+    //*lnProposalRatio -= log(1.0/numClusters) + log(backwardsNormProbs[origEndStateIdx]);
+
+    *lnProposalRatio = 100.0;
 
     /* Copy over states from oldLatentMatrix to newLatentMatrix, replacing columns corresponding to selected cluster */
     for (i=0; i<numLocalTaxa; i++)
@@ -6105,6 +6116,13 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
                 newLatentMatrix[pos(i, j, m->numChars)] = oldLatentMatrix[pos(i, j, m->numChars)];
             }
         }
+
+
+    // for (i=0; i<numLocalTaxa+1; i++)
+    //     printf("%f ",forwardNormProbs[i]);
+    // printf("\n");
+    //
+    // getchar();
 
     /* Copy back newLatentMatrix */
     *GetParamIntVals(param, chain, state[chain]) = *newLatentMatrix;

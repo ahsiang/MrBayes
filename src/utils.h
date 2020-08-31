@@ -298,7 +298,9 @@ MrBFlt    *NormalizeEmissionProbabilities(MrBFlt *emissionProbabilities);
 int       *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceOriginal);
 int       *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, RandLong *seed);
 int       *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);
-int       *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix);
+int       *DrawNewLatentMatrix(int *oldAllocationVector, int *newAllocationVector, int numChars, int compMatrixStart, int srcTable, int dstTable, int *oldLatentMatrix, MrBFlt rho, RandLong *seed, MrBFlt moveProb);
 int       PrintLatentMatrixToScreen(int numChars, int *latentMatrix);
+int       *DrawLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, int numMissing, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
+
 
 #endif  /* __UTILS_H__ */

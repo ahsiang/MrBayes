@@ -14676,34 +14676,60 @@ int *RescaleAllocationVector(int *allocationVector, int numChar, int newTable, i
 
 /*---------------------------------------------------------------------------------
 |
-|   DrawNewLatentPatterns
+|   DrawNewLatentMatrix
 |
-|   Draws new latent patterns that match data pattern for new clusters.
+|   Draws new latent matrix that match data pattern for new clusters.
 |
 ---------------------------------------------------------------------------------*/
-int *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatrixStart, int newTable, int *oldLatentMatrix)
+int *DrawNewLatentMatrix(int *oldAllocationVector, int *newAllocationVector, int numChars, int compMatrixStart, int srcTable, int dstTable, int *oldLatentMatrix, MrBFlt rho, RandLong *seed, MrBFlt moveProb)
 {
-    int         i, j, numCharsInCluster=0, *data, *finalLatentMatrix, numValues;
+    int         i, j, numCharsInClusterSrc=0, numCharsInClusterDst=0, *dataSrc, *dataDst,
+                numMissingSrc, numMissingDst, *newLatentStatesSrc, *newLatentStatesDst,
+                *finalLatentMatrix, numValues;
 
-    /* Get number of characters in newTable cluster */
+    /* Source cluster */
+    /* Get number of characters in source cluster */
     for (i=0; i<numChars; i++)
-        if (newAllocationVector[i] == newTable)
-            numCharsInCluster++;
+        if (newAllocationVector[i] == srcTable)
+            numCharsInClusterSrc++;
+
+    if (numCharsInClusterSrc > 0) // There is a chance that the source cluster has disappeared
+    {
+        /* Get data from characters that belong to the newTable cluster */
+        dataSrc = GetClusterData(newAllocationVector, dstTable, numCharsInClusterSrc, numChars, compMatrixStart);
+
+        /* Get number of missing characters */
+        numMissingSrc = GetNumMissingChars(numCharsInClusterSrc*numLocalTaxa, dataSrc);
+
+        /* Set new latent states */
+        newLatentStatesSrc = DrawLatentPattern(dataSrc, NULL, numCharsInClusterSrc, numMissingSrc, rho, seed, &moveProb);
+    }
+
+    /* Destination cluster */
+    /* Get number of characters in destination cluster*/
+    for (i=0; i<numChars; i++)
+        if (newAllocationVector[i] == dstTable)
+            numCharsInClusterDst++;
 
     /* Get data from characters that belong to the newTable cluster */
-    data = GetClusterData(newAllocationVector, newTable, numCharsInCluster, numChars, compMatrixStart);
+    dataDst = GetClusterData(newAllocationVector, dstTable, numCharsInClusterDst, numChars, compMatrixStart);
+
+    /* Get number of missing characters */
+    numMissingDst = GetNumMissingChars(numCharsInClusterDst*numLocalTaxa, dataDst);
 
     /* Set new latent states */
-    int newLatentStates[numChars];
-    for (i=0; i<numChars; i++)
-        {
-        if (data[i] == 1)
-            newLatentStates[i] = ENDSTATE;
-        else if (data[i] == 2)
-            newLatentStates[i] = OPPENDSTATE;
-        else
-            newLatentStates[i] = INTSTATE;
-        }
+    newLatentStatesDst = DrawLatentPattern(dataDst, NULL, numCharsInClusterDst, numMissingDst, rho, seed, &moveProb);
+
+    // int newLatentStates[numChars];
+    // for (i=0; i<numChars; i++)
+    //     {
+    //     if (data[i] == 1)
+    //         newLatentStates[i] = ENDSTATE;
+    //     else if (data[i] == 2)
+    //         newLatentStates[i] = OPPENDSTATE;
+    //     else
+    //         newLatentStates[i] = INTSTATE;
+    //     }
 
     /* Initialize data structure to hold new latent matrix */
     numValues = numChars * numLocalTaxa;
@@ -14716,19 +14742,126 @@ int *DrawNewLatentPatterns(int *newAllocationVector, int numChars, int compMatri
         {
         for (j=0; j<numChars; j++)
             {
-            if (newAllocationVector[j] == newTable)
-                finalLatentMatrix[pos(i, j, numChars)] = newLatentStates[i];
+            if (newAllocationVector[j] == srcTable)
+                finalLatentMatrix[pos(i, j, numChars)] = newLatentStatesSrc[i];
+            else if (newAllocationVector[j] == dstTable)
+                finalLatentMatrix[pos(i, j, numChars)] = newLatentStatesDst[i];
             else
                 finalLatentMatrix[pos(i, j, numChars)] = oldLatentMatrix[pos(i, j, numChars)];
             }
         }
 
     /* Free allocations */
-    free (data);
-    data = NULL;
+    if (numCharsInClusterSrc > 0)
+    {
+        free (dataSrc);
+        dataSrc = NULL;
+
+        free (newLatentStatesSrc);
+        newLatentStatesSrc = NULL;
+    }
+
+    free (dataDst);
+    dataDst = NULL;
+
+    free (newLatentStatesDst);
+    newLatentStatesDst = NULL;
+
 
     return (finalLatentMatrix);
+
 }
+
+
+/*---------------------------------------------------------------------------------
+|
+|  DrawLatentPattern
+|
+|  Takes a set of data associated with a given cluster and probabilistically
+|  draws a latent resolution
+|
+---------------------------------------------------------------------------------*/
+int *DrawLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, int numMissing, MrBFlt rho, RandLong *seed, MrBFlt *moveProb)
+{
+    int         i, j, idx, *latentResolution, *newLatentPattern,
+                newLatentVectorIdx=-1;
+    MrBFlt      moveProbs[numLocalTaxa+1], latentResolutions[(numLocalTaxa+1) * numLocalTaxa],
+                *normalizedProbs, cumulativeProbs[numLocalTaxa+1], rand, currentMoveProb,
+                allMoveProbs[numLocalTaxa+1];
+
+    // Allocate space for final latent resolution
+    newLatentPattern = (int *) SafeMalloc(numLocalTaxa * sizeof(int));
+    if (!newLatentPattern)
+        printf("ERROR: Problem with allocation in DrawLatentPattern\n");
+
+    // Loop through all possible end states
+    for (i=0; i<numLocalTaxa+1; i++)
+        {
+        // Reset currentMoveProb
+        currentMoveProb = 0.0;
+
+        // Get current index
+        if (i == numLocalTaxa) // Last entry is the all-i-state case
+            idx = -1;
+        else // Current data pattern is the end state
+            idx = i;
+
+        // Get latent resolution
+        latentResolution = ConvertLatentStates(data, origLatentStates, numCharsInCluster, idx, rho, seed, &currentMoveProb, NO);
+
+        // Copy latent resolution to data structure
+        for (j=0; j<numLocalTaxa; j++)
+            latentResolutions[pos(j, i, numLocalTaxa+1)] = latentResolution[j];
+
+        // Get emission probability of latent resolution and then save to data structure
+        moveProbs[i] = LnProbEmission(latentResolution, numCharsInCluster, numMissing);
+
+        // Save currentMoveProb
+        allMoveProbs[i] = currentMoveProb;
+
+        // Free allocation
+        free (latentResolution);
+        latentResolution = NULL;
+        }
+
+    /* Normalize emission probabilities */
+    normalizedProbs = NormalizeEmissionProbabilities(allMoveProbs);
+
+    /* Convert to cumulative probabilities */
+    for (i=0; i<numLocalTaxa+1; i++)
+        {
+        if (i == 0)
+            cumulativeProbs[i] = normalizedProbs[i];
+        else
+            cumulativeProbs[i] = normalizedProbs[i] + cumulativeProbs[i-1];
+        }
+
+    /* Randomly select new latent resolution */
+    rand = RandomNumber(seed);
+    for (i=0; i<numLocalTaxa+1; i++)
+        {
+        if (rand <= cumulativeProbs[i])
+            {
+            newLatentVectorIdx = i;
+            break;
+            }
+        }
+
+    /* Get new latent resolution pattern */
+    for (i=0; i<numLocalTaxa; i++)
+        newLatentPattern[i] = latentResolutions[pos(i, newLatentVectorIdx, numLocalTaxa+1)];
+
+    /* Set move prob for the selected latent pattern */
+    *moveProb = normalizedProbs[newLatentVectorIdx];
+
+    /* Free allocations */
+    free (normalizedProbs);
+    normalizedProbs = NULL;
+
+    return newLatentPattern;
+
+}
+
 
 
 /*---------------------------------------------------------------------------------
@@ -14742,7 +14875,7 @@ int GetNumMissingChars(int numChars, int *pattern)
 {
     int         i, numMissing=0;
 
-    for (i=0; i==numChars; i++)
+    for (i=0; i<=numChars; i++)
         {
         if ((pattern[i] == MISSING) || (pattern[i] == GAP))
             numMissing++;

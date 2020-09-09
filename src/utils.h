@@ -298,9 +298,11 @@ MrBFlt    *NormalizeEmissionProbabilities(MrBFlt *emissionProbabilities);
 int       *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, MrBFlt rho, RandLong *seed, MrBFlt *moveProb, int forceOriginal);
 int       *CountLatentResolutions(int *dataSubset, int *origLatentPattern, int numCharsInCluster, int endStateIndex, RandLong *seed);
 int       *RescaleAllocationVector(int *allocationVector, int numChars, int newTable, int oldTable);
-int       *DrawNewLatentMatrix(int *oldAllocationVector, int *newAllocationVector, int numChars, int compMatrixStart, int srcTable, int dstTable, int *oldLatentMatrix, MrBFlt rho, RandLong *seed, MrBFlt moveProb);
+int       *DrawNewLatentMatrix(int *oldAllocationVector, int *newAllocationVector, int numChars, int compMatrixStart, int srcTable, int dstTable, int *oldLatentMatrix, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
 int       PrintLatentMatrixToScreen(int numChars, int *latentMatrix);
 int       *DrawLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, int numMissing, MrBFlt rho, RandLong *seed, MrBFlt *moveProb);
+MrBFlt    ForceLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, int numMissing, MrBFlt rho, RandLong *seed);
+MrBFlt    ForceLatentPatternWithChangedData(int *oldAllocationVector, int *oldLatentMatrix, int numChars, int compMatrixStart, int oldTable, MrBFlt rho, RandLong *seed);
 
 
 #endif  /* __UTILS_H__ */

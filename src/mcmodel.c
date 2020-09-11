@@ -49,8 +49,6 @@
  #define MAX(a,b)                            (((a) > (b)) ? (a) : (b))
  #endif
 
- /* local prototypes */
- MrBLFlt Combination (int n, int k);
 
 
  /*---------------------------------------------------------------------------------
@@ -544,15 +542,6 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
             endStatePattern[i] = dataSubset[pos(endStateIndex, i, numCharsInCluster)];
         }
 
-    // if (numCharsInCluster > 1)
-    // {
-    //     printf("end state index: %d\n", endStateIndex);
-    //     printf("end state pattern: ");
-    //     for (i=0; i<numCharsInCluster; i++)
-    //         printf("%c ",WhichStand(endStatePattern[i]));
-    //     printf("\n");
-    // }
-
     /* We need to determine the probability of end state/opposite end state patterns being emitted by an i-state. */
     // First get the number of missing states in the end state pattern.
     numMissingEndState = GetNumMissingChars(numCharsInCluster, endStatePattern);
@@ -560,12 +549,6 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
     // Now get the emission probability of an i-state emitting this new end state pattern
     MrBFlt power = numCharsInCluster - numMissingEndState;
     emProb = SmartExponentiation(0.5, power);
-
-    // if (numCharsInCluster > 1)
-    // {
-    //     printf("num missing end state: %d\n",numMissingEndState);
-    //     printf("em prob: %f\n",emProb);
-    // }
 
     // Now get the overall probability of an i-state emitting the end or opposite end state
     // (i.e., emProb * stationary state frequency of the i-state). First compute pis:
@@ -576,12 +559,6 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
 
     // Also get the probability of the end or opposite end state emitting the pattern
     jProb = log(1.0 - (emProb * pis[1]));
-
-    // if (numCharsInCluster > 1)
-    // {
-    //     printf("iProb: %f\n",iProb);
-    //     printf("jProb: %f\n",jProb);
-    // }
 
     /* All intermediate case */
     if (endStateIndex < 0)
@@ -613,21 +590,8 @@ int *ConvertLatentStates(int *dataSubset, int *origLatentPattern, int numCharsIn
                 for (j=0; j<numCharsInCluster; j++)
                     currentCharacterPattern[j] = dataSubset[pos(i, j, numCharsInCluster)];
 
-                // if (numCharsInCluster > 2)
-                // {
-                //     printf("current char pattern: ");
-                //     for (j=0; j<numCharsInCluster; j++)
-                //         printf("%c ",WhichStand(currentCharacterPattern[j]));
-                //     printf("\n");
-                // }
-
                 // Get possible latent state(s)
                 compatibleLatentState = CheckCharacterPatternCompatibility(endStatePattern, currentCharacterPattern, numCharsInCluster);
-                //
-                // if (numCharsInCluster > 2)
-                // {
-                //     printf("compat: %d\n",compatibleLatentState);
-                // }
 
                 if (forceOriginal == YES)
                     selectedLatentState = origLatentPattern[i];
@@ -782,24 +746,9 @@ int *DrawNewLatentMatrix(int *oldAllocationVector, int *newAllocationVector, int
         /* Set new latent states */
         newLatentStatesSrc = DrawLatentPattern(dataSrc, NULL, numCharsInClusterSrc, numMissingSrc, rho, seed, moveProbSrc);
 
-        // printf("src data:\n");
-        // for (i=0; i<numLocalTaxa; i++)
-        // {
-        //     for (int j=0; j<numCharsInClusterSrc; j++)
-        //         printf("%c ", WhichStand(dataSrc[pos(i,j,numCharsInClusterSrc)]));
-        //     printf("\n");
-        // }
-        // printf("\n");
-        //
-        // printf("new latent states src: ");
-        // for (i=0; i<numLocalTaxa; i++)
-        //     printf("%c ",WhichLatent(newLatentStatesSrc[i]));
-        // printf("\n");
-        //
-        // printf("move prob src: %f\n",*moveProbSrc);
-        //
-        // free (dataSrc);
-        // dataSrc = NULL;
+        /* Free allocation */
+        free (dataSrc);
+        dataSrc = NULL;
     }
     else
     {
@@ -815,30 +764,11 @@ int *DrawNewLatentMatrix(int *oldAllocationVector, int *newAllocationVector, int
     /* Get data from characters that belong to the newTable cluster */
     dataDst = GetClusterData(newAllocationVector, dstTable, numCharsInClusterDst, numChars, compMatrixStart);
 
-    // printf("data dst: \n");
-    // for (i=0; i<numLocalTaxa; i++)
-    // {
-    //     for (j=0; j<numCharsInClusterDst; j++)
-    //         printf("%c ",WhichStand(dataDst[pos(i,j,numCharsInClusterDst)]));
-    //     printf("\n");
-    // }
-    // printf("\n");
-
-
     /* Get number of missing characters */
     numMissingDst = GetNumMissingChars(numCharsInClusterDst*numLocalTaxa, dataDst);
 
-
     /* Set new latent states */
     newLatentStatesDst = DrawLatentPattern(dataDst, NULL, numCharsInClusterDst, numMissingDst, rho, seed, moveProbDst);
-
-    // printf("new latent states dst: ");
-    // for (i=0; i<numLocalTaxa; i++)
-    //     printf("%c ",WhichLatent(newLatentStatesDst[i]));
-    // printf("\n");
-    //
-    // printf("move prob dst: %f\n",*moveProbDst);
-
 
     /* Initialize data structure to hold new latent matrix */
     numValues = numChars * numLocalTaxa;
@@ -933,15 +863,6 @@ int *DrawLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, 
     /* Normalize emission probabilities */
     normalizedProbs = NormalizeEmissionProbabilities(allMoveProbs);
 
-    // printf("latent resolutions: \n");
-    // for (i=0; i<numLocalTaxa; i++)
-    // {
-    //     for (j=0; j<numLocalTaxa+1; j++)
-    //         printf("%c ",WhichLatent(latentResolutions[pos(i,j,numLocalTaxa+1)]));
-    //     printf("\n");
-    // }
-    // printf("\n");
-
     /* Convert to cumulative probabilities */
     for (i=0; i<numLocalTaxa+1; i++)
         {
@@ -950,11 +871,6 @@ int *DrawLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, 
         else
             cumulativeProbs[i] = normalizedProbs[i] + cumulativeProbs[i-1];
         }
-
-    // printf("cumulative probs: ");
-    // for (i=0; i<numLocalTaxa+1; i++)
-    //     printf("%f ",cumulativeProbs[i]);
-    // printf("\n");
 
     /* Randomly select new latent resolution */
     rand = RandomNumber(seed);
@@ -967,25 +883,13 @@ int *DrawLatentPattern(int *data, int *origLatentStates, int numCharsInCluster, 
             }
         }
 
-    // printf("new latent vector idx: %d\n",newLatentVectorIdx);
-
     /* Get new latent resolution pattern */
     for (i=0; i<numLocalTaxa; i++)
         newLatentPattern[i] = latentResolutions[pos(i, newLatentVectorIdx, numLocalTaxa+1)];
 
-    // printf("new latent pattern: ");
-    // for (i=0; i<numLocalTaxa; i++)
-    //     printf("%c ",WhichLatent(newLatentPattern[i]));
-    // printf("\n");
-
     /* Set move prob for the selected latent pattern */
     /* Note that this is NOT a log prob! */
     *moveProb = normalizedProbs[newLatentVectorIdx];
-    //
-    // printf("move prob (correct): %f\n",normalizedProbs[newLatentVectorIdx]);
-    // printf("move prob: %f\n",*moveProb);
-    // //
-    // getchar();
 
     /* Free allocations */
 
@@ -1012,21 +916,6 @@ MrBFlt ForceLatentPattern(int *data, int *origLatentStates, int numCharsInCluste
     int         i, idx, origEndStateIdx=-1, *latentResolution;
     MrBFlt      backwardsMoveProbs[numLocalTaxa+1], backwardsSecProb, backwardsEmProb,
                 *backwardsNormProbs, forcedProb;
-
-    // printf("----------------------\norig latent resolution: ");
-    // for (int j=0; j<numLocalTaxa; j++)
-    //     printf("%c ", WhichLatent(origLatentStates[j]));
-    // printf("\n\n");
-    //
-    // printf("data:\n");
-    // for (int j=0; j<numLocalTaxa; j++)
-    // {
-    //     for (int k=0; k<numCharsInCluster; k++)
-    //         printf("%c ",WhichStand(data[pos(j,k,numCharsInCluster)]));
-    //     printf("\n");
-    // }
-    //
-    // printf("\n----------------------\n");
 
     // Get end state index in original latent pattern
     for (i=0; i<numLocalTaxa; i++)
@@ -1059,14 +948,6 @@ MrBFlt ForceLatentPattern(int *data, int *origLatentStates, int numCharsInCluste
 
         backwardsEmProb = LnProbEmission(latentResolution, numCharsInCluster, numMissing);
 
-        // printf("i: %d\n",i);
-        // printf("latent resolution: ");
-        // for (int j=0; j<numLocalTaxa; j++)
-        //     printf("%c ", WhichLatent(latentResolution[j]));
-        // printf("\n");
-        // printf("backwards em prob: %f\n",backwardsEmProb);
-        // printf("backwards sec prob: %f\n",backwardsSecProb);
-
         backwardsMoveProbs[i] = backwardsSecProb + backwardsEmProb;
 
         // Free allocations
@@ -1080,10 +961,6 @@ MrBFlt ForceLatentPattern(int *data, int *origLatentStates, int numCharsInCluste
 
     /* Get move probability for forced latent resolution */
     forcedProb = backwardsNormProbs[origEndStateIdx];
-
-    // printf("forced prob: %f\n\n",forcedProb);
-    // getchar();
-
 
     /* Free allocations */
     free (backwardsNormProbs);
@@ -1131,27 +1008,9 @@ MrBFlt ForceLatentPatternWithChangedData(int *oldAllocationVector, int *newAlloc
     // Finally get the move prob associated with the original latent states
     backwardsMoveProbSrc = ForceLatentPattern(dataSrc, origLatentStatesSrc, numCharsInClusterSrc, numMissingSrc, rho, seed);
 
-    //
-    // printf("src data:\n");
-    // for (i=0; i<numLocalTaxa; i++)
-    // {
-    //     for (int j=0; j<numCharsInClusterSrc; j++)
-    //         printf("%c ", WhichStand(dataSrc[pos(i,j,numCharsInClusterSrc)]));
-    //     printf("\n");
-    // }
-    // printf("\n");
-    //
-    // printf("orig latent states src: ");
-    // for (i=0; i<numLocalTaxa; i++)
-    //     printf("%c ",WhichLatent(origLatentStatesSrc[i]));
-    // printf("\n");
-    //
-    // printf("backwards move prob src: %f\n",backwardsMoveProbSrc);
-
     // Free allocations
     free (dataSrc);
     dataSrc = NULL;
-
 
     // Get number of characters in destination cluster and index of destination latent pattern after move
     for (i=0; i<numChars; i++)
@@ -1176,22 +1035,6 @@ MrBFlt ForceLatentPatternWithChangedData(int *oldAllocationVector, int *newAlloc
 
         // Finally get the move prob associated with the original latent states
         backwardsMoveProbDst = ForceLatentPattern(dataDst, origLatentStatesDst, numCharsInClusterDst, numMissingDst, rho, seed);
-
-        // printf("dst data:\n");
-        // for (i=0; i<numLocalTaxa; i++)
-        // {
-        //     for (int j=0; j<numCharsInClusterDst; j++)
-        //         printf("%c ", WhichStand(dataDst[pos(i,j,numCharsInClusterDst)]));
-        //     printf("\n");
-        // }
-        // printf("\n");
-        //
-        // printf("orig latent states dst: ");
-        // for (i=0; i<numLocalTaxa; i++)
-        //     printf("%c ",WhichLatent(origLatentStatesDst[i]));
-        // printf("\n");
-        //
-        // printf("backwards move prob dst: %f\n",backwardsMoveProbDst);
 
         // Free allocations
         free (dataDst);

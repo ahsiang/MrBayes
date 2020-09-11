@@ -43,6 +43,7 @@
 #include "proposal.h"
 #include "utils.h"
 #include "likelihood.h"
+#include "mcmodel.h"
 
 /* debugging compiler statements */
 #undef  DEBUG_LOCAL
@@ -439,10 +440,9 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
 
     int         i, j, randCharIndex, oldTable, numTables, *oldAllocationVector,
                 *newLatentMatrix, newTable, *oldLatentMatrix, *newAllocationVector,
-                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix, *dataSrc,
-                numCharsInClusterSrc=0, latentIdx=-1, numMissingSrc, origLatentStates[numLocalTaxa];
-    MrBFlt      rho, alphaDir=0.0, probNewTable, randomNum, moveProb=0.0, probForwardMove,
-                probBackwardsMove, backwardsMoveProb;
+                *rescaledAllocationVector, newNumTables, *updatedLatentMatrix;
+    MrBFlt      rho, alphaDir=0.0, probNewTable, randomNum, moveProbSrc=0.0,
+                moveProbDst=0.0, backwardsMoveProb;
     ModelInfo   *m;
 
     /* Get model settings */
@@ -469,16 +469,17 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* Pick random character from old allocation vector */
     randCharIndex = (int) (RandomNumber(seed) * m->numChars);
 
-    // printf("old alloc: ");
-    // for (i=0; i<m->numChars; i++)
-    //     printf("%d ",oldAllocationVector[i]);
-    // printf("\n");
-
-    // printf("rand char idx: %d\n",randCharIndex);
 
     /* Get identity of table that randomly selected character is seated at */
     oldTable = oldAllocationVector[randCharIndex];
 
+    //
+    // printf("old alloc: ");
+    // for (i=0; i<m->numChars; i++)
+    //     printf("%d ",oldAllocationVector[i]);
+    // printf("\n");
+    //
+    // printf("rand char idx: %d\n",randCharIndex);
     // printf("old table: %d\n", oldTable);
 
     /* Get number of characters seated at each table, excluding the selected character */
@@ -541,12 +542,12 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
             newNumTables++;
 
     /* Draw new latent matrix */
-    // // We only need to do this if the source and destination tables are different
-    // // Remember that you can't use the rescaled version to do this!
-    // int srcTable = oldTable;
-    // int dstTable = newTable;
-    // if (srcTable != dstTable)
-    updatedLatentMatrix = DrawNewLatentMatrix(oldAllocationVector, newAllocationVector, m->numChars, m->compMatrixStart, oldTable, newTable, oldLatentMatrix, rho, seed, &moveProb);
+
+
+    // printf("forwards move:\n");
+    updatedLatentMatrix = DrawNewLatentMatrix(oldAllocationVector, newAllocationVector, m->numChars, m->compMatrixStart, oldTable, newTable, oldLatentMatrix, rho, seed, &moveProbSrc, &moveProbDst);
+
+
 
     // printf("updated latent matrix: \n");
     // PrintLatentMatrixToScreen(m->numChars, updatedLatentMatrix);
@@ -558,18 +559,23 @@ int Move_Allocation (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRat
     /* We don't need to get the prior ratio here because it's built into the likelihood ratio */
 
     /* Get the backwards move probability */
-    backwardsMoveProb = ForceLatentPatternWithChangedData(oldAllocationVector, oldLatentMatrix, m->numChars, m->compMatrixStart, oldTable, rho, seed);
+    // This returns a log prob
 
-    // printf("backwards move prob: %f\n", backwardsMoveProb);
-    // printf("forwards move prob: %f\n", moveProb);
-    // printf("hastings ratio: %f\n",moveProb/backwardsMoveProb);
+    // printf("backwards move:\n");
+    backwardsMoveProb = ForceLatentPatternWithChangedData(oldAllocationVector, newAllocationVector, oldLatentMatrix, updatedLatentMatrix, m->numChars, m->compMatrixStart, oldTable, newTable, rho, seed);
+
+    // printf("forwards move prob: %f\n", moveProbSrc * moveProbDst);
+    // printf("backwards move prob: %f\n", exp(backwardsMoveProb));
+    // printf("hastings ratio: %f\n",(moveProbSrc * moveProbDst)/exp(backwardsMoveProb));
     // printf("-----------------------------------\n");
+
+    // getchar();
 
     /* Hastings ratio */
     /* The prior ratio cancels out (see Neal 2000) so we only need to deal with the
     move probability of the latent matrix update */
-    *lnProposalRatio += log(moveProb);
-    *lnProposalRatio -= log(backwardsMoveProb);
+    *lnProposalRatio += log(moveProbSrc) + log(moveProbDst);
+    *lnProposalRatio -= backwardsMoveProb;
 
     /* Copy new allocation vector, latent matrix, and newNumTables back */
     for (i=0; i<m->numChars; i++)
@@ -6073,7 +6079,12 @@ int Move_Latent (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, 
     // Get data associated with original cluster that was moved
     backwardsMoveProb = ForceLatentPattern(data, origLatentStates, numCharsInCluster, numMissing, rho, seed);
 
-    // printf("backwards move prob: %f\n",backwardsMoveProb);
+    // if (forwardMoveProb < backwardsMoveProb)
+    // {
+    //     printf("forwards move prob: %f\n",forwardMoveProb);
+    //     printf("backwards move prob: %f\n",backwardsMoveProb);
+    //     getchar();
+    // }
 
     // Now we can calculate proposal ratio
     *lnProposalRatio += log(forwardMoveProb);

@@ -105,7 +105,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_mb_OBJECTS = mb-bayes.$(OBJEXT) mb-best.$(OBJEXT) \
 	mb-command.$(OBJEXT) mb-likelihood.$(OBJEXT) \
-	mb-mbbeagle.$(OBJEXT) mb-mcmc.$(OBJEXT) mb-model.$(OBJEXT) \
+	mb-mbbeagle.$(OBJEXT) mb-mcmc.$(OBJEXT) mb-mcmodel.$(OBJEXT) mb-model.$(OBJEXT) \
 	mb-proposal.$(OBJEXT) mb-sumpt.$(OBJEXT) mb-utils.$(OBJEXT)
 mb_OBJECTS = $(am_mb_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -119,11 +119,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/autotools/depcomp
 am__depfiles_maybe = depfiles
@@ -131,19 +131,19 @@ am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(mb_SOURCES)
 DIST_SOURCES = $(mb_SOURCES)
 am__can_run_installinfo = \
@@ -295,6 +295,8 @@ mb_SOURCES = \
 	mbbeagle.h \
 	mcmc.c \
 	mcmc.h \
+	mcmodel.c \
+	mcmodel.h \
 	model.c \
 	model.h \
 	proposal.c \
@@ -348,7 +350,7 @@ config.h: stamp-h1
 stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status src/config.h
-$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f stamp-h1
 	touch $@
@@ -398,7 +400,7 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
-mb$(EXEEXT): $(mb_OBJECTS) $(mb_DEPENDENCIES) $(EXTRA_mb_DEPENDENCIES) 
+mb$(EXEEXT): $(mb_OBJECTS) $(mb_DEPENDENCIES) $(EXTRA_mb_DEPENDENCIES)
 	@rm -f mb$(EXEEXT)
 	$(AM_V_CCLD)$(mb_LINK) $(mb_OBJECTS) $(mb_LDADD) $(LIBS)
 
@@ -414,6 +416,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-likelihood.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-mbbeagle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-mcmc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-mcmodel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-model.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-proposal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-sumpt.Po@am__quote@
@@ -516,6 +519,20 @@ mb-mcmc.obj: mcmc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mcmc.c' object='mb-mcmc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -c -o mb-mcmc.obj `if test -f 'mcmc.c'; then $(CYGPATH_W) 'mcmc.c'; else $(CYGPATH_W) '$(srcdir)/mcmc.c'; fi`
+
+mb-mcmodel.o: mcmodel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -MT mb-mcmodel.o -MD -MP -MF $(DEPDIR)/mb-mcmodel.Tpo -c -o mb-mcmodel.o `test -f 'mcmodel.c' || echo '$(srcdir)/'`mcmodel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mb-mcmodel.Tpo $(DEPDIR)/mb-mcmodel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mcmodel.c' object='mb-mcmodel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -c -o mb-mcmodel.o `test -f 'mcmodel.c' || echo '$(srcdir)/'`mcmodel.c
+
+mb-mcmodel.obj: mcmodel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -MT mb-mcmodel.obj -MD -MP -MF $(DEPDIR)/mb-mcmodel.Tpo -c -o mb-mcmodel.obj `if test -f 'mcmodel.c'; then $(CYGPATH_W) 'mcmodel.c'; else $(CYGPATH_W) '$(srcdir)/mcmodel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mb-mcmodel.Tpo $(DEPDIR)/mb-mcmodel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mcmodel.c' object='mb-mcmodel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -c -o mb-mcmodel.obj `if test -f 'mcmodel.c'; then $(CYGPATH_W) 'mcmodel.c'; else $(CYGPATH_W) '$(srcdir)/mcmodel.c'; fi`
 
 mb-model.o: model.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -MT mb-model.o -MD -MP -MF $(DEPDIR)/mb-model.Tpo -c -o mb-model.o `test -f 'model.c' || echo '$(srcdir)/'`model.c

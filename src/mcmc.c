@@ -12073,9 +12073,8 @@ int PrintAllocationVectorToFile (int curGen)
                     allocationVector = GetParamIntVals(m->allocationVector, coldId, state[coldId]);
                     for (i=0; i<m->numChars; i++)
                         MrBayesPrintf(fpAlloc[runId], "%d ", allocationVector[i]);
-                    MrBayesPrintf(fpAlloc[runId], "\t");
 
-                    MrBayesPrintf (fpAlloc[runId], "\n");
+                    MrBayesPrintf(fpAlloc[runId], "\t\n");
 
                     fflush (fpAlloc[runId]);
                     }

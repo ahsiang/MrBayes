@@ -13,6 +13,8 @@ mb_SOURCES=	\
 	mbbeagle.h \
 	mcmc.c \
 	mcmc.h \
+	mcmodel.c \
+	mcmodel.h \
 	model.c \
 	model.h \
 	proposal.c \

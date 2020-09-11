@@ -43,6 +43,7 @@
 #include "sumpt.h"
 #include <math.h>
 #include "command.h"
+#include "mcmodel.h"
 
 #define LIKE_EPSILON                1.0e-300
 
@@ -8592,98 +8593,98 @@ MrBFlt LnProbAllocation (int *allocationVector, int numChars, MrBFlt alphaDir)
 }
 
 
-/*---------------------------------------------------------------------------------
-|
-|   LnProbEmission
-|
-|   Calculates log emission probability for a latent pattern.
-|   Missing character compliant.
-|
----------------------------------------------------------------------------------*/
-MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
-{
-    int            i, n, m=0, q, p;
-    MrBFlt         lnProbability;
-
-    /* Calculate total emission probability */
-    n = numCharsInCluster;
-    q = numMissing;
-
-    /* Count number of i-states in latent pattern */
-    for (i=0; i<numLocalTaxa; i++)
-        if (latentPattern[i] == INTSTATE)
-            m++;
-
-    /* Get mn-q power term */
-    p = m * n - q;
-
-    /* Get emission probability */
-    lnProbability = p * (log(1) - log(2)); // i.e., (1/2)^(mn-q)
-
-    return ( lnProbability );
-}
-
-
-/*-----------------------------------------------------------------
-|
-|   LnProbLatentMatrix: Calculate likelihood of latent matrix
-|
------------------------------------------------------------------*/
-MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars, int compMatrixStart)
-{
-    int         i, j, idx=0, highest=0, clusterCols[numClusters], currColumn[numLocalTaxa],
-                numCharsPerCluster[numClusters], numMissingPerCluster[numClusters], numDataValues,
-                *data;
-    MrBFlt      lnTotalProb=0.0;
-
-    /* Determine which columns to calculate likelihood for */
-    for (i=0; i<numChars; i++)
-        if (allocationVector[i] == highest)
-            {
-            clusterCols[idx++] = i;
-            highest++;
-            }
-
-    /* Get number of characters per cluster */
-    for (i=0; i<numClusters; i++)
-        numCharsPerCluster[i] = 0; // Initialize all entries to 0
-    for (i=0; i<numClusters; i++)
-        {
-        for (j=0; j<numChars; j++)
-            if (allocationVector[j] == i)
-                numCharsPerCluster[i]++;
-        }
-
-    /* Get number of missing characters per cluster */
-    for (i=0; i<numClusters; i++)
-        numMissingPerCluster[i] = 0;
-    for (i=0; i<numClusters; i++)
-        {
-        // Grab relevant data
-        data = GetClusterData(allocationVector, i, numCharsPerCluster[i], numChars, compMatrixStart);
-        // Count number of missing characters
-        numDataValues = numLocalTaxa * numCharsPerCluster[i];
-        for (j=0; j<numDataValues; j++)
-            if (data[j] == MISSING || data[j] == GAP)
-                numMissingPerCluster[i]++;
-        // Free allocation
-        free (data);
-        data = NULL;
-        }
-
-    /* Loop through processes and calculate probability */
-    for (i=0; i<numClusters; i++)
-        {
-        // Grab current column/cluster/process
-        for (j=0; j<numLocalTaxa; j++)
-            currColumn[j] = latentMatrix[pos(j, clusterCols[i], numChars)];
-
-        // Calculate log likelihood of column and add to total
-        lnTotalProb += LnProbEmission(currColumn, numCharsPerCluster[i], numMissingPerCluster[i]);
-        }
-
-    return lnTotalProb;
-}
+// /*---------------------------------------------------------------------------------
+// |
+// |   LnProbEmission
+// |
+// |   Calculates log emission probability for a latent pattern.
+// |   Missing character compliant.
+// |
+// ---------------------------------------------------------------------------------*/
+// MrBFlt LnProbEmission(int *latentPattern, int numCharsInCluster, int numMissing)
+// {
+//     int            i, n, m=0, q, p;
+//     MrBFlt         lnProbability;
+//
+//     /* Calculate total emission probability */
+//     n = numCharsInCluster;
+//     q = numMissing;
+//
+//     /* Count number of i-states in latent pattern */
+//     for (i=0; i<numLocalTaxa; i++)
+//         if (latentPattern[i] == INTSTATE)
+//             m++;
+//
+//     /* Get mn-q power term */
+//     p = m * n - q;
+//
+//     /* Get emission probability */
+//     lnProbability = p * (log(1) - log(2)); // i.e., (1/2)^(mn-q)
+//
+//     return ( lnProbability );
+// }
+//
+//
+// /*-----------------------------------------------------------------
+// |
+// |   LnProbLatentMatrix: Calculate likelihood of latent matrix
+// |
+// -----------------------------------------------------------------*/
+// MrBFlt LnProbLatentMatrix (int *allocationVector, int *latentMatrix, int numClusters, int numChars, int compMatrixStart)
+// {
+//     int         i, j, idx=0, highest=0, clusterCols[numClusters], currColumn[numLocalTaxa],
+//                 numCharsPerCluster[numClusters], numMissingPerCluster[numClusters], numDataValues,
+//                 *data;
+//     MrBFlt      lnTotalProb=0.0;
+//
+//     /* Determine which columns to calculate likelihood for */
+//     for (i=0; i<numChars; i++)
+//         if (allocationVector[i] == highest)
+//             {
+//             clusterCols[idx++] = i;
+//             highest++;
+//             }
+//
+//     /* Get number of characters per cluster */
+//     for (i=0; i<numClusters; i++)
+//         numCharsPerCluster[i] = 0; // Initialize all entries to 0
+//     for (i=0; i<numClusters; i++)
+//         {
+//         for (j=0; j<numChars; j++)
+//             if (allocationVector[j] == i)
+//                 numCharsPerCluster[i]++;
+//         }
+//
+//     /* Get number of missing characters per cluster */
+//     for (i=0; i<numClusters; i++)
+//         numMissingPerCluster[i] = 0;
+//     for (i=0; i<numClusters; i++)
+//         {
+//         // Grab relevant data
+//         data = GetClusterData(allocationVector, i, numCharsPerCluster[i], numChars, compMatrixStart);
+//         // Count number of missing characters
+//         numDataValues = numLocalTaxa * numCharsPerCluster[i];
+//         for (j=0; j<numDataValues; j++)
+//             if (data[j] == MISSING || data[j] == GAP)
+//                 numMissingPerCluster[i]++;
+//         // Free allocation
+//         free (data);
+//         data = NULL;
+//         }
+//
+//     /* Loop through processes and calculate probability */
+//     for (i=0; i<numClusters; i++)
+//         {
+//         // Grab current column/cluster/process
+//         for (j=0; j<numLocalTaxa; j++)
+//             currColumn[j] = latentMatrix[pos(j, clusterCols[i], numChars)];
+//
+//         // Calculate log likelihood of column and add to total
+//         lnTotalProb += LnProbEmission(currColumn, numCharsPerCluster[i], numMissingPerCluster[i]);
+//         }
+//
+//     return lnTotalProb;
+// }
 
 
 /*----------------------------------------------------------------
